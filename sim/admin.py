@@ -1,0 +1,134 @@
+"""Admin view: download the data and handle withdrawals.
+
+Reached at ?view=admin and protected by ADMIN_PASSWORD in Streamlit secrets.
+Participants never see it and never see a link to it. If no password is set,
+the page refuses to open, so a deployed app is never accidentally public.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+import streamlit as st
+
+from . import codebook, content, scoring, storage
+
+
+def _password() -> str | None:
+    try:
+        value = st.secrets.get("ADMIN_PASSWORD")
+    except Exception:
+        return None
+    return str(value) if value else None
+
+
+def render() -> None:
+    st.title("Study data")
+
+    expected = _password()
+    if not expected:
+        st.error(
+            "No ADMIN_PASSWORD is set, so this page stays closed. Add one to "
+            "`.streamlit/secrets.toml` locally, or under Settings and Secrets in "
+            "Streamlit Cloud."
+        )
+        return
+
+    if not st.session_state.get("admin_ok"):
+        given = st.text_input("Password", type="password")
+        if st.button("Open", type="primary"):
+            if given == expected:
+                st.session_state.admin_ok = True
+                st.rerun()
+            else:
+                st.error("Wrong password.")
+        return
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+    numbers = storage.counts()
+
+    st.caption(f"Storage: {storage.describe()}")
+    if storage.backend() == "sqlite":
+        st.warning(
+            "This app is writing to a local SQLite file. On a hosted Streamlit app "
+            "that file is lost whenever the app restarts. Set DATABASE_URL in "
+            "secrets before collecting real data, and download often until then."
+        )
+
+    cols = st.columns(4)
+    cols[0].metric("Sessions started", numbers["started"])
+    cols[1].metric("Completed", numbers["completed"])
+    cols[2].metric("Withdrawn", numbers["withdrawn"])
+    cols[3].metric("Answers stored", numbers["answers"])
+
+    st.divider()
+    st.subheader("Download")
+    st.caption(
+        "Sessions and responses are the analysis files. The mail addresses are a "
+        "separate download so the analysis file carries no contact data."
+    )
+    for table, label in (("sessions", "sessions.csv"),
+                         ("responses", "responses.csv"),
+                         ("followup", "followup.csv")):
+        data = storage.table_csv(table)
+        st.download_button(
+            f"{label}  ({len(data.splitlines()) - 1 if data else 0} rows)",
+            data=data or "", file_name=f"{stamp}-{label}", mime="text/csv",
+            disabled=not data, key=f"dl_{table}")
+
+    st.divider()
+    st.subheader("Group results so far")
+    st.caption(
+        "Descriptive only, and the design supports group level reading, not "
+        "individual diagnosis. Withdrawn participants are left out."
+    )
+    if st.button("Compute"):
+        sessions = [s for s in storage.fetch_all("sessions")
+                    if not s.get("withdrawn") and s.get("completed_at")]
+        if not sessions:
+            st.info("No completed sessions yet.")
+        else:
+            scored = {s["code"]: scoring.score_participant(
+                storage.fetch_responses(s["code"]), seed=s.get("seed") or 0)
+                for s in sessions}
+            summary = scoring.sample_summary(scoring.standardise(scored))
+            rows = []
+            for node_id in sorted(summary):
+                row = summary[node_id]
+                detail = ""
+                if row["form"] == "overestimation":
+                    detail = (f"mean distance {row['mean_distance']:+.2f}, "
+                              f"{row['share_above_reference']:.0%} above reference")
+                elif row["form"] == "overplacement":
+                    detail = (f"entry {row['entry_rate']:.0%} "
+                              f"(break-even {row['break_even_entry_rate']:.0%})")
+                elif row["form"] == "overprecision" and "median_width_ratio" in row:
+                    detail = (f"width ratio {row['median_width_ratio']:.2f}, "
+                              f"coverage {row['mean_expected_coverage']:.0%} "
+                              f"of a {row['target_coverage']:.0%} target")
+                elif "pass_rate" in row:
+                    detail = f"passed by {row['pass_rate']:.0%}"
+                elif "choices" in row:
+                    detail = str(row["choices"])
+                rows.append({"node": node_id, "form": row["form"],
+                             "domain": row["domain"], "n": row["n"],
+                             "result": detail})
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+
+    st.divider()
+    st.subheader("Withdraw a participant")
+    st.caption(
+        "For a withdrawal by mail. Deleting removes the session, every answer and "
+        "the contact, and cannot be undone."
+    )
+    code = st.text_input("Pseudonym code", placeholder="ABC-1234")
+    col1, col2 = st.columns([1, 3])
+    if col1.button("Delete", type="primary", disabled=not code.strip()):
+        removed = storage.delete(code.strip().upper())
+        if removed:
+            st.success(f"Deleted {code.strip().upper()}.")
+        else:
+            st.warning("No session with that code.")
+
+    st.divider()
+    st.caption(f"App {content.APP_VERSION} · codebook {codebook.version()}")
