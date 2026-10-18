@@ -3,111 +3,30 @@
 Run with:  streamlit run app.py
 
 The session never names confidence, calibration or overconfidence. Reference
-values are never shown to the participant: they live only in the backend and
-are used only for the analysis. The full debrief is delivered through the
-follow-up a week later, opened with the pseudonym code.
+values live only in the backend and are never shown. The full explanation of
+the study is sent with the follow-up a week later.
 """
 
 from __future__ import annotations
 
+import copy
 import random
+import re
 import time
 
 import streamlit as st
 
-from sim import codebook, content, flow, state as game, storage
+from sim import codebook, content, flow, state as game, storage, ui
 
-st.set_page_config(page_title="Decisions in founding", page_icon="•",
+st.set_page_config(page_title="Decisions in founding", page_icon="◆",
                    layout="centered", initial_sidebar_state="collapsed")
+ui.inject_css()
 
-# ---------------------------------------------------------------------------
-# Styles. Light theme is enforced via config and here: both themes render the
-# same so answer cards are always legible, regardless of the viewer's OS.
-# ---------------------------------------------------------------------------
-
-STYLE = """
-<style>
-  :root, [data-theme="dark"] {
-      color-scheme: light;
-      --fg: #1A1D21;
-      --fg-muted: #5F6672;
-      --bg: #FFFFFF;
-      --bg-soft: #F4F6F8;
-      --accent: #1F3A5F;
-      --accent-soft: rgba(31,58,95,0.08);
-      --border: rgba(26,29,33,0.16);
-      --border-hover: rgba(31,58,95,0.55);
-      --warning-bg: #FFF4E5;
-      --warning-fg: #7A4A00;
-  }
-  html, body, .stApp {background: var(--bg) !important; color: var(--fg) !important;}
-  .block-container {max-width: 46rem; padding-top: 2.5rem; padding-bottom: 4rem;}
-  h1, h2, h3, h4 {letter-spacing: -0.015em; color: var(--fg) !important;}
-  p, li, label, span, div {color: var(--fg);}
-  div[data-testid="stMarkdownContainer"] p {font-size: 1.02rem; line-height: 1.65;}
-
-  /* Answer options as one column of equal-width cards, legible in dark mode. */
-  div[data-testid="stRadio"], div[data-testid="stRadio"] > div {width: 100%;}
-  div[role="radiogroup"] {
-      gap: 0.4rem; width: 100% !important; align-items: stretch;
-  }
-  label[data-testid="stRadioOption"] {
-      display: flex; align-items: center; box-sizing: border-box;
-      width: 100%; padding: 0.75rem 1rem; margin: 0; border-radius: 10px;
-      border: 1px solid var(--border) !important;
-      background: var(--bg) !important; color: var(--fg) !important;
-      transition: border-color 120ms ease, background 120ms ease;
-  }
-  label[data-testid="stRadioOption"] * {color: var(--fg) !important;}
-  label[data-testid="stRadioOption"]:hover {
-      border-color: var(--border-hover) !important;
-      background: var(--accent-soft) !important;
-  }
-  /* Horizontal radio groups (likert, inline choices) stay compact. */
-  div[role="radiogroup"][aria-orientation="horizontal"] label[data-testid="stRadioOption"] {
-      width: auto; border: none !important; background: none !important;
-      padding: 0.3rem 0.9rem 0.3rem 0;
-  }
-
-  .stButton button, .stDownloadButton button, .stFormSubmitButton button {
-      padding: 0.55rem 1.6rem; border-radius: 10px; font-weight: 500;
-  }
-  button[kind="primary"], .stButton button[kind="primary"] {
-      background: var(--accent) !important; color: #fff !important;
-      border: 1px solid var(--accent) !important;
-  }
-  button[kind="secondary"], .stButton button[kind="secondary"] {
-      background: var(--bg) !important; color: var(--fg) !important;
-      border: 1px solid var(--border) !important;
-  }
-
-  /* Numeric inputs legible in both themes. */
-  input, textarea, [data-baseweb="input"] input, [data-baseweb="textarea"] textarea,
-  [data-baseweb="select"] div {color: var(--fg) !important; background: var(--bg) !important;}
-
-  /* Hide app chrome: participants should see the question, nothing else. */
-  div[data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"],
-  footer, div[data-testid="stDecoration"] {visibility: hidden; height: 0;}
-
-  .q {font-size: 1.22rem; font-weight: 600; line-height: 1.45;
-      margin-bottom: 0.6rem; color: var(--fg) !important;}
-  .sit {color: var(--fg-muted); font-size: 0.9rem; letter-spacing: 0.04em;
-        text-transform: uppercase; margin-bottom: 0.25rem;}
-  .hint {color: var(--fg-muted); font-size: 0.92rem;}
-  .mand {color: #B23A48; font-weight: 500;}
-
-  div[data-testid="stMetricValue"] {font-size: 1.25rem; color: var(--fg) !important;}
-  div[data-testid="stMetricLabel"] {color: var(--fg-muted) !important;}
-
-  /* Progress bar in accent colour. */
-  div[data-testid="stProgress"] div[role="progressbar"] > div {background: var(--accent);}
-</style>
-"""
-st.markdown(STYLE, unsafe_allow_html=True)
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
 
 
 # ---------------------------------------------------------------------------
-# Session bootstrap
+# Session
 # ---------------------------------------------------------------------------
 
 def init() -> None:
@@ -115,282 +34,320 @@ def init() -> None:
         return
     seed = random.randrange(1, 2**31 - 1)
     rng = random.Random(seed)
-    st.session_state.seed = seed
-    st.session_state.rng = rng
-    st.session_state.track = flow.assign_track(rng)
-    st.session_state.code = flow.make_code(rng)
-    st.session_state.screens = flow.build(st.session_state.track, seed)
-    st.session_state.index = 0
-    st.session_state.solo = False
-    st.session_state.state = game.new_state(solo=False)
-    st.session_state.started = False
-    st.session_state.screen_entered = time.monotonic()
-    st.session_state.answers = {}
+    ss = st.session_state
+    ss.seed = seed
+    ss.track = flow.assign_track(rng)
+    ss.code = flow.make_code(rng)
+    ss.screens = flow.build(ss.track, seed)
+    ss.sections = flow.sections(ss.screens)
+    ss.index = 0
+    ss.solo = False
+    ss.state = game.new_state(solo=False)
+    ss.screen_entered = time.monotonic()
+    ss.answers = {}            # screen id -> values, to pre-fill after Back
+    ss.events = []             # what changed the numbers, per area
+    ss.block_start = {}        # area -> situation when the area began
+    ss.closed = set()          # areas whose month of burn has been paid
+    ss.completed = False
 
 
 init()
+ss = st.session_state
+
+# Local design review only: FS_DEV=1 streamlit run app.py, then ?jump=<screen id>.
+# Never active on a deployment unless that environment variable is set there.
+import os  # noqa: E402
+if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.get("jumped"):
+    target = st.query_params.get("jump")
+    ids = [s["id"] for s in ss.screens]
+    if target in ids:
+        ss.index = ids.index(target)
+        ss.startup_name = "Northwind"
+        ss.jumped = True
+        if target.startswith("report_"):
+            dom = target.split("_", 1)[1]
+            ss.block_start[dom] = copy.deepcopy(ss.state)
+            ss.state = game.apply(ss.state, {"cash": -12_000})
+            ss.events.append({"domain": dom, "label": "MVP development: About half "
+                              "to external developers", "delta": {"cash": -12_000}})
 
 
 def screen() -> dict:
-    return st.session_state.screens[st.session_state.index]
+    return ss.screens[ss.index]
 
 
 def elapsed() -> float:
-    return round(time.monotonic() - st.session_state.screen_entered, 3)
+    return round(time.monotonic() - ss.screen_entered, 3)
 
 
 def advance() -> None:
-    st.session_state.index += 1
-    st.session_state.screen_entered = time.monotonic()
+    ss.index += 1
+    ss.screen_entered = time.monotonic()
     st.rerun()
 
 
 def go_back() -> None:
-    if st.session_state.index > 0:
-        st.session_state.index -= 1
-        st.session_state.screen_entered = time.monotonic()
-        st.rerun()
+    ss.index -= 1
+    ss.screen_entered = time.monotonic()
+    st.rerun()
 
 
-def log(**kwargs) -> None:
-    storage.save_response(
-        st.session_state.code, screen(), st.session_state.index,
-        response_seconds=elapsed(), state=game.snapshot(st.session_state.state),
-        **kwargs)
+def log(screen_override: dict | None = None, **kwargs) -> None:
+    sc = screen_override or screen()
+    storage.save_response(ss.code, sc, ss.index, response_seconds=kwargs.pop(
+        "response_seconds", elapsed()), state=game.snapshot(ss.state), **kwargs)
 
 
-def apply_effects(effects: dict) -> None:
-    st.session_state.state = game.apply(st.session_state.state, effects)
+def remember(**values) -> None:
+    ss.answers[screen()["id"]] = values
 
 
-def text(value: str) -> str:
-    """Fill the placeholders a question reads from the situation."""
-    s = st.session_state.state
-    return value.format(
-        runway=s["runway"],
-        launch_budget=f'{game.launch_budget(s):,.0f} euros',
-        cash=f'{s["cash"]:,.0f}',
-        team_size=s["team_size"],
-    )
+def recalled(key: str, default=None):
+    return ss.answers.get(screen()["id"], {}).get(key, default)
 
 
-def solo_variant(block: dict, key: str) -> str:
-    if st.session_state.solo and f"{key}_solo" in block:
-        return block[f"{key}_solo"]
-    return block[key]
+def apply_effects(effects: dict, label: str | None) -> None:
+    before = ss.state
+    ss.state = game.apply(ss.state, effects)
+    delta = game.diff(before, ss.state)
+    if label and delta:
+        ss.events.append({"domain": screen().get("domain"), "label": label,
+                          "delta": delta})
 
 
-def header() -> None:
-    done, total = flow.progress(st.session_state.screens, st.session_state.index)
-    st.progress(done / total)
+def fill(text: str) -> str:
+    s = ss.state
+    return text.format(runway=s["runway"],
+                       launch_budget=game.money(game.launch_budget(s)))
+
+
+def money(v: float) -> str:
+    return game.money(v)
+
+
+# ---------------------------------------------------------------------------
+# Frame
+# ---------------------------------------------------------------------------
+
+def frame() -> None:
+    """Section bar, progress and, where allowed, the Back button."""
     sc = screen()
-    if sc["kind"] in flow.BACK_ALLOWED and st.session_state.index > 0:
-        if st.button("← Back", key=f"back_{sc['id']}"):
+    ui.steps(ss.sections, sc.get("section"), ss.index / (len(ss.screens) - 1))
+    if flow.back_allowed(ss.screens, ss.index):
+        if st.button("← Back", key=f"back_{sc['id']}", type="tertiary"):
             go_back()
 
 
-def euros(value: float) -> str:
-    return f"{value:,.0f} euros"
-
-
-def scenario_popover(spec: dict) -> None:
-    """Small info popover attached to a measurement question, showing the
-    *scenario* context and sources. Never discloses the measurement reference.
-    """
-    if not spec.get("scenario") and not spec.get("sources"):
+def scenario(spec: dict) -> None:
+    if not spec.get("scenario"):
         return
-    with st.popover("About this scenario", use_container_width=False):
-        if spec.get("scenario"):
-            st.markdown(spec["scenario"])
+    with st.popover("ⓘ  About this scenario"):
+        st.markdown(spec["scenario"])
         if spec.get("sources"):
-            st.markdown("**Related reading**")
+            st.markdown("**Data behind the scenario**")
             for src in spec["sources"]:
                 st.markdown(f"- {src}")
 
 
+def continue_button(key: str, label: str = "Continue") -> bool:
+    return st.button(label, type="primary", key=key)
+
+
 # ---------------------------------------------------------------------------
-# Screens
+# Welcome
 # ---------------------------------------------------------------------------
 
 def render_consent(sc: dict) -> None:
     st.title(content.CONSENT["title"])
+    ui.html_block(f'<div class="fs-hero"><div class="lead">{content.CONSENT["lead"]}'
+                  '</div></div>')
     st.markdown(content.CONSENT["body"])
-    col1, col2 = st.columns([1, 1])
-    if col1.button(content.CONSENT["agree"], type="primary", key="consent_agree"):
-        storage.start_session(st.session_state.code, st.session_state.track,
-                              st.session_state.seed, content.APP_VERSION,
+    c1, c2 = st.columns([1.3, 1])
+    if c1.button(content.CONSENT["agree"], type="primary", key="consent_agree",
+                 use_container_width=True):
+        storage.start_session(ss.code, ss.track, ss.seed, content.APP_VERSION,
                               codebook.version())
-        st.session_state.started = True
-        storage.update_session(st.session_state.code, consent=1)
+        storage.update_session(ss.code, consent=1)
         log(option_key="agree")
         advance()
-    if col2.button(content.CONSENT["decline"], key="consent_decline"):
-        st.session_state.declined = True
+    if c2.button(content.CONSENT["decline"], key="consent_decline",
+                 use_container_width=True):
+        ss.declined = True
         st.rerun()
 
 
+# ---------------------------------------------------------------------------
+# About you
+# ---------------------------------------------------------------------------
+
+def about_header() -> None:
+    ui.note(content.ABOUT_NOTE)
+
+
 def render_filter(sc: dict) -> None:
-    header()
-    st.markdown(f'<div class="q">{content.FILTER["question"]}</div>',
-                unsafe_allow_html=True)
-    st.caption(content.FILTER["help"])
-    choice = st.radio("Answer", content.FILTER["options"], index=None,
+    frame()
+    about_header()
+    ui.question(content.FILTER["question"], content.FILTER["help"])
+    opts = content.FILTER["options"]
+    saved = recalled("choice")
+    choice = st.radio("Answer", opts, index=opts.index(saved) if saved in opts else None,
                       label_visibility="collapsed", key="filter_choice")
-    if st.button("Continue", type="primary", key="filter_continue"):
+    if continue_button("filter_continue"):
         if choice is None:
-            st.warning("Please select Yes or No.")
+            st.warning("Please choose Yes or No.")
             return
-        is_founder = choice == "Yes"
-        storage.update_session(st.session_state.code, is_founder=int(is_founder))
+        remember(choice=choice)
+        storage.update_session(ss.code, is_founder=int(choice == "Yes"))
         log(option_key=choice)
-        if not is_founder:
-            st.session_state.not_founder = True
+        if choice != "Yes":
+            storage.delete(ss.code)      # the end screen promises nothing is kept
+            ss.not_founder = True
             st.rerun()
         advance()
 
 
-def render_setup(sc: dict) -> None:
-    header()
-    st.markdown('<div class="q">Let us set up your start-up.</div>',
-                unsafe_allow_html=True)
-    with st.form("setup", clear_on_submit=False):
-        name = st.text_input(content.SETUP["name_label"],
-                             placeholder=content.SETUP["name_placeholder"])
-        industry = st.selectbox(content.SETUP["industry_label"],
-                                content.INDUSTRIES, index=None,
-                                placeholder="Pick one")
-        solo = st.radio(content.SETUP["solo_label"],
-                        content.SETUP["solo_options"], index=None,
-                        horizontal=True)
+def render_email(sc: dict) -> None:
+    frame()
+    about_header()
+    ui.question(content.EMAIL["question"], content.EMAIL["body"])
+    with st.form("email_form", border=False):
+        email = st.text_input(content.EMAIL["label"], value=recalled("email", ""),
+                              placeholder=content.EMAIL["placeholder"],
+                              key="email_value")
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
-        missing = []
-        if not name.strip():
-            missing.append("a name for your start-up")
-        if industry is None:
-            missing.append("the industry")
-        if solo is None:
-            missing.append("whether you run it alone or with co-founders")
-        if missing:
-            st.warning("Please fill in: " + ", ".join(missing) + ".")
+        email = (email or "").strip().lower()
+        if not EMAIL_RE.match(email):
+            st.warning("Please enter a valid email address.")
             return
-        is_solo = solo == "Alone"
-        st.session_state.solo = is_solo
-        st.session_state.state = game.new_state(solo=is_solo)
-        st.session_state.startup_name = name.strip()
-        storage.update_session(st.session_state.code, solo=int(is_solo),
-                               startup_name=name.strip(), industry=industry)
-        log(text_value=f"{name.strip()} | {industry} | {solo}")
+        remember(email=email)
+        storage.save_followup(ss.code, email)
+        log(option_key="provided")      # the address itself is never in responses
         advance()
 
 
-def render_code(sc: dict) -> None:
-    header()
-    st.markdown('<div class="q">Your code</div>', unsafe_allow_html=True)
-    st.markdown(
-        "Everything you enter is stored under this code. It is the only link "
-        "to your session. In one week we will share a short follow-up through "
-        "the same channel you received this invitation on; you will open it "
-        "with this code. Please **note it down now**."
-    )
-    st.code(st.session_state.code, language=None)
-    if st.button("Continue", type="primary", key="code_continue"):
-        log(text_value=st.session_state.code)
-        advance()
+def _profile_widget(field: dict):
+    key, label, kind = field["key"], field["label"], field["kind"]
+    saved = recalled(key)
+    wkey = f"profile_{key}"
+    if kind == "number":
+        return st.number_input(label, min_value=field["min"], max_value=field["max"],
+                               step=1, value=saved, key=wkey, placeholder="Type a number")
+    if kind == "select":
+        opts = field["options"]
+        return st.selectbox(label, opts, index=opts.index(saved) if saved in opts else None,
+                            placeholder="Select", key=wkey)
+    if kind == "pills":
+        return st.pills(label, field["options"], default=saved, key=wkey)
+    if kind == "multi":
+        return st.pills(label, field["options"], selection_mode="multi",
+                        default=saved or [], key=wkey)
+    return st.text_input(label, value=saved or "", key=wkey)
 
 
 def render_profile(sc: dict) -> None:
-    header()
-    st.markdown('<div class="q">About you and your start-up</div>',
-                unsafe_allow_html=True)
-    st.caption(content.DEMOGRAPHICS_INTRO)
-    with st.form("profile", clear_on_submit=False):
-        values = {}
-        for field in content.PROFILE_FIELDS:
-            if field["kind"] == "number":
-                values[field["key"]] = st.number_input(
-                    field["label"], min_value=field["min"],
-                    max_value=field["max"], step=1, value=None)
-            elif field["kind"] == "select":
-                values[field["key"]] = st.selectbox(
-                    field["label"], field["options"], index=None,
-                    placeholder="Pick one")
+    frame()
+    about_header()
+    ui.question(content.PROFILE["question"], content.PROFILE["body"])
+    values: dict = {}
+    with st.form("profile_form", border=False):
+        fields = content.PROFILE_FIELDS
+        i = 0
+        while i < len(fields):
+            f = fields[i]
+            nxt = fields[i + 1] if i + 1 < len(fields) else None
+            if "col" in f and nxt is not None and "col" in nxt:
+                c1, c2 = st.columns(2)
+                with c1:
+                    values[f["key"]] = _profile_widget(f)
+                with c2:
+                    values[nxt["key"]] = _profile_widget(nxt)
+                i += 2
             else:
-                values[field["key"]] = st.text_input(field["label"])
+                values[f["key"]] = _profile_widget(f)
+                i += 1
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
         missing = [f["label"] for f in content.PROFILE_FIELDS
-                   if values.get(f["key"]) in (None, "")]
+                   if values.get(f["key"]) in (None, "", [])]
         if missing:
-            st.warning("Please answer: " + "; ".join(missing) + ".")
+            st.warning("Please answer every question. Still open: "
+                       + "; ".join(m.split(" (")[0] for m in missing) + ".")
             return
-        log(text_value="; ".join(f"{k}={v}" for k, v in values.items()))
+        remember(**values)
+        log(text_value="; ".join(
+            f"{k}={'|'.join(v) if isinstance(v, list) else v}" for k, v in values.items()))
         advance()
 
 
 def render_experience(sc: dict) -> None:
-    header()
-    st.markdown('<div class="q">How much of this have you done before?</div>',
-                unsafe_allow_html=True)
-    with st.form("experience", clear_on_submit=False):
-        values = {}
+    frame()
+    about_header()
+    ui.question(content.EXPERIENCE["question"], content.EXPERIENCE["body"])
+    values = {}
+    with st.form("experience_form", border=False):
         for field in content.EXPERIENCE_FIELDS:
-            values[field["key"]] = st.radio(
+            values[field["key"]] = st.pills(
                 field["label"], content.EXPERIENCE_OPTIONS,
-                horizontal=True, index=None)
+                default=recalled(field["key"]), key=f"exp_{field['key']}")
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
-        missing = [f["label"] for f in content.EXPERIENCE_FIELDS
-                   if values.get(f["key"]) is None]
-        if missing:
-            st.warning("Please answer: " + "; ".join(missing) + ".")
+        if any(v is None for v in values.values()):
+            st.warning("Please answer each of the four questions.")
             return
+        remember(**values)
         log(text_value="; ".join(f"{k}={v}" for k, v in values.items()))
         advance()
 
 
 def render_risk(sc: dict) -> None:
-    header()
-    st.markdown('<div class="q">Three last questions about how you decide</div>',
-                unsafe_allow_html=True)
-    with st.form("risk", clear_on_submit=False):
-        values = {}
-        scale = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+    frame()
+    about_header()
+    ui.question(content.RISK["question"], content.RISK["body"])
+    scale = [str(i) for i in range(11)]
+    values = {}
+    with st.form("risk_form", border=False):
         for item in content.RISK_ITEMS:
-            st.markdown(item["label"])
-            st.caption(f'0 = {item["low"]} · 10 = {item["high"]}')
-            values[item["key"]] = st.radio(
-                item["label"], scale, index=None, horizontal=True,
-                label_visibility="collapsed", key=f'risk_{item["key"]}')
+            st.markdown(f"**{item['label']}**")
+            values[item["key"]] = st.pills(
+                item["label"], scale, default=recalled(item["key"]),
+                label_visibility="collapsed", key=f"risk_{item['key']}")
+            ui.html_block(
+                '<div style="display:flex;justify-content:space-between;'
+                'font-size:0.78rem;color:#6B7280;margin:-0.4rem 0 1.1rem 0;max-width:34rem">'
+                f'<span>0 = {item["low"]}</span><span>10 = {item["high"]}</span></div>')
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
-        missing = [item["label"] for item in content.RISK_ITEMS
-                   if values.get(item["key"]) is None]
-        if missing:
+        if any(v is None for v in values.values()):
             st.warning("Please answer each of the three questions.")
             return
+        remember(**values)
         log(text_value="; ".join(f"{k}={v}" for k, v in values.items()))
         advance()
 
 
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+
 def render_warmup_intro(sc: dict) -> None:
-    header()
+    frame()
     st.subheader(content.WARMUP_INTRO["title"])
-    st.markdown(content.WARMUP_INTRO["body"])
-    if st.button("Continue", type="primary", key="warmup_continue"):
+    ui.points(content.WARMUP_INTRO["points"])
+    st.caption(content.WARMUP_INTRO["footer"])
+    if continue_button("warmup_continue"):
+        log(option_key="seen")
         advance()
 
 
-def render_practice_name(sc: dict) -> None:
-    header()
-    st.caption(content.PRACTICE_NAME["intro"])
-    st.markdown(f'<div class="q">{content.PRACTICE_NAME["question"]}</div>',
-                unsafe_allow_html=True)
-    st.markdown(content.PRACTICE_NAME["options_label"])
-    choice = st.radio(content.PRACTICE_NAME["product_label"],
-                      content.PRACTICE_NAME["options"], index=None,
-                      key="practice_name_choice")
-    if st.button("Continue", type="primary", key="practice_name_continue"):
+def render_practice_choice(sc: dict) -> None:
+    frame()
+    ui.eyebrow(content.PRACTICE_CHOICE["tag"], muted=True)
+    ui.question(content.PRACTICE_CHOICE["question"])
+    opts = content.PRACTICE_CHOICE["options"]
+    choice = st.radio("Order", opts, index=None, label_visibility="collapsed",
+                      key="practice_choice_value")
+    if continue_button("practice_choice_continue"):
         if choice is None:
             st.warning("Please pick one.")
             return
@@ -399,233 +356,312 @@ def render_practice_name(sc: dict) -> None:
 
 
 def render_practice_range(sc: dict) -> None:
-    header()
-    half = sc["half"]
-    spec = content.PRACTICE_RANGE[half]
-    if half == "low":
-        st.caption(content.PRACTICE_RANGE["intro"])
-    st.markdown(f'<div class="q">{spec["question"]}</div>',
-                unsafe_allow_html=True)
-    st.markdown(spec["prompt"])
-    value = st.number_input("cups", min_value=0, max_value=5000, step=1,
-                            value=None, label_visibility="collapsed",
-                            key=f"practice_{half}_value")
-    if st.button("Continue", type="primary", key=f"practice_{half}_continue"):
-        if value is None:
-            st.warning("Please enter a number.")
+    frame()
+    spec = content.PRACTICE_RANGE
+    ui.eyebrow(spec["tag"], muted=True)
+    ui.question(spec["question"], spec["intro"])
+    ui.range_diagram("lower", "higher")
+    c1, c2 = st.columns(2)
+    with c1:
+        low = st.number_input(spec["low_label"], min_value=0, max_value=5000, step=1,
+                              value=None, key="practice_low", placeholder=spec["unit"])
+        st.caption(spec["low_help"])
+    with c2:
+        high = st.number_input(spec["high_label"], min_value=0, max_value=5000, step=1,
+                               value=None, key="practice_high", placeholder=spec["unit"])
+        st.caption(spec["high_help"])
+    if continue_button("practice_range_continue"):
+        if low is None or high is None:
+            st.warning("Please enter both numbers.")
             return
-        log(numeric_value=float(value))
+        if low > high:
+            st.warning("Your low estimate is higher than your high estimate. "
+                       "Please check the two numbers.")
+            return
+        log(numeric_value=float(low), text_value=f"{low}-{high}")
+        advance()
+
+
+# ---------------------------------------------------------------------------
+# Your start-up
+# ---------------------------------------------------------------------------
+
+def render_setup(sc: dict) -> None:
+    frame()
+    ui.question(content.SETUP["question"], content.SETUP["body"])
+    with st.form("setup_form", border=False):
+        name = st.text_input(content.SETUP["name_label"],
+                             placeholder=content.SETUP["name_placeholder"])
+        industry = st.selectbox(content.SETUP["industry_label"], content.INDUSTRIES,
+                                index=None, placeholder="Select")
+        solo = st.radio(content.SETUP["solo_label"], content.SETUP["solo_options"],
+                        index=None, horizontal=True)
+        submitted = st.form_submit_button("Continue", type="primary")
+    if submitted:
+        missing = []
+        if not (name or "").strip():
+            missing.append("a name")
+        if industry is None:
+            missing.append("the industry")
+        if solo is None:
+            missing.append("alone or with co-founders")
+        if missing:
+            st.warning("Please fill in " + ", ".join(missing) + ".")
+            return
+        ss.solo = solo == "Alone"
+        ss.state = game.new_state(solo=ss.solo)
+        ss.startup_name = name.strip()
+        storage.update_session(ss.code, solo=int(ss.solo), startup_name=name.strip(),
+                               industry=industry)
+        log(text_value=f"{name.strip()} | {industry} | {solo}")
         advance()
 
 
 def render_starting_situation(sc: dict) -> None:
-    header()
+    frame()
+    ui.eyebrow(ss.get("startup_name") or content.SECTION_STARTUP)
     st.subheader(content.STARTING_SITUATION["title"])
-    st.markdown(content.STARTING_SITUATION["intro"])
-    rows = game.report_rows(st.session_state.state)
-    for i in range(0, len(rows), 3):
-        cols = st.columns(3)
-        for col, (label, value, help_text) in zip(cols, rows[i:i + 3]):
-            col.metric(label, value, help=help_text)
-    st.caption(content.STARTING_SITUATION["footer"])
-    if st.button("Start the first area", type="primary",
-                 key="starting_continue"):
+    st.markdown(content.STARTING_SITUATION["body"])
+    ui.status_cards(ss.state)
+    if continue_button("starting_continue", content.STARTING_SITUATION["button"]):
+        log(option_key="seen")
         advance()
 
+
+# ---------------------------------------------------------------------------
+# The four areas
+# ---------------------------------------------------------------------------
 
 def render_block_intro(sc: dict) -> None:
-    header()
-    block = content.BLOCKS[sc["domain"]]
-    st.markdown(f'<div class="sit">{st.session_state.get("startup_name", "")}</div>',
-                unsafe_allow_html=True)
+    frame()
+    domain = sc["domain"]
+    block = content.BLOCKS[domain]
+    if domain not in ss.block_start:
+        ss.block_start[domain] = copy.deepcopy(ss.state)
+    n = content.TRACKS[ss.track].index(domain) + 1
+    ui.eyebrow(f"Area {n} of 4")
     st.subheader(block["title"])
-    st.markdown(solo_variant(block, "intro"))
-    if st.button("Continue", type="primary", key=f"intro_{sc['domain']}_continue"):
+    st.markdown(block.get("intro_solo") if ss.solo and "intro_solo" in block
+                else block["intro"])
+    st.markdown("**Where you start this area**")
+    ui.status_cards(ss.state)
+    if continue_button(f"intro_{domain}_continue"):
         advance()
+
+
+def _option_label(opt: dict, cost_override: int | None = None) -> str:
+    label = opt.get("label_solo") if ss.solo and "label_solo" in opt else opt["label"]
+    cost = cost_override if cost_override is not None else opt.get("cost")
+    if cost is not None:
+        label += f"  ·  {money(cost)}" if cost else "  ·  no cash cost"
+    if opt.get("extra"):
+        label += f"  ·  {opt['extra']}"
+    return label
 
 
 def render_choice(sc: dict) -> None:
-    header()
+    frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    question = text(spec.get("question_solo") if st.session_state.solo
-                    and "question_solo" in spec else spec["question"])
-    st.markdown(f'<div class="q">{question}</div>', unsafe_allow_html=True)
-    if spec.get("body"):
-        st.markdown(text(spec["body"]))
-    scenario_popover(spec)
+    ui.hud(ss.state)
+    q = spec.get("question_solo") if ss.solo and "question_solo" in spec else spec["question"]
+    ui.question(fill(q), fill(spec["body"]) if spec.get("body") else None)
+    scenario(spec)
 
-    labels, keys = [], []
-    for opt in spec["options"]:
-        label = opt.get("label_solo") if st.session_state.solo \
-            and "label_solo" in opt else opt["label"]
-        if opt.get("extra"):
-            label = f'{label}  ·  {opt["extra"]}'
-        labels.append(label)
-        keys.append(opt["key"])
-
-    choice = st.radio("Options", labels, index=None,
-                      label_visibility="collapsed", key=f"choice_{node_id}")
-    if st.button("Continue", type="primary", key=f"choice_{node_id}_continue"):
+    labels = [_option_label(o) for o in spec["options"]]
+    if spec.get("display") == "pills":
+        choice = st.pills("Options", labels, label_visibility="collapsed",
+                          key=f"choice_{node_id}")
+    else:
+        choice = st.radio("Options", labels, index=None, label_visibility="collapsed",
+                          key=f"choice_{node_id}")
+    if continue_button(f"choice_{node_id}_continue"):
         if choice is None:
-            st.warning("Please select one of the options.")
+            st.warning("Please choose one of the options.")
             return
         idx = labels.index(choice)
         opt = spec["options"][idx]
-        log(option_key=keys[idx], option_index=idx)
-        apply_effects(opt.get("effects", {}))
+        log(option_key=opt["key"], option_index=idx)
+        event = f'{spec["event"]}: {opt["label"]}' if spec.get("event") else None
+        apply_effects(opt.get("effects", {}), event)
+        advance()
+
+
+def render_multi(sc: dict) -> None:
+    frame()
+    node_id = sc["node"]
+    spec = content.SCREENS[node_id]
+    ui.hud(ss.state)
+    ui.question(spec["question"], spec.get("body"))
+    labels = [o["label"] for o in spec["options"]]
+    picked = st.pills("Options", labels, selection_mode="multi",
+                      label_visibility="collapsed", key=f"multi_{node_id}")
+    if continue_button(f"multi_{node_id}_continue"):
+        if not picked:
+            st.warning("Please select at least one option.")
+            return
+        keys = sorted(spec["options"][labels.index(p)]["key"] for p in picked)
+        log(option_key=",".join(keys))
         advance()
 
 
 def render_contest(sc: dict) -> None:
-    header()
+    frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
     params = codebook.contest_params(node_id)
-
-    question = spec["question"].format(prize=euros(params["prize"]))
-    body = spec["body"].format(prize=euros(params["prize"]),
-                               base_cost=euros(params["base_cost"]))
-    st.markdown(f'<div class="q">{question}</div>', unsafe_allow_html=True)
-    st.markdown(body)
-    scenario_popover(spec)
-
-    labels, keys = [], []
+    ui.hud(ss.state)
+    ui.question(spec["question"].format(prize=money(params["prize"])),
+                spec["body"].format(prize=money(params["prize"]),
+                                    base_cost=money(params["base_cost"])))
+    scenario(spec)
+    labels = []
     for opt in spec["options"]:
-        key = opt["key"]
-        cost = params["options"][key]["cost"]
-        label = opt["label"]
-        if cost:
-            label = f"{label}  ·  {euros(cost)}"
-        if opt.get("extra"):
-            label = f'{label}  ·  {opt["extra"]}'
-        labels.append(label)
-        keys.append(key)
-
-    choice = st.radio("Options", labels, index=None,
-                      label_visibility="collapsed", key=f"contest_{node_id}")
-    if st.button("Continue", type="primary", key=f"contest_{node_id}_continue"):
+        cost = params["options"][opt["key"]]["cost"]
+        labels.append(_option_label(opt, cost_override=cost if cost else None))
+    choice = st.radio("Options", labels, index=None, label_visibility="collapsed",
+                      key=f"contest_{node_id}")
+    if continue_button(f"contest_{node_id}_continue"):
         if choice is None:
-            st.warning("Please select one of the options.")
+            st.warning("Please choose one of the options.")
             return
         idx = labels.index(choice)
-        key = keys[idx]
+        key = spec["options"][idx]["key"]
         log(option_key=key, option_index=idx)
-        apply_effects(game.contest_effects(params["options"][key]["cost"]))
+        cost = params["options"][key]["cost"]
+        apply_effects(game.contest_effects(cost),
+                      f'{spec["event"]}: {spec["options"][idx]["label"]}' if cost else None)
         advance()
 
 
+def _interval_input(spec: dict, which: str, node_id: str):
+    unit = spec["unit"]
+    more = spec["optimistic_is_high"] == (which == "best")
+    label = f'{spec[f"{which}_label"]} ({"more" if more else "fewer"} {unit})'
+    is_money = spec["unit"] == "euros"
+    val = st.number_input(label, min_value=int(spec["min_value"]),
+                          max_value=int(spec["max_value"]), step=int(spec["step"]),
+                          value=None, key=f"interval_{node_id}_{which}",
+                          placeholder="€" if is_money else spec["unit"])
+    st.caption(spec[f"{which}_help"])
+    if is_money and val is not None:
+        ui.html_block(f'<div class="fs-echo">{money(val)} per month</div>')
+    return val
+
+
 def render_interval(sc: dict) -> None:
-    header()
+    frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    half = sc["half"]
-    st.markdown(f'<div class="q">{text(spec["question"])}</div>',
-                unsafe_allow_html=True)
-    st.markdown(spec[f"{half}_prompt"])
-    scenario_popover(spec)
+    ui.hud(ss.state)
+    if spec.get("chart") == "revenue":
+        ui.bar_chart(content.CHART_REVENUE, money, "Monthly revenue so far",
+                     "In 12 months")
+    elif spec.get("chart") == "customers":
+        ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
+                     "New paying customers from the channel", "Next 6 months")
+    ui.question(fill(spec["question"]),
+                "Give two numbers: a best case and a worst case. Pick them so that "
+                "you are fairly sure the real value lands between them.")
+    scenario(spec)
+    high_is_best = spec["optimistic_is_high"]
+    unit = spec["unit"]
+    ui.range_diagram(f"fewer {unit}", f"more {unit}")
 
-    value = st.number_input(
-        spec["unit"], min_value=float(spec["min_value"]),
-        max_value=float(spec["max_value"]), step=1.0, value=None,
-        label_visibility="collapsed", format="%g",
-        key=f"interval_{sc['id']}_value")
-    st.caption(f'in {spec["unit"]}')
+    order = ["best", "worst"] if sc.get("first", "best") == "best" else ["worst", "best"]
+    cols = st.columns(2)
+    vals = {}
+    for col, which in zip(cols, order):
+        with col:
+            vals[which] = _interval_input(spec, which, node_id)
 
-    # Check for reversed order: the second half can see the first half's value
-    # and warn if the new value makes the pair implausible.
-    sibling_half = "pessimistic" if half == "optimistic" else "optimistic"
-    sibling_suffix = "pes" if sibling_half == "pessimistic" else "opt"
-    sibling_id = f"{node_id}_{sibling_suffix}"
-    sibling_rows = [r for r in storage.fetch_responses(st.session_state.code)
-                    if r["screen_id"] == sibling_id]
-    sibling_value = sibling_rows[0]["numeric_value"] if sibling_rows else None
-
-    if value is not None and sibling_value is not None:
-        opt_value = value if half == "optimistic" else sibling_value
-        pes_value = value if half == "pessimistic" else sibling_value
-        if abs(opt_value - pes_value) < 1e-9:
-            st.info("You entered the same value for both. If you meant to give "
-                    "a range, change one of them.")
-
-    if st.button("Continue", type="primary", key=f"interval_{sc['id']}_continue"):
-        if value is None:
-            st.warning("Please enter a number.")
+    if continue_button(f"interval_{node_id}_continue"):
+        best, worst = vals["best"], vals["worst"]
+        if best is None or worst is None:
+            st.warning("Please enter both numbers.")
             return
-        log(numeric_value=float(value))
+        if (high_is_best and best < worst) or (not high_is_best and best > worst):
+            st.warning("Your best case is worse than your worst case. "
+                       "Please check the two numbers.")
+            return
+        t = elapsed()
+        log({**sc, "id": f"{node_id}_opt"}, numeric_value=float(best),
+            text_value=f"first={order[0]}", response_seconds=t)
+        log({**sc, "id": f"{node_id}_pes"}, numeric_value=float(worst),
+            text_value=f"first={order[0]}", response_seconds=0.0)
         advance()
 
 
 def render_report(sc: dict) -> None:
-    header()
-    st.session_state.state = game.advance_block(st.session_state.state)
-    st.markdown('<div class="sit">Where things stand</div>',
-                unsafe_allow_html=True)
-    rows = game.report_rows(st.session_state.state)
-    for i in range(0, len(rows), 3):
-        cols = st.columns(3)
-        for col, (label, value, help_text) in zip(cols, rows[i:i + 3]):
-            col.metric(label, value, help=help_text)
-    if st.button("Continue", type="primary", key=f"report_{sc['domain']}_continue"):
+    frame()
+    domain = sc["domain"]
+    if domain not in ss.closed:
+        before = ss.state
+        ss.state = game.advance_block(ss.state)
+        ss.events.append({"domain": domain, "label": "One month of running costs",
+                          "delta": game.diff(before, ss.state)})
+        ss.closed.add(domain)
+    block = content.BLOCKS[domain]
+    ui.eyebrow(f"End of {block['title'].lower()}")
+    st.subheader("Where things stand")
+    ui.status_cards(ss.state, before=ss.block_start.get(domain))
+    st.markdown("**What changed in this area**")
+    ui.changes([e for e in ss.events if e["domain"] == domain])
+    if continue_button(f"report_{domain}_continue"):
+        log(option_key="seen")
         advance()
 
 
+# ---------------------------------------------------------------------------
+# Wrap-up
+# ---------------------------------------------------------------------------
+
 def render_suspicion(sc: dict) -> None:
-    header()
-    st.markdown(content.SUSPICION["intro"])
-    st.markdown(f'<div class="q">{content.SUSPICION["question"]}</div>',
-                unsafe_allow_html=True)
-    st.caption(content.SUSPICION["prompt"])
-    with st.form("suspicion", clear_on_submit=False):
-        answer = st.text_area("Your answer", height=140,
-                              label_visibility="collapsed")
-        submitted = st.form_submit_button("Continue", type="primary")
+    frame()
+    ui.eyebrow(content.SUSPICION["lead"], muted=True)
+    st.subheader(content.SUSPICION["title"])
+    ui.question(content.SUSPICION["question"], content.SUSPICION["body"])
+    with st.form("suspicion_form", border=False):
+        answer = st.text_area("Your answer", height=140, label_visibility="collapsed")
+        submitted = st.form_submit_button("Finish", type="primary")
     if submitted:
-        if not answer.strip():
-            st.warning("Please write a short answer, even one sentence is fine.")
+        if not (answer or "").strip():
+            st.warning("Please write a short answer. One sentence is enough.")
             return
         log(text_value=answer.strip())
         advance()
 
 
 def render_end(sc: dict) -> None:
-    storage.complete_session(st.session_state.code)
+    if not ss.completed:
+        storage.complete_session(ss.code)
+        ss.completed = True
+    ui.steps(ss.sections, sc.get("section"), 1.0)
     st.title(content.END["title"])
-    st.markdown(content.END["body"].format(
-        code=st.session_state.code,
-        contact=content.END["contact"],
-        weeks=content.END["weeks"],
-    ))
-    st.balloons()
+    st.markdown(content.END["body"])
 
 
 RENDERERS = {
-    "consent": render_consent, "filter": render_filter, "setup": render_setup,
-    "code": render_code,
-    "profile": render_profile, "experience": render_experience,
-    "risk": render_risk,
-    "warmup_intro": render_warmup_intro,
-    "practice_name": render_practice_name,
-    "practice_range": render_practice_range,
-    "starting_situation": render_starting_situation,
-    "block_intro": render_block_intro,
-    "choice": render_choice, "contest": render_contest,
-    "interval": render_interval,
-    "report": render_report,
-    "suspicion": render_suspicion,
-    "end": render_end,
+    "consent": render_consent, "filter": render_filter, "email": render_email,
+    "profile": render_profile, "experience": render_experience, "risk": render_risk,
+    "warmup_intro": render_warmup_intro, "practice_choice": render_practice_choice,
+    "practice_range": render_practice_range, "setup": render_setup,
+    "starting_situation": render_starting_situation, "block_intro": render_block_intro,
+    "choice": render_choice, "multi": render_multi, "contest": render_contest,
+    "interval": render_interval, "report": render_report,
+    "suspicion": render_suspicion, "end": render_end,
 }
-
 
 # ---------------------------------------------------------------------------
 
 if st.query_params.get("view") == "admin":
     from sim import admin
     admin.render()
-elif st.session_state.get("declined"):
+elif ss.get("declined"):
     st.title(content.CONSENT["title"])
     st.markdown(content.DECLINED)
-elif st.session_state.get("not_founder"):
+elif ss.get("not_founder"):
+    st.title(content.CONSENT["title"])
     st.markdown(content.THANK_YOU_NOT_FOUNDER)
 else:
     sc = screen()

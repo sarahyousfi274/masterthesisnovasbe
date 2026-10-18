@@ -5,12 +5,15 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
-**Version 0.4.0** incorporates the review feedback of 18 October: demographics
-run at the start, every field is validated, the attention check is randomised
-within its block, the optimistic and pessimistic halves of each range screen
-appear in random order, the back button is scoped to the warm-up, and the
-debrief content has moved to the follow-up so the end screen does not reveal
-what the study measured.
+**Version 0.5.0** applies the team notes of 18 October: a new light-only design
+system (`sim/ui.py`), a section bar at the top, the email address instead of a
+pseudonym code, the questions about the person first, a logical order inside
+each area, one screen per range question, status cards that explain every
+change, and attention checks written into the question text.
+
+**Before inviting anyone:** set `CONTACT_EMAIL` at the top of `sim/content.py`
+to the team's study address, and make sure `.streamlit/config.toml` is in the
+repository at exactly that path.
 
 ## Running it
 
@@ -87,25 +90,31 @@ participants experience, and `codebook.json` holds the reference values,
 which they never see. The story reacts only to the effect table in
 `content.py`, never to a measurement result.
 
-## Flow (0.4.0)
+## Flow (0.5.0)
 
 ```
-consent → founder filter → setup (name, industry, solo?)
-→ pseudonym code (shown to participant)
-→ demographics (profile, experience, risk — all mandatory)
-→ how it works → warm-up: coffee example (one choice, one range)
-→ starting situation (cash, burn, runway, team, morale, customers)
-→ block 1 (intro, 4 shuffled nodes, situation report)
-→ block 2 ...
-→ block 3 ...
-→ block 4 ...
-→ suspicion check ("what do you think this was about?")
-→ thank you + pseudonym code + follow-up notice
+welcome and consent
+About you        founder filter → email → profile → experience → risk attitude
+How it works     overview → example choice → example range (not part of the study)
+Your start-up    name, industry, solo or co-founders → starting situation
+4 areas          intro with status → 4 decisions → status with "what changed"
+Wrap-up          "what do you think this study was about?" → thank you
 ```
 
-The full debrief (what the study measured, how each form was scored, personal
-results) is delivered through the follow-up a week later, opened with the
-pseudonym code through the same channel the invitation came on.
+Inside an area, nodes that build on each other keep their order (F1 → F3 → F4,
+H1 → H3 → H4, T1 → T3, G1 → G3); the others, including the attention checks,
+are inserted at random positions. Back is offered in "About you" and on any
+screen that follows an information-only screen. Range questions show the best
+and worst case on one screen, in random order, and are stored as the two rows
+`<node>_opt` and `<node>_pes` that the scoring expects.
+
+The email address is stored only in the `followup` table with the internal
+session id. It never appears in `responses`. The full debrief goes out with the
+follow-up email.
+
+For a local design review, `FS_DEV=1 streamlit run app.py` and open
+`?jump=<screen id>`, for example `?jump=F3`. Without that environment variable
+the parameter does nothing.
 
 ## Changing the reference values
 
