@@ -20,7 +20,21 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 from sim import scoring, storage  # noqa: E402
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
-MAX_STEPS = 120
+MAX_STEPS = 160
+
+
+def _primary(at: AppTest) -> object:
+    """Return the primary (Continue/Submit) button on the current screen.
+
+    Some screens also render a Back button, so a bare at.button[0] can hit the
+    wrong one. The primary button is identified by its key not starting with
+    'back_'. Form submit buttons live in at.button in Streamlit 1.65.
+    """
+    for btn in at.button:
+        key = getattr(btn, "key", "") or ""
+        if not key.startswith("back_"):
+            return btn
+    raise AssertionError("no primary button found")
 
 
 def answer(at: AppTest, rng: random.Random) -> str:
@@ -29,60 +43,77 @@ def answer(at: AppTest, rng: random.Random) -> str:
     kind = sc["kind"]
 
     if kind == "consent":
-        at.button[0].click()
-    elif kind in ("filter",):
-        # The Continue button stays disabled until a choice exists, so the
-        # answer needs its own run before the button can be clicked.
+        at.button(key="consent_agree").click()
+
+    elif kind == "filter":
         at.radio[0].set_value("Yes")
         at.run()
-        at.button[0].click()
+        at.button(key="filter_continue").click()
+
     elif kind == "setup":
         at.text_input[0].set_value("Testwerk")
         at.selectbox[0].select("Software and SaaS")
         at.radio[0].set_value("With co-founders")
-        at.button[0].click()
-    elif kind in ("code", "block_intro", "report", "debrief_purpose",
-                  "debrief_results"):
-        at.button[0].click()
+        _primary(at).click()
+
+    elif kind == "code":
+        at.button(key="code_continue").click()
+
+    elif kind == "profile":
+        for widget in at.number_input:
+            widget.set_value(34)
+        for widget in at.selectbox:
+            widget.select_index(0)
+        _primary(at).click()
+
+    elif kind == "experience":
+        for widget in at.radio:
+            widget.set_value("1")
+        _primary(at).click()
+
+    elif kind == "risk":
+        for widget in at.radio:
+            widget.set_value("6")
+        _primary(at).click()
+
+    elif kind == "warmup_intro":
+        at.button(key="warmup_continue").click()
+
     elif kind == "practice_name":
-        at.text_input[0].set_value("Pilot")
-        at.selectbox[0].select("Blue")
-        at.button[0].click()
+        at.radio[0].set_value("Espresso")
+        at.run()
+        at.button(key="practice_name_continue").click()
+
     elif kind == "practice_range":
         at.number_input[0].set_value(float(rng.randint(10, 60)))
-        at.button[0].click()
+        at.button(key=f"practice_{sc['half']}_continue").click()
+
+    elif kind == "starting_situation":
+        at.button(key="starting_continue").click()
+
+    elif kind == "block_intro":
+        at.button(key=f"intro_{sc['domain']}_continue").click()
+
     elif kind in ("choice", "contest"):
         options = at.radio[0].options
         at.radio[0].set_value(rng.choice(options))
         at.run()
-        at.button[0].click()
+        at.button(key=f"{kind}_{sc['node']}_continue").click()
+
     elif kind == "interval":
         at.number_input[0].set_value(float(rng.randint(5, 120)))
-        at.button[0].click()
+        at.button(key=f"interval_{sc['id']}_continue").click()
+
+    elif kind == "report":
+        at.button(key=f"report_{sc['domain']}_continue").click()
+
     elif kind == "suspicion":
         at.text_area[0].set_value("Something about how founders plan.")
-        at.button[0].click()
-    elif kind == "profile":
-        for widget in at.number_input:
-            widget.set_value(34.0)
-        for widget in at.selectbox:
-            widget.select_index(0)
-        for widget in at.text_input:
-            widget.set_value("Germany")
-        at.button[0].click()
-    elif kind == "experience":
-        for widget in at.radio:
-            widget.set_value("1")
-        at.button[0].click()
-    elif kind == "risk":
-        for widget in at.slider:
-            widget.set_value(6)
-        at.button[0].click()
-    elif kind == "debrief_data":
-        at.text_input[0].set_value("pilot@example.com")
-        at.button[0].click()
+        _primary(at).click()
+
     elif kind == "end":
         return "end"
+
     else:
         raise AssertionError(f"no driver for screen kind {kind!r}")
     return kind

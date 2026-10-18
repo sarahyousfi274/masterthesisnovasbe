@@ -96,13 +96,13 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
             centre = math.log(ref_mid) + rng.gauss(0, 0.25)
             lower = math.exp(centre - half)
             upper = math.exp(centre + half)
-            optimistic_is_high = content.SCREENS[node_id]["optimistic_is_high"]
-            opt_v, pes_v = ((upper, lower) if optimistic_is_high else (lower, upper))
+            # Scoring sorts the pair, so it does not matter which half holds
+            # which value. The UI itself randomises opt/pes order anyway.
             rows.append(_row(code, node_id, sc, index, snap,
-                             screen_id=f"{node_id}_opt", numeric_value=opt_v))
+                             screen_id=f"{node_id}_opt", numeric_value=lower))
             index += 1
             rows.append(_row(code, node_id, sc, index, snap,
-                             screen_id=f"{node_id}_pes", numeric_value=pes_v))
+                             screen_id=f"{node_id}_pes", numeric_value=upper))
 
         elif kind == "attention_check":
             passed = rng.random() < 0.93
@@ -126,7 +126,7 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
 
         index += 1
         if sc.get("node_position") == 4:
-            st = game.close_block(st)
+            st = game.advance_block(st)
 
     return rows
 
