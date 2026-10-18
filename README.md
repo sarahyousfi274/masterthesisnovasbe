@@ -5,6 +5,15 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.7.0** adds four rank-belief items (one per area, asked before each
+contest), states the 1-in-10 base rate in every contest, removes every benchmark
+from the scenario popovers (fictional + author and year only), switches all range
+questions to Low/High at 80%, adds net burn with a revenue tile, an ownership
+tile, hires joining at the end of the Team area, a full morale and market
+confidence rule set, consequences for fundraising timing, a randomized candidate
+order in H4, attention checks in areas 2 and 3, and the SOEP risk items. The
+session has 20 decisions (18 measured, 2 attention checks).
+
 **Version 0.6.0** applies the notes of 18 October (V3): Streamlit pinned to
 1.65.0 so the cloud runs the exact tested version, accent color indigo instead
 of red for every selection, light mode enforced, Back only once per area (from
