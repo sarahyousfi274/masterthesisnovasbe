@@ -1,6 +1,6 @@
 {
-  "codebook_version": "0.3.0",
-  "updated": "2026-10-11",
+  "codebook_version": "0.4.0",
+  "updated": "2026-10-18",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
 
   "contest_variant": "harmonised",
@@ -132,17 +132,18 @@
       "form": "overestimation",
       "domain": "hiring",
       "type": "ladder",
-      "quantity": "roles planned in the next three months",
-      "option_values": [1, 2, 4, 6],
+      "quantity": "roles opened in the next three months",
+      "option_values": [0, 1, 2, 3],
       "reference_value": 2,
       "sign": 1,
       "provenance": "empirical",
-      "basis": "Median time from job opening to first hire is 75 days for technical roles and 71 days for senior roles in the Ashby dataset, against a 91-day window. The DHI-DFH vacancy duration measure for the Information sector ran at 30 to 46 working days. A two-founder team without a recruiter can close about two roles in three months; four or six assume several searches closing inside one median time-to-fill.",
+      "basis": "Median time from job opening to first hire is 75 days for technical roles and 71 days for senior roles in the Ashby dataset, against a 91-day window. The DHI-DFH vacancy duration measure for the Information sector ran at 30 to 46 working days. A two-founder team without a recruiter can realistically close about two roles in three months; three assume several searches closing inside one median time-to-fill.",
       "sources": [
         "Ashby Recruiting Operations Benchmarks: median days to first fill, technical 75, business 60, senior 71; 54M applications and 93K jobs, 2021 to 2026",
         "DHI-DFH Mean Vacancy Duration Measure, Information industry (FRED series DHIDFHDMII), built on JOLTS by Davis, Faberman and Haltiwanger",
         "Buehler, Griffin and Ross (1994)"
-      ]
+      ],
+      "open": "The 0-1-2-3 ladder is censored on the aggressive side (only one option is above the reference). See Zorowitz and Niv (2023) on ceiling effects. The team may add a fifth option (4 or 5 roles) before fielding."
     },
 
     "H2": {

@@ -1,8 +1,13 @@
 """Builds the sequence of screens for one session.
 
 Half the participants get Track 1 and half Track 2, so that order and fatigue
-effects can be checked. Within each block the three measurement nodes run in
-random order and the outcome or filler node is last.
+effects can be checked. Within each block all four nodes (three measurement
+nodes plus the attention or outcome node) are shuffled, so the attention
+check does not sit at a predictable position. For each interval node the
+order of the optimistic and the pessimistic value is also randomised.
+
+Demographics, the warm-up and the starting situation screen all come BEFORE
+the first block, so participants have context when the first decision lands.
 """
 
 from __future__ import annotations
@@ -20,43 +25,48 @@ def build(track: int, seed: int) -> list[dict]:
         {"id": "filter", "kind": "filter"},
         {"id": "setup", "kind": "setup"},
         {"id": "code", "kind": "code"},
+        {"id": "profile", "kind": "profile"},
+        {"id": "experience", "kind": "experience"},
+        {"id": "risk", "kind": "risk"},
+        {"id": "warmup_intro", "kind": "warmup_intro"},
         {"id": "practice_name", "kind": "practice_name"},
         {"id": "practice_low", "kind": "practice_range", "half": "low"},
         {"id": "practice_high", "kind": "practice_range", "half": "high"},
+        {"id": "starting_situation", "kind": "starting_situation"},
     ]
 
     for position, domain in enumerate(content.TRACKS[track], start=1):
         block = content.BLOCKS[domain]
-        screens.append({"id": f"intro_{domain}", "kind": "block_intro", "domain": domain})
+        screens.append({"id": f"intro_{domain}", "kind": "block_intro",
+                        "domain": domain})
 
-        nodes = list(block["nodes"])
+        # All four nodes shuffled: three measurement + the attention/outcome
+        # node. This removes the fixed last-position pattern of earlier builds.
+        nodes = list(block["nodes"]) + [block["attention"]]
         rng.shuffle(nodes)
+
         for order_in_block, node_id in enumerate(nodes, start=1):
             spec = content.SCREENS[node_id]
             common = {"node": node_id, "domain": domain,
-                      "block_position": position, "node_position": order_in_block}
+                      "block_position": position,
+                      "node_position": order_in_block}
             if spec["kind"] == "interval":
-                screens.append({"id": f"{node_id}_opt", "kind": "interval",
-                                "half": "optimistic", **common})
-                screens.append({"id": f"{node_id}_pes", "kind": "interval",
-                                "half": "pessimistic", **common})
+                # Randomise whether optimistic or pessimistic is asked first.
+                halves = ["optimistic", "pessimistic"]
+                rng.shuffle(halves)
+                for half in halves:
+                    suffix = "opt" if half == "optimistic" else "pes"
+                    screens.append({"id": f"{node_id}_{suffix}",
+                                    "kind": "interval", "half": half,
+                                    **common})
             else:
                 screens.append({"id": node_id, "kind": spec["kind"], **common})
 
-        last = block["last"]
-        screens.append({"id": last, "kind": content.SCREENS[last]["kind"],
-                        "node": last, "domain": domain,
-                        "block_position": position, "node_position": 4})
-        screens.append({"id": f"report_{domain}", "kind": "report", "domain": domain})
+        screens.append({"id": f"report_{domain}", "kind": "report",
+                        "domain": domain})
 
     screens += [
         {"id": "suspicion", "kind": "suspicion"},
-        {"id": "profile", "kind": "profile"},
-        {"id": "experience", "kind": "experience"},
-        {"id": "risk", "kind": "risk"},
-        {"id": "debrief_purpose", "kind": "debrief_purpose"},
-        {"id": "debrief_data", "kind": "debrief_data"},
-        {"id": "debrief_results", "kind": "debrief_results"},
         {"id": "end", "kind": "end"},
     ]
     return screens
@@ -82,3 +92,9 @@ def progress(screens: list[dict], index: int) -> tuple[int, int]:
     """Position for the progress bar, deliberately coarse so that it does not
     reveal the structure of the blocks."""
     return min(index + 1, len(screens)), len(screens)
+
+
+# Screens where a Back button is allowed. Everything else is one-way, so that
+# answers are not adjusted retrospectively.
+BACK_ALLOWED = {"warmup_intro", "practice_name", "practice_range",
+                "starting_situation"}
