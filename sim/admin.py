@@ -64,8 +64,9 @@ def render() -> None:
     st.divider()
     st.subheader("Download")
     st.caption(
-        "Sessions and responses are the analysis files. The mail addresses are a "
-        "separate download so the analysis file carries no contact data."
+        "Sessions and responses are the analysis files. followup.csv holds the "
+        "email addresses with the internal session id: personal data, keep it "
+        "separate and send the follow-up from it only."
     )
     for table, label in (("sessions", "sessions.csv"),
                          ("responses", "responses.csv"),
@@ -118,17 +119,21 @@ def render() -> None:
     st.divider()
     st.subheader("Withdraw a participant")
     st.caption(
-        "For a withdrawal by mail. Deleting removes the session, every answer and "
-        "the contact, and cannot be undone."
+        "For a withdrawal by mail. Enter the email address the person wrote from "
+        "(or an internal session id). Deleting removes the session, every answer and "
+        "the address, and cannot be undone."
     )
-    code = st.text_input("Pseudonym code", placeholder="ABC-1234")
+    given = st.text_input("Email address or session id",
+                          placeholder="name@company.com")
     col1, col2 = st.columns([1, 3])
-    if col1.button("Delete", type="primary", disabled=not code.strip()):
-        removed = storage.delete(code.strip().upper())
+    if col1.button("Delete", type="primary", disabled=not given.strip()):
+        value = given.strip()
+        code = storage.code_for_email(value) if "@" in value else value.upper()
+        removed = storage.delete(code) if code else 0
         if removed:
-            st.success(f"Deleted {code.strip().upper()}.")
+            st.success(f"Deleted the session for {value}.")
         else:
-            st.warning("No session with that code.")
+            st.warning("No session found for that address or id.")
 
     st.divider()
     st.caption(f"App {content.APP_VERSION} · codebook {codebook.version()}")

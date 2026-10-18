@@ -68,9 +68,14 @@ def score_participant(responses: list[dict], seed: int | None = None) -> dict:
         elif kind == "attention_check":
             row = by_screen.get(node_id)
             if row is not None:
+                picked = (row["option_key"] or "").split(",")
+                if spec.get("mode") == "includes":
+                    passed = spec["correct_option"] in picked
+                else:
+                    passed = row["option_key"] == spec["correct_option"]
                 out[node_id] = {
                     "node": node_id, "form": "none", "domain": spec["domain"],
-                    "passed": row["option_key"] == spec["correct_option"],
+                    "passed": passed,
                 }
         elif kind == "outcome":
             row = by_screen.get(node_id)

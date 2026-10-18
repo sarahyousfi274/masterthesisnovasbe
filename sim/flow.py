@@ -1,13 +1,14 @@
 """Builds the sequence of screens for one session.
 
 Half the participants get Track 1 and half Track 2, so that order and fatigue
-effects can be checked. Within each block all four nodes (three measurement
-nodes plus the attention or outcome node) are shuffled, so the attention
-check does not sit at a predictable position. For each interval node the
-order of the optimistic and the pessimistic value is also randomised.
+effects can be checked.
 
-Demographics, the warm-up and the starting situation screen all come BEFORE
-the first block, so participants have context when the first decision lands.
+Within a block, nodes that build on each other keep their order (you decide
+when to fundraise before you decide how; you open roles before you fill one).
+The remaining nodes, including the attention check, are inserted at random
+positions, so the attention check does not sit at a predictable place.
+
+Every screen carries a `section`, which drives the bar at the top.
 """
 
 from __future__ import annotations
@@ -16,60 +17,83 @@ import random
 
 from . import content
 
+# Screens that only show information. Going back to one of them cannot change
+# an answer, so a Back button is offered on the screen that follows them.
+INFO_KINDS = {"consent", "warmup_intro", "starting_situation", "block_intro",
+              "report"}
+
+# In this section every screen may go back (questions about the person).
+BACK_SECTIONS = {content.SECTION_ABOUT}
+
 
 def build(track: int, seed: int) -> list[dict]:
     """Return the ordered list of screens for one session."""
     rng = random.Random(seed)
+    about, how, startup, wrap = (content.SECTION_ABOUT, content.SECTION_HOW,
+                                 content.SECTION_STARTUP, content.SECTION_WRAP)
     screens: list[dict] = [
-        {"id": "consent", "kind": "consent"},
-        {"id": "filter", "kind": "filter"},
-        {"id": "setup", "kind": "setup"},
-        {"id": "code", "kind": "code"},
-        {"id": "profile", "kind": "profile"},
-        {"id": "experience", "kind": "experience"},
-        {"id": "risk", "kind": "risk"},
-        {"id": "warmup_intro", "kind": "warmup_intro"},
-        {"id": "practice_name", "kind": "practice_name"},
-        {"id": "practice_low", "kind": "practice_range", "half": "low"},
-        {"id": "practice_high", "kind": "practice_range", "half": "high"},
-        {"id": "starting_situation", "kind": "starting_situation"},
+        {"id": "consent", "kind": "consent", "section": None},
+        {"id": "filter", "kind": "filter", "section": about},
+        {"id": "email", "kind": "email", "section": about},
+        {"id": "profile", "kind": "profile", "section": about},
+        {"id": "experience", "kind": "experience", "section": about},
+        {"id": "risk", "kind": "risk", "section": about},
+        {"id": "warmup_intro", "kind": "warmup_intro", "section": how},
+        {"id": "practice_choice", "kind": "practice_choice", "section": how},
+        {"id": "practice_range", "kind": "practice_range", "section": how},
+        {"id": "setup", "kind": "setup", "section": startup},
+        {"id": "starting_situation", "kind": "starting_situation",
+         "section": startup},
     ]
 
     for position, domain in enumerate(content.TRACKS[track], start=1):
         block = content.BLOCKS[domain]
+        section = block["title"]
         screens.append({"id": f"intro_{domain}", "kind": "block_intro",
-                        "domain": domain})
+                        "domain": domain, "section": section})
 
-        # All four nodes shuffled: three measurement + the attention/outcome
-        # node. This removes the fixed last-position pattern of earlier builds.
-        nodes = list(block["nodes"]) + [block["attention"]]
-        rng.shuffle(nodes)
+        nodes = list(block["sequence"])
+        for node_id in block["floating"]:
+            nodes.insert(rng.randint(0, len(nodes)), node_id)
 
         for order_in_block, node_id in enumerate(nodes, start=1):
             spec = content.SCREENS[node_id]
-            common = {"node": node_id, "domain": domain,
-                      "block_position": position,
-                      "node_position": order_in_block}
+            screen = {"id": node_id, "kind": spec["kind"], "node": node_id,
+                      "domain": domain, "block_position": position,
+                      "node_position": order_in_block, "section": section}
             if spec["kind"] == "interval":
-                # Randomise whether optimistic or pessimistic is asked first.
-                halves = ["optimistic", "pessimistic"]
-                rng.shuffle(halves)
-                for half in halves:
-                    suffix = "opt" if half == "optimistic" else "pes"
-                    screens.append({"id": f"{node_id}_{suffix}",
-                                    "kind": "interval", "half": half,
-                                    **common})
-            else:
-                screens.append({"id": node_id, "kind": spec["kind"], **common})
+                # Which of the two fields comes first is randomised.
+                screen["first"] = rng.choice(["best", "worst"])
+            screens.append(screen)
 
         screens.append({"id": f"report_{domain}", "kind": "report",
-                        "domain": domain})
+                        "domain": domain, "section": section})
 
     screens += [
-        {"id": "suspicion", "kind": "suspicion"},
-        {"id": "end", "kind": "end"},
+        {"id": "suspicion", "kind": "suspicion", "section": wrap},
+        {"id": "end", "kind": "end", "section": wrap},
     ]
     return screens
+
+
+def sections(screens: list[dict]) -> list[str]:
+    """The sections in the order this participant meets them."""
+    out: list[str] = []
+    for sc in screens:
+        sec = sc.get("section")
+        if sec and sec not in out:
+            out.append(sec)
+    return out
+
+
+def back_allowed(screens: list[dict], index: int) -> bool:
+    """Back is offered among the questions about the person, and on any screen
+    whose previous screen was information only. Never on the end screen."""
+    if index <= 0 or screens[index]["kind"] == "end":
+        return False
+    if screens[index].get("section") in BACK_SECTIONS:
+        return True
+    return screens[index - 1]["kind"] in INFO_KINDS
 
 
 def assign_track(rng: random.Random) -> int:
@@ -77,24 +101,9 @@ def assign_track(rng: random.Random) -> int:
 
 
 def make_code(rng: random.Random) -> str:
-    """Pseudonym code shown to the participant, used for withdrawal and to
-    link the session to the follow-up a week later."""
-    letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"   # no I or O
-    digits = "23456789"                     # no 0 or 1
-    return (
-        "".join(rng.choice(letters) for _ in range(3))
-        + "-"
-        + "".join(rng.choice(digits) for _ in range(4))
-    )
-
-
-def progress(screens: list[dict], index: int) -> tuple[int, int]:
-    """Position for the progress bar, deliberately coarse so that it does not
-    reveal the structure of the blocks."""
-    return min(index + 1, len(screens)), len(screens)
-
-
-# Screens where a Back button is allowed. Everything else is one-way, so that
-# answers are not adjusted retrospectively.
-BACK_ALLOWED = {"warmup_intro", "practice_name", "practice_range",
-                "starting_situation"}
+    """Internal session id. Never shown to the participant; it links the
+    answers to the separately stored email address."""
+    letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+    digits = "23456789"
+    return ("".join(rng.choice(letters) for _ in range(3)) + "-"
+            + "".join(rng.choice(digits) for _ in range(4)))

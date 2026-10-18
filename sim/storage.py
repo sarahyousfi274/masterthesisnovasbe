@@ -272,6 +272,14 @@ def save_followup(code: str, email: str) -> None:
                  (code, email.strip(), _now()))
 
 
+def code_for_email(email: str) -> str | None:
+    """Session id stored with an email address, for a withdrawal by mail."""
+    with connect() as conn:
+        rows = _fetch(conn, "SELECT code FROM followup WHERE email = ?",
+                      (email.strip().lower(),))
+    return rows[0]["code"] if rows else None
+
+
 def withdraw(code: str) -> None:
     """Mark the data as withdrawn and drop the follow-up contact."""
     with connect() as conn:
