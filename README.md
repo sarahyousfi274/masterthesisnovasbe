@@ -1,9 +1,16 @@
 # Founder decision simulation
 
-The instrument for Chapter 5 of the work project *Founder Overconfidence and Startup
-Performance*. It runs the session described in the Simulation Walkthrough of 5 October:
-four domain blocks, three measurement nodes per block, a situation that travels through
-the game, and a mandatory debrief.
+The instrument for Chapter 5 of the work project *Founder Overconfidence and
+Startup Performance*. It runs a session of about 20 minutes: four domain
+blocks of four decisions each, a short post-game question, and an end screen
+with the pseudonym code that opens the follow-up a week later.
+
+**Version 0.4.0** incorporates the review feedback of 18 October: demographics
+run at the start, every field is validated, the attention check is randomised
+within its block, the optimistic and pessimistic halves of each range screen
+appear in random order, the back button is scoped to the warm-up, and the
+debrief content has moved to the follow-up so the end screen does not reveal
+what the study measured.
 
 ## Running it
 
@@ -14,32 +21,28 @@ streamlit run app.py
 
 The app opens at `http://localhost:8501`. Data goes to `data/sessions.db`.
 
-For putting it online, see **DEPLOY.md**. The short version: a hosted Streamlit app has no
-permanent disk, so set `DATABASE_URL` to a Postgres database before collecting real data,
-or it will be lost on the next restart.
+For putting it online, see **DEPLOY.md**. The short version: a hosted
+Streamlit app has no permanent disk, so set `DATABASE_URL` to a Postgres
+database before collecting real data, or it will be lost on the next restart.
 
 ## The data page
 
-`?view=admin`, for example `http://localhost:8501/?view=admin`. It shows how many sessions
-have been started and completed, offers one CSV download per table, computes the group
-level results so far, and deletes a participant by pseudonym code for a withdrawal by
-mail.
+`?view=admin`, for example `http://localhost:8501/?view=admin`. It shows how
+many sessions have been started and completed, offers one CSV download per
+table, computes the group level results so far, and deletes a participant by
+pseudonym code for a withdrawal by mail.
 
-It needs `ADMIN_PASSWORD` in `.streamlit/secrets.toml` (copy `secrets.toml.example`).
-Without a password the page refuses to open, so a deployed app is never accidentally
-public. Participants never see a link to it.
+It needs `ADMIN_PASSWORD` in `.streamlit/secrets.toml` (copy
+`secrets.toml.example`). Without a password the page refuses to open, so a
+deployed app is never accidentally public. Participants never see a link to it.
 
 From a script instead:
 
 ```python
 from sim import storage
-storage.export_csv("export")                        # sessions.csv, responses.csv
-storage.export_csv("export", include_followup=True) # adds the mail addresses
-storage.delete("ABC-1234")                          # a withdrawal by mail
+storage.export_csv("export")   # sessions.csv, responses.csv
+storage.delete("ABC-1234")     # a withdrawal by mail
 ```
-
-The follow-up mail addresses live in their own table and are left out of the normal
-export, so the analysis file carries no contact data.
 
 ## Tests
 
@@ -48,14 +51,15 @@ python -m tests.simulate_participants   # does the scoring recover known biases?
 python -m tests.walkthrough             # does a whole session run and store correctly?
 ```
 
-`simulate_participants` is evaluation episode 1 from Section 4.3: 300 synthetic
-participants with known bias parameters, scored by the real scoring module. It reports
-how well each form score recovers the parameter that produced it and whether the three
-form scores stay independent. Current result: r = 0.92 / 0.84 / 0.90 with cross
-correlations below 0.09.
+`simulate_participants` is evaluation episode 1 from Section 4.3: 300
+synthetic participants with known bias parameters, scored by the real scoring
+module. It reports how well each form score recovers the parameter that
+produced it and whether the three form scores stay independent. Current
+result: r = 0.93 / 0.84 / 0.83 with cross correlations below 0.09.
 
-`walkthrough` drives the real app through both tracks with Streamlit's AppTest harness
-and checks that every screen is stored, timed and carries a snapshot of the situation.
+`walkthrough` drives the real app through both tracks with Streamlit's
+AppTest harness and checks that every screen is stored, timed and carries a
+snapshot of the situation.
 
 ## Layout
 
@@ -73,40 +77,63 @@ sim/scoring.py              scoring per form and per domain
 tests/                      the two checks above
 ```
 
-**`sim/codebook.json` is why the repository has to stay private.** It holds every
-reference value and the whole measurement logic. A participant who could read it would
-know what is being measured and what counts as an aggressive answer, which is exactly what
-R5 keeps from them.
+**`sim/codebook.json` is why the repository has to stay private.** It holds
+every reference value and the whole measurement logic. A participant who could
+read it would know what is being measured and what counts as an aggressive
+answer, which is exactly what R5 keeps from them.
 
-The split matters for the design: `content.py` is the story, which participants
-experience, and `codebook.json` holds the reference values, which they never see. The
-story reacts only to the effect table in `content.py`, never to a measurement result.
+The split matters for the design: `content.py` is the story, which
+participants experience, and `codebook.json` holds the reference values,
+which they never see. The story reacts only to the effect table in
+`content.py`, never to a measurement result.
+
+## Flow (0.4.0)
+
+```
+consent → founder filter → setup (name, industry, solo?)
+→ pseudonym code (shown to participant)
+→ demographics (profile, experience, risk — all mandatory)
+→ how it works → warm-up: coffee example (one choice, one range)
+→ starting situation (cash, burn, runway, team, morale, customers)
+→ block 1 (intro, 4 shuffled nodes, situation report)
+→ block 2 ...
+→ block 3 ...
+→ block 4 ...
+→ suspicion check ("what do you think this was about?")
+→ thank you + pseudonym code + follow-up notice
+```
+
+The full debrief (what the study measured, how each form was scored, personal
+results) is delivered through the follow-up a week later, opened with the
+pseudonym code through the same channel the invitation came on.
 
 ## Changing the reference values
 
-Everything scored sits in `sim/codebook.json`. Each node carries a `provenance` tag:
+Everything scored sits in `sim/codebook.json`. Each node carries a `provenance`
+tag:
 
 - `empirical` — a published figure is used directly (F3, H1, H3, G1)
-- `derived` — computed from published figures plus a stated assumption (T1, T3, F1, and
-  the four contests)
-- `placeholder` — needs the team's own interview or pilot data before fielding (G3)
+- `derived` — computed from published figures plus a stated assumption (T1,
+  T3, F1, and the four contests)
+- `placeholder` — needs the team's own interview or pilot data before fielding
+  (G3)
 
-Every entry also carries `basis`, `sources` and, where something is still open, an
-`open` field. Changing a number means editing this file; nothing else needs touching.
+Every entry also carries `basis`, `sources` and, where something is still
+open, an `open` field. Changing a number means editing this file; nothing
+else needs touching.
 
 ## The contests
 
-`contest_variant` at the top of the codebook switches between two sets of numbers.
+`contest_variant` at the top of the codebook switches between two sets of
+numbers.
 
-`harmonised` (default) applies one rule to all four contests: ten competitors, a one in
-ten chance, an upgrade to one in eight, entry costing `prize / 10 + 2000` and the upgrade
-`prize / 8 + 4500`. Every contest then has an expected value of −2,000 euros for entry
-and −4,500 for the upgrade, so entry rates are comparable across domains, which is what
-R2 and Section 6.3 need.
+`harmonised` (default) applies one rule to all four contests: ten
+competitors, a one in ten chance, an upgrade to one in eight, entry costing
+`prize / 10 + 2000` and the upgrade `prize / 8 + 4500`. Every contest then
+has an expected value of −2,000 euros for entry and −4,500 for the upgrade,
+so entry rates are comparable across domains.
 
-`walkthrough` restores the numbers from the draft of 5 October. T2 and F2 are identical
-in both variants; H2 and G2 differ, because the draft gave them expected values of
-−1,250 / −4,000 and −5,000 / −21,250.
+`walkthrough` restores the numbers from the draft of 5 October.
 
 ## Scoring
 
@@ -116,34 +143,78 @@ in both variants; H2 and G2 differ, because the draft gave them expected values 
 | Overplacement | entry into a contest with a negative expected value, plus the size of the stake |
 | Overprecision | width of the stated range over the width of the reference range, below 1 meaning too narrow, plus the coverage of the reference distribution |
 
-For overprecision the module reports both the binary hit against one drawn value, which
-the walkthrough specifies and the debrief shows, and `expected_coverage`, the share of
-the reference distribution falling inside the stated range. The second is the expectation
-of the first without the noise of a single draw, so with one decision per cell it is the
+For overprecision the module reports both the binary hit against one drawn
+value and `expected_coverage`, the share of the reference distribution
+falling inside the stated range. The second is the expectation of the first
+without the noise of a single draw, so with one decision per cell it is the
 more efficient statistic for the analysis (Section 4.3 on reliability).
 
-## Open points
+## Open points for the team
 
-1. **G3's reference distribution** is an assumption about how channel growth flattens, not
-   a measured one. It needs the interviews or a pilot.
-2. **F1's nine-month runway reference** is a convention. Report the score for a six-month
-   reference as well, or defend nine from the interviews.
-3. **T1's ladder is censored on the aggressive side.** With the reference at option B,
-   only one option can show overestimation while two can show caution. The other three
-   ladders have two or three options above the reference. See Zorowitz and Niv (2023) on
-   ceiling effects, already cited in Section 4.3.
-4. **No random-outcome control contest.** Section 4.2 says the design provides for control
-   decisions with random outcomes, following Binnendyk et al. (2025) and the luck
-   condition of Camerer and Lovallo (1999). None of the four contests is one. Without it,
-   entry can reflect risk or ambiguity attitude rather than overplacement.
-5. **Risk and ambiguity attitude (R7)** were missing from the walkthrough and are added
-   here as three sliders in the post-survey. Replace them with whichever validated items
-   the team decides on.
-6. **Soll and Klayman (2004) recommend a three-point format.** Adding a "most likely"
-   value to each interval node raised the hit rate from 57 to 66 percent in their data and
-   would give a point estimate per node as well. It costs four extra screens.
-7. **The reference distributions have short tails.** They are defined by five stated
-   percentiles and interpolated log-linearly between them, so values far outside the 10 to
-   90 range are compressed. The scored quantities, the width ratio and the coverage, use
-   the documented range and are unaffected, and the drawn value shown at the debrief stays
-   in a sensible span. It is worth a sentence in the appendix rather than a change.
+The 18 October review raised several points that need a team decision before
+fielding, listed here so they do not get lost:
+
+1. **Contest design.** All four contests use the same 10-competitor rank
+   format. Overplacement cannot be cleanly separated from risk tolerance,
+   because entering the contest also carries risk. A paired version with a
+   random-outcome control (Camerer and Lovallo 1999) plus a rank question
+   ("which of the 10 do you expect to finish?") would separate the two.
+2. **H2 ("senior developer").** Winning depends on the candidate's choice,
+   not on the founder's own ability, so this is not a pure overplacement
+   item. Either replace with a contest where ability matters, or keep it and
+   score it separately.
+3. **Overprecision noise.** With one draw per interval, the hit rate is noisy.
+   The scoring already prefers `expected_coverage` for the analysis. The
+   drawn value is only shown in the follow-up, not during the session.
+4. **Overestimation items.** The ladder format measures preference under
+   known reference, not point estimates against ground truth. Consider adding
+   a point-estimate variant for one node per block.
+5. **One item per form per domain.** With 16 scored nodes, the Finance and
+   GTM scores rest on three decisions each. Consider adding a second item per
+   form per block for the fielding version.
+6. **Attention checks** are now randomised within blocks (not always last).
+   Keep them as a quality marker rather than a hard exclusion given the small
+   sample.
+7. **Validation block and market-entry game.** Still to be added.
+8. **Team diversity** is now captured in demographics as a potential
+   moderator variable.
+9. **G3 reference distribution** is still a placeholder; needs interview or
+   pilot data.
+10. **H1 ladder (0, 1, 2, 3)** is censored on the aggressive side. A fifth
+    option (4 or 5 roles) would balance it.
+11. **F1 nine-month runway reference** is a convention; defend from
+    interviews or report with both a six- and a nine-month reference.
+12. **Contact and ethics placeholders** in the consent and end text need to
+    be confirmed with Prof. Castro and the Nova SBE ethics board. The current
+    placeholders are `founderstudy@novasbe.pt` and `ethics@novasbe.pt`.
+
+## What changed in 0.4.0
+
+- Demographics (profile, experience, risk) moved to the start.
+- Attention check randomised within its block, no longer always last.
+- Optimistic and pessimistic halves of each range screen appear in random order.
+- Starting situation screen added so participants see the baseline.
+- Burn is deducted at the end of each block.
+- Planned hires are shown separately and no longer fold into team size.
+- Customer growth depends on the launch-budget split (G1).
+- Convertible terms (F4) rebalanced to a 2M cap with a conversion note.
+- G4 reworked from a website colour choice to a trade-event question.
+- H1 roles updated to 0, 1, 2, 3.
+- Experience options extended to 0 through 5 or more.
+- Country as a dropdown; gender keeps "Prefer not to say".
+- Numbers rendered in US format throughout (commas as thousands separator).
+- Café warm-up is now explicitly labelled as an example.
+- Back button only in warm-up and intro screens; otherwise one-way.
+- Validation on every field; nothing can be left blank.
+- Dark mode: answer cards stay legible (forced light colours).
+- Continue button: one click; validation on click.
+- Interval warning if both values are the same.
+- "What was this study about?" kept as suspicion check with explanation.
+- Debrief content moved to the follow-up: the end screen shows a thank you,
+  the code, and the follow-up notice; the full purpose, data note and
+  personal results are shared in the follow-up a week later.
+- No mail collection; the follow-up is opened with the pseudonym code.
+- No "don't use my data" opt-out: participants withdraw by writing to the
+  research team with their code (deadline stated).
+- Scenario context popover ("About this scenario") on each measurement
+  question, with sources, without disclosing the reference value.
