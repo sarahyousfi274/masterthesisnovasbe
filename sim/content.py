@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.7.0"
+APP_VERSION = "0.7.1"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -162,7 +162,7 @@ EMAIL = {
             "from now. It is stored separately from your answers and never "
             "shared outside the research team.",
     "label": "Email",
-    "placeholder": "name@example.com",
+    "placeholder": "you@example.com",
 }
 
 # --------------------------------------------------------------------------
