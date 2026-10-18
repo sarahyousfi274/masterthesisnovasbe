@@ -139,12 +139,13 @@ def play(seed: int, try_back: bool = False) -> dict:
             assert at.session_state.index == idx - 1, "Back did not go back"
             went_back = True
             continue
-        if sc.get("section") not in (None, content.SECTION_ABOUT) and idx > 0:
-            prev = at.session_state.screens[idx - 1]["kind"]
-            has_back = any((b.key or "").startswith("back_") for b in at.button)
+        if idx > 0:
             from sim import flow
-            expected = prev in flow.INFO_KINDS and sc["kind"] != "end"
+            has_back = any((b.key or "").startswith("back_") for b in at.button)
+            expected = flow.back_allowed(at.session_state.screens, idx)
             assert has_back == expected, f"Back shown={has_back} on {sc['id']}"
+            if sc.get("node") and has_back:
+                assert at.session_state.screens[idx - 1]["kind"] == "block_intro"
         kind = answer(at, rng, email)
         if kind == "end":
             break
@@ -191,6 +192,7 @@ def main() -> int:
             "email stored apart": storage.code_for_email(r["email"]) == r["code"],
             "email not in answers": not email_in_answers,
             "every row has a snapshot": all(row["state_json"] for row in nodes),
+            "every row has entered_at": all(row["entered_at"] for row in rows),
             "attention checks passed or failed cleanly":
                 all("passed" in scored[n] for n in ("T4", "G4")),
         }
