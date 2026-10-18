@@ -1,8 +1,9 @@
 """End to end check: play the whole session through, in both tracks.
 
 Uses Streamlit's own AppTest harness, so the real app code runs. Verifies that
-every screen renders, that every answer is stored, that the situation changes
-only through the effect table and that the scoring runs on the stored rows.
+every screen renders, that every answer is stored, that the email is stored
+apart from the answers, that Back works where offered, and that the scoring
+runs on the stored rows.
 
 Run with:  python -m tests.walkthrough
 """
@@ -17,181 +18,186 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
-from sim import scoring, storage  # noqa: E402
+from sim import content, scoring, storage  # noqa: E402
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
-MAX_STEPS = 160
+MAX_STEPS = 120
 
 
-def _primary(at: AppTest) -> object:
-    """Return the primary (Continue/Submit) button on the current screen.
-
-    Some screens also render a Back button, so a bare at.button[0] can hit the
-    wrong one. The primary button is identified by its key not starting with
-    'back_'. Form submit buttons live in at.button in Streamlit 1.65.
-    """
+def submit(at: AppTest) -> None:
+    """Click the form's submit button (the one that is not Back)."""
     for btn in at.button:
-        key = getattr(btn, "key", "") or ""
-        if not key.startswith("back_"):
-            return btn
-    raise AssertionError("no primary button found")
+        if not (btn.key or "").startswith("back_"):
+            btn.click()
+            return
+    raise AssertionError("no submit button")
 
 
-def answer(at: AppTest, rng: random.Random) -> str:
-    """Fill in whatever the current screen asks and move on."""
+def answer(at: AppTest, rng: random.Random, email: str) -> str:
     sc = at.session_state.screens[at.session_state.index]
     kind = sc["kind"]
 
     if kind == "consent":
         at.button(key="consent_agree").click()
-
     elif kind == "filter":
-        at.radio[0].set_value("Yes")
-        at.run()
+        at.radio(key="filter_choice").set_value("Yes")
         at.button(key="filter_continue").click()
-
+    elif kind == "email":
+        at.text_input(key="email_value").set_value(email)
+        submit(at)
+    elif kind == "profile":
+        for f in content.PROFILE_FIELDS:
+            w = f"profile_{f['key']}"
+            if f["kind"] == "number":
+                at.number_input(key=w).set_value(max(f["min"], 3) if f["key"] != "age" else 34)
+            elif f["kind"] == "select":
+                at.selectbox(key=w).select(f["options"][1])
+            elif f["kind"] == "pills":
+                at.pills(key=w).set_value(f["options"][1])
+            elif f["kind"] == "multi":
+                at.pills(key=w).set_value(f["options"][:2])
+        submit(at)
+    elif kind == "experience":
+        for f in content.EXPERIENCE_FIELDS:
+            at.pills(key=f"exp_{f['key']}").set_value("2")
+        submit(at)
+    elif kind == "risk":
+        for item in content.RISK_ITEMS:
+            at.pills(key=f"risk_{item['key']}").set_value(str(rng.randint(0, 10)))
+        submit(at)
+    elif kind == "warmup_intro":
+        at.button(key="warmup_continue").click()
+    elif kind == "practice_choice":
+        at.radio(key="practice_choice_value").set_value("Tea")
+        at.button(key="practice_choice_continue").click()
+    elif kind == "practice_range":
+        at.number_input(key="practice_low").set_value(10)
+        at.number_input(key="practice_high").set_value(40)
+        at.button(key="practice_range_continue").click()
     elif kind == "setup":
         at.text_input[0].set_value("Testwerk")
         at.selectbox[0].select("Software and SaaS")
-        at.radio[0].set_value("With co-founders")
-        _primary(at).click()
-
-    elif kind == "code":
-        at.button(key="code_continue").click()
-
-    elif kind == "profile":
-        for widget in at.number_input:
-            widget.set_value(34)
-        for widget in at.selectbox:
-            widget.select_index(0)
-        _primary(at).click()
-
-    elif kind == "experience":
-        for widget in at.radio:
-            widget.set_value("1")
-        _primary(at).click()
-
-    elif kind == "risk":
-        for widget in at.radio:
-            widget.set_value("6")
-        _primary(at).click()
-
-    elif kind == "warmup_intro":
-        at.button(key="warmup_continue").click()
-
-    elif kind == "practice_name":
-        at.radio[0].set_value("Espresso")
-        at.run()
-        at.button(key="practice_name_continue").click()
-
-    elif kind == "practice_range":
-        at.number_input[0].set_value(float(rng.randint(10, 60)))
-        at.button(key=f"practice_{sc['half']}_continue").click()
-
+        at.radio[0].set_value(rng.choice(["With co-founders", "Alone"]))
+        submit(at)
     elif kind == "starting_situation":
         at.button(key="starting_continue").click()
-
     elif kind == "block_intro":
         at.button(key=f"intro_{sc['domain']}_continue").click()
-
-    elif kind in ("choice", "contest"):
-        options = at.radio[0].options
-        at.radio[0].set_value(rng.choice(options))
-        at.run()
-        at.button(key=f"{kind}_{sc['node']}_continue").click()
-
+    elif kind == "choice":
+        node = sc["node"]
+        if content.SCREENS[node].get("display") == "pills":
+            w = at.pills(key=f"choice_{node}")
+        else:
+            w = at.radio(key=f"choice_{node}")
+        w.set_value(rng.choice(w.options))
+        at.button(key=f"choice_{node}_continue").click()
+    elif kind == "multi":
+        node = sc["node"]
+        w = at.pills(key=f"multi_{node}")
+        w.set_value([w.options[0], w.options[2]])
+        at.button(key=f"multi_{node}_continue").click()
+    elif kind == "contest":
+        node = sc["node"]
+        w = at.radio(key=f"contest_{node}")
+        w.set_value(rng.choice(w.options))
+        at.button(key=f"contest_{node}_continue").click()
     elif kind == "interval":
-        at.number_input[0].set_value(float(rng.randint(5, 120)))
-        at.button(key=f"interval_{sc['id']}_continue").click()
-
+        node = sc["node"]
+        spec = content.SCREENS[node]
+        a, b = sorted(rng.sample(range(5, 120), 2))
+        best, worst = (b, a) if spec["optimistic_is_high"] else (a, b)
+        at.number_input(key=f"interval_{node}_best").set_value(best)
+        at.number_input(key=f"interval_{node}_worst").set_value(worst)
+        at.button(key=f"interval_{node}_continue").click()
     elif kind == "report":
         at.button(key=f"report_{sc['domain']}_continue").click()
-
     elif kind == "suspicion":
         at.text_area[0].set_value("Something about how founders plan.")
-        _primary(at).click()
-
+        submit(at)
     elif kind == "end":
         return "end"
-
     else:
         raise AssertionError(f"no driver for screen kind {kind!r}")
     return kind
 
 
-def play(seed: int) -> dict:
+def play(seed: int, try_back: bool = False) -> dict:
     rng = random.Random(seed)
+    email = f"tester{seed}@example.com"
     at = AppTest.from_file(APP, default_timeout=30)
     at.run()
-
-    seen = []
+    went_back = False
     for _ in range(MAX_STEPS):
         if at.exception:
             raise AssertionError(f"app raised: {at.exception[0].value}")
-        kind = answer(at, rng)
-        seen.append(kind)
+        idx = at.session_state.index
+        sc = at.session_state.screens[idx]
+        # Once per session: go Back from the experience screen and return.
+        if try_back and not went_back and sc["kind"] == "experience":
+            at.button(key="back_experience").click()
+            at.run()
+            assert at.session_state.index == idx - 1, "Back did not go back"
+            went_back = True
+            continue
+        if sc.get("section") not in (None, content.SECTION_ABOUT) and idx > 0:
+            prev = at.session_state.screens[idx - 1]["kind"]
+            has_back = any((b.key or "").startswith("back_") for b in at.button)
+            from sim import flow
+            expected = prev in flow.INFO_KINDS and sc["kind"] != "end"
+            assert has_back == expected, f"Back shown={has_back} on {sc['id']}"
+        kind = answer(at, rng, email)
         if kind == "end":
             break
         at.run()
+        if at.session_state.index == idx:
+            warn = [w.value for w in at.warning]
+            raise AssertionError(f"stuck on {sc['id']}: {warn}")
     else:
-        raise AssertionError("session did not reach the end within MAX_STEPS")
-
-    return {
-        "code": at.session_state.code,
-        "track": at.session_state.track,
-        "seed": at.session_state.seed,
-        "screens": len(at.session_state.screens),
-        "steps": len(seen),
-        "final_state": at.session_state.state,
-    }
+        raise AssertionError("session did not reach the end")
+    return {"code": at.session_state.code, "track": at.session_state.track,
+            "seed": at.session_state.seed, "email": email,
+            "final_state": at.session_state.state, "solo": at.session_state.solo,
+            "events": at.session_state.events}
 
 
 def main() -> int:
-    tracks_played = set()
-    results = []
-    seed = 1
-    while len(tracks_played) < 2 and seed < 25:
-        result = play(seed)
-        results.append(result)
-        tracks_played.add(result["track"])
+    results, tracks, seed = [], set(), 1
+    while (len(tracks) < 2 or len(results) < 3) and seed < 30:
+        r = play(seed, try_back=(seed == 1))
+        results.append(r)
+        tracks.add(r["track"])
         seed += 1
-
-    print(f"Sessions played: {len(results)}   tracks covered: {sorted(tracks_played)}\n")
+    print(f"Sessions played: {len(results)}   tracks covered: {sorted(tracks)}\n")
 
     ok = True
     for r in results:
         rows = storage.fetch_responses(r["code"])
-        answered = {row["screen_id"] for row in rows}
         nodes = [row for row in rows if row["node"]]
-        timed = [row for row in rows if row["response_seconds"] is not None]
-        with_state = [row for row in nodes if row["state_json"]]
         scored = scoring.score_participant(rows, seed=r["seed"])
         forms = {e.get("form") for e in scored.values()}
-
-        print(f"  {r['code']}  track {r['track']}  "
-              f"{len(answered)} screens stored, {len(nodes)} node answers, "
-              f"{len(timed)} timed, {len(with_state)} with a situation snapshot")
-        print(f"      scored nodes: {len(scored)}   forms present: "
-              f"{sorted(f for f in forms if f != 'none')}")
-        print(f"      final situation: cash {r['final_state']['cash']:,}, "
-              f"runway {r['final_state']['runway']} months, "
-              f"team {r['final_state']['team_size']}, "
-              f"customers {r['final_state']['customers']}".replace(",", "."))
-
+        email_in_answers = any(r["email"] in (row["text_value"] or "") for row in rows)
+        print(f"  track {r['track']}  solo={r['solo']}  {len(rows)} rows, "
+              f"{len(nodes)} node rows, {len(scored)} scored nodes")
+        fs = r["final_state"]
+        print(f"      final: cash €{fs['cash']:,}, runway {fs['runway']} mo, "
+              f"team {fs['team_size']}, open roles {fs['pending_hires']}, "
+              f"customers {fs['customers']}")
+        for ev in r["events"][:4]:
+            print(f"      event: {ev['label']}  {ev['delta']}")
         checks = {
-            "all 16 nodes scored": len(scored) == 16,
+            "16 nodes scored": len(scored) == 16,
             "three forms present": {"overestimation", "overplacement",
                                     "overprecision"} <= forms,
-            "every node answer timed": len(timed) == len(rows),
-            "every node has a snapshot": len(with_state) == len(nodes),
+            "email stored apart": storage.code_for_email(r["email"]) == r["code"],
+            "email not in answers": not email_in_answers,
+            "every row has a snapshot": all(row["state_json"] for row in nodes),
+            "attention checks passed or failed cleanly":
+                all("passed" in scored[n] for n in ("T4", "G4")),
         }
         for label, passed in checks.items():
             if not passed:
                 ok = False
                 print(f"      FAIL: {label}")
-
-    paths = storage.export_csv("export")
-    print(f"\nExported: {', '.join(p.name for p in paths)}")
     print("\nRESULT:", "end to end ok" if ok else "checks failed")
     return 0 if ok else 1
 

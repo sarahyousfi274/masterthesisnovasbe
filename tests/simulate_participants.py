@@ -63,7 +63,7 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
                 truth["est"] + rng.gauss(0, NOISE)) * spread * 0.5
             idx = _nearest_option(values, target)
             rows.append(_row(code, node_id, sc, index, snap,
-                             option_key="ABCD"[idx], option_index=idx))
+                             option_key="ABCDEFG"[idx], option_index=idx))
             effects = content.SCREENS[node_id]["options"][idx].get("effects", {})
             st = game.apply(st, effects)
 
@@ -106,9 +106,16 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
 
         elif kind == "attention_check":
             passed = rng.random() < 0.93
-            key = spec["correct_option"] if passed else rng.choice(["A", "B", "D"])
+            correct = spec["correct_option"]
+            if spec.get("mode") == "includes":
+                key = "A," + correct if passed else "A,B"
+                idx = None
+            else:
+                key = correct if passed else rng.choice(
+                    [k for k in "ABCD" if k != correct])
+                idx = "ABCD".index(key)
             rows.append(_row(code, node_id, sc, index, snap,
-                             option_key=key, option_index="ABCD".index(key)))
+                             option_key=key, option_index=idx))
 
         elif kind == "outcome":
             # F4: higher overestimation makes the loan more likely.
