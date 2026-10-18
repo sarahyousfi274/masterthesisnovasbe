@@ -7,7 +7,7 @@ popovers cite only the data sources behind the scenario numbers, never the
 research on judgement that the study builds on.
 """
 
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.6.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -34,14 +34,14 @@ START_STATE = {
 STATUS_FIELDS = [
     # key, label, help text
     ("cash", "Cash", "Money in the bank right now."),
-    ("burn", "Burn per month", "What the start-up spends each month: salaries, "
-                               "tools, rent, services."),
+    ("burn", "Burn per month", "What the startup spends each month on salaries, "
+                               "tools, rent and services."),
     ("runway", "Runway", "How many months the cash lasts at the current burn. "
                          "Cash divided by burn per month."),
-    ("team_size", "Team", "People who have signed and started, founders "
+    ("team_size", "Team", "People working in the startup, founders "
                           "included."),
     ("pending_hires", "Open roles", "Positions you have opened but not filled "
-                                    "yet. They do not count as team until "
+                                    "yet. They count toward the team once "
                                     "someone signs."),
     ("customers", "Customers", "Paying customers using the product today."),
     ("morale", "Team morale", "Mood of the team, from 1 (very low) to 5 (very "
@@ -82,7 +82,7 @@ COUNTRIES = [
 
 SECTION_ABOUT = "About you"
 SECTION_HOW = "How it works"
-SECTION_STARTUP = "Your start-up"
+SECTION_STARTUP = "Your startup"
 SECTION_WRAP = "Wrap-up"
 
 # --------------------------------------------------------------------------
@@ -91,37 +91,36 @@ SECTION_WRAP = "Wrap-up"
 
 CONSENT = {
     "title": "Decisions in founding",
-    "lead": "A 20-minute simulation for founders.",
-    "body": f"""
-You are invited to take part in a study on how founders make decisions, run by
-master's students at Nova School of Business and Economics. The session takes
-about 20 minutes. One week later we will email you a short follow-up of about
-5 minutes.
-
-You will run a fictional start-up and make the decisions its founders face.
-There are no right or wrong answers, and nothing you enter is checked against
-your real company.
-
-**Taking part is voluntary.** Your email address is stored separately from your
-answers, and the answers are analysed only in aggregate. To have your data
-removed, write to {CONTACT_EMAIL} within {WITHDRAWAL_WEEKS} weeks of today. No
-reason is needed.
-
-**Data use.** Your data are stored in the European Union, used only for this
-research project and not shared with anyone outside the research team.
-
-**Ethics.** This study follows the research ethics guidelines of Nova School of
-Business and Economics.
-""",
-    "agree": "I agree, let's start",
+    "lead": "A simulation study for founders, run by master’s students at Nova "
+            "School of Business and Economics.",
+    "facts": [
+        ("About 20 minutes", "One sitting, on any device"),
+        ("A fictional startup", "No right or wrong answers"),
+        ("A 5-minute follow-up", "By email, one week later"),
+    ],
+    "sections": [
+        ("What you will do",
+         "You run a fictional startup and make the decisions its founders face. "
+         "Nothing you enter is checked against your real company."),
+        ("Taking part is voluntary",
+         f"You can have your data removed within {WITHDRAWAL_WEEKS} weeks by "
+         f"writing to {CONTACT_EMAIL}. No reason is needed."),
+        ("Your data",
+         "Your email address is stored separately from your answers. The answers "
+         "are analyzed only in aggregate, used only for this research project and "
+         "never shared outside the research team."),
+        ("Ethics",
+         "This study follows the research ethics guidelines of Nova School of "
+         "Business and Economics."),
+    ],
+    "agree": "I agree, let’s start",
     "decline": "I do not agree",
 }
 
 FILTER = {
-    "question": "Are you a founder or co-founder of a start-up?",
-    "help": "We count as a founder anyone who founded a venture, inherited or "
-            "bought one and runs it, or joined within five years of its "
-            "founding with at least five percent of the equity.",
+    "question": "Have you founded or co-founded a company?",
+    "help": "Current or past, any size and any industry. Joining a company early "
+            "with a meaningful share of the equity counts too.",
     "options": ["Yes", "No"],
 }
 
@@ -141,8 +140,10 @@ EMAIL = {
 ABOUT_NOTE = "This part is about you, not the simulation."
 
 PROFILE = {
-    "question": "About you and your start-up",
-    "body": "A few questions for the analysis. They are never shown to anyone.",
+    "question": "About you and your startup",
+    "body": "A few questions for the analysis. If you no longer run a company, "
+            "answer for the most recent one. Your answers are never published "
+            "individually.",
 }
 
 PROFILE_FIELDS = [
@@ -152,29 +153,27 @@ PROFILE_FIELDS = [
      "options": ["Female", "Male", "Non-binary", "Prefer not to say"]},
     {"key": "education", "label": "Highest degree completed", "kind": "select",
      "col": 0,
-     "options": ["No formal degree", "High-school diploma", "Apprenticeship",
-                 "Bachelor", "Master or Diploma", "Doctorate",
+     "options": ["No formal degree", "High school diploma", "Apprenticeship",
+                 "Bachelor’s degree", "Master’s degree or Diploma", "Doctorate",
                  "Prefer not to say"]},
-    {"key": "country", "label": "Country your start-up is based in",
+    {"key": "country", "label": "Country your startup is based in",
      "kind": "select", "options": COUNTRIES, "col": 1},
-    {"key": "previous_startups", "label": "Start-ups you founded before this one",
+    {"key": "previous_startups", "label": "Startups you founded before this one",
      "kind": "pills", "options": ["0", "1", "2", "3 or more"]},
     {"key": "years_founder",
      "label": "Years of experience as a founder (0 if this is your first year)",
      "kind": "number", "min": 0, "max": 60, "col": 0},
     {"key": "employees",
-     "label": "People employed in your start-up, not counting the founders",
+     "label": "People employed in your startup, not counting the founders",
      "kind": "number", "min": 0, "max": 100_000, "col": 1},
-    {"key": "stage", "label": "Stage of your start-up", "kind": "select",
-     "options": ["Idea or pre-product", "Pre-seed", "Seed", "Series A",
-                 "Series B or later",
-                 "Bootstrapped / self-funded (no external investors)"]},
+    {"key": "stage", "label": "Stage of your startup", "kind": "select",
+     "options": ["Idea", "Pre-seed", "Seed", "Series A", "Series B or later"]},
     {"key": "team_composition", "label": "How would you describe your founding team?",
      "kind": "select",
      "options": ["Solo founder", "Two co-founders with similar backgrounds",
                  "Two co-founders with complementary backgrounds",
-                 "Three or more co-founders, similar backgrounds",
-                 "Three or more co-founders, complementary backgrounds"]},
+                 "Three or more co-founders with similar backgrounds",
+                 "Three or more co-founders with complementary backgrounds"]},
     {"key": "funding", "label": "Sources of financing so far (select all that apply)",
      "kind": "multi",
      "options": ["Own savings", "Revenue", "Family and friends",
@@ -184,7 +183,7 @@ PROFILE_FIELDS = [
 
 EXPERIENCE = {
     "question": "How much of this have you done before?",
-    "body": "Count everything across your career, not only this start-up.",
+    "body": "Count everything across your career, not only this startup.",
 }
 EXPERIENCE_FIELDS = [
     {"key": "exp_funding", "label": "Funding rounds you have raised"},
@@ -220,7 +219,7 @@ RISK_ITEMS = [
 WARMUP_INTRO = {
     "title": "How the simulation works",
     "points": [
-        ("You run a fictional start-up",
+        ("You run a fictional startup",
          "About 16 decisions in four areas: building the product, finance, "
          "team and go-to-market."),
         ("Your numbers travel with you",
@@ -230,8 +229,8 @@ WARMUP_INTRO = {
          "Most ask you to pick an option. Some ask for two numbers, a best "
          "case and a worst case, so that your answer is a range."),
     ],
-    "footer": "The next two screens are examples to get familiar with the "
-              "format. They are not part of the study.",
+    "footer": "The next two screens are short examples to help you get familiar "
+              "with the format. They are not part of the study.",
 }
 
 PRACTICE_CHOICE = {
@@ -243,8 +242,8 @@ PRACTICE_CHOICE = {
 PRACTICE_RANGE = {
     "tag": "Example",
     "question": "How many cups of coffee does your team drink in a typical week?",
-    "intro": "For questions like this, give two numbers that you are fairly sure "
-             "the real value falls between.",
+    "intro": "For questions like this, give a low and a high number, so that you "
+             "are fairly sure the real value lies between them.",
     "low_label": "Low estimate",
     "low_help": "Only 1 in 10 weeks would be lower than this.",
     "high_label": "High estimate",
@@ -253,13 +252,13 @@ PRACTICE_RANGE = {
 }
 
 # --------------------------------------------------------------------------
-# Your start-up
+# Your startup
 # --------------------------------------------------------------------------
 
 SETUP = {
-    "question": "Set up your start-up",
+    "question": "Set up your startup",
     "body": "From here on you are in the simulation.",
-    "name_label": "Give your start-up a name",
+    "name_label": "Give your startup a name",
     "name_placeholder": "anything you like",
     "industry_label": "Which industry is it in?",
     "solo_label": "Do you run it alone or with co-founders?",
@@ -268,8 +267,10 @@ SETUP = {
 
 STARTING_SITUATION = {
     "title": "Your starting situation",
-    "body": "This is where you take over. The numbers change with your decisions. "
-            "Hover or tap the (i) next to a label to see what it means.",
+    "body": "This is where you take over. The numbers change with your "
+            "decisions, and you see where you stand at the start and end of "
+            "each area. Hover over or tap the (i) next to a label to see what "
+            "it means.",
     "button": "Start the first area",
 }
 
@@ -283,18 +284,19 @@ STARTING_SITUATION = {
 BLOCKS = {
     "team": {
         "title": "Building the product",
-        "intro": "You and your co-founders have agreed to build the first "
-                 "version of the product. The next decisions are about how you "
-                 "get it done.",
-        "intro_solo": "You have decided to build the first version of the "
-                      "product. The next decisions are about how you get it done.",
+        "intro": "You and your co-founders have agreed to build a first version "
+                 "of the product, the minimum viable product (MVP). The next "
+                 "decisions are about how you get it done.",
+        "intro_solo": "You have decided to build a first version of the product, "
+                      "the minimum viable product (MVP). The next decisions are "
+                      "about how you get it done.",
         "sequence": ["T1", "T3"],
         "floating": ["T2", "T4"],
     },
     "finance": {
         "title": "Finance",
         "intro": "Cash is going out every month. The next decisions are about "
-                 "financing the start-up.",
+                 "financing the startup.",
         "sequence": ["F1", "F3", "F4"],
         "floating": ["F2"],
     },
@@ -322,7 +324,7 @@ TRACKS = {
 }
 
 ILLUSTRATIVE = ("The scenario is fictional. Its numbers are illustrative and "
-                "set to resemble an early-stage start-up.")
+                "set to resemble an early-stage startup.")
 
 # --------------------------------------------------------------------------
 # Screens
@@ -365,8 +367,8 @@ SCREENS = {
     "T2": {
         "kind": "contest",
         "question": "A mentor invites you to a pitch contest against 9 other "
-                    "start-ups.",
-        "body": "An independent jury ranks all 10 start-ups on the quality of "
+                    "startups.",
+        "body": "An independent jury ranks all 10 startups on the quality of "
                 "their plan. The best one wins a grant of {prize}. Taking part "
                 "costs {base_cost} in travel and preparation.",
         "scenario": ILLUSTRATIVE + " One winner is chosen by the jury.",
@@ -400,9 +402,8 @@ SCREENS = {
     "T4": {
         "kind": "choice",
         "question": "How do you run the weekly team meeting?",
-        "body": "We also check that the questions are being read: for this "
-                "question, please choose the standing meeting, whatever you "
-                "would really do.",
+        "body": "To show that you are reading carefully, please select "
+                "“Standing meeting, 15 minutes” for this question.",
         "options": [
             {"key": "A", "label": "Fixed agenda, 30 minutes", "effects": {}},
             {"key": "B", "label": "Open round without agenda", "effects": {}},
@@ -423,7 +424,7 @@ SCREENS = {
                     "from first contact to money in the bank.",
         "sources": ["Elad Gil, Fundraising will take you ~3 months (blog)",
                     "DocSend, A brief anatomy of a successful seed raise "
-                    "(2020, 175 seed-stage start-ups)"],
+                    "(2020, 175 seed-stage startups)"],
         "event": "Fundraising timing",
         "options": [
             {"key": "A", "label": "Right away", "effects": {}},
@@ -437,7 +438,7 @@ SCREENS = {
     "F2": {
         "kind": "contest",
         "question": "A well-known accelerator has shortlisted you and 9 other "
-                    "start-ups for one place in its programme.",
+                    "startups for a single place in its program.",
         "body": "The place comes with {prize} in funding. An independent "
                 "selection panel picks the strongest of the 10. Applying, with "
                 "a video and two interview rounds, costs {base_cost} in time "
@@ -456,8 +457,9 @@ SCREENS = {
     "F3": {
         "kind": "interval",
         "chart": "revenue",
-        "question": "You are preparing the seed story. Monthly revenue is now "
-                    "€8,000. What will monthly revenue be in 12 months?",
+        "question": "You are preparing your pitch for a seed round. Monthly "
+                    "revenue is now €8,000. What will monthly revenue be in 12 "
+                    "months?",
         "scenario": ILLUSTRATIVE + " The revenue path resembles an early-stage "
                     "B2B software company.",
         "sources": ["SaaS Capital, Benchmarking private SaaS company growth "
@@ -465,9 +467,9 @@ SCREENS = {
         "unit": "euros",
         "optimistic_is_high": True,
         "best_label": "Best case",
-        "best_help": "Only 1 in 10 comparable start-ups would end up higher.",
+        "best_help": "Only 1 in 10 comparable startups would end up higher.",
         "worst_label": "Worst case",
-        "worst_help": "Only 1 in 10 comparable start-ups would end up lower.",
+        "worst_help": "Only 1 in 10 comparable startups would end up lower.",
         "min_value": 0, "max_value": 10_000_000, "step": 500,
     },
 
@@ -484,12 +486,13 @@ SCREENS = {
             {"key": "A", "label": "Bank loan over 24 months at 9 percent",
              "extra": "about €13,700 per month, no equity given up",
              "effects": {"cash": 300_000, "burn": 13_700}},
-            {"key": "B", "label": "SAFE with a €6 million valuation cap",
+            {"key": "B", "label": "SAFE (simple agreement for future equity) with a "
+                                  "€6 million valuation cap",
              "extra": "up to 5 percent, final stake set in the next round",
              "effects": {"cash": 300_000}},
             {"key": "C", "label": "Priced round: 5 percent for €300,000",
-             "extra": "investor joins as board observer, about €15,000 legal "
-                      "costs",
+             "extra": "the investor joins as a board observer, about €15,000 "
+                      "in legal costs",
              "effects": {"cash": 285_000}},
         ],
     },
@@ -524,13 +527,13 @@ SCREENS = {
 
     "H2": {
         "kind": "contest",
-        "question": "An experienced head of growth is choosing between offers "
-                    "from 10 start-ups, yours among them.",
+        "question": "An experienced Head of Growth is choosing between offers "
+                    "from 10 startups, yours among them.",
         "body": "If she joins you, you save 3 months of searching, worth "
-                "{prize}. A standard offer with an assessment and employer "
-                "branding costs {base_cost}.",
+                "{prize}. Preparing a standard offer, with an assessment day "
+                "and employer branding, costs {base_cost}.",
         "scenario": ILLUSTRATIVE + " She accepts one of the 10 offers.",
-        "event": "Offer to head of growth",
+        "event": "Offer to Head of Growth",
         "options": [
             {"key": "A", "label": "Make no offer"},
             {"key": "B", "label": "Standard offer"},
@@ -557,12 +560,12 @@ SCREENS = {
 
     "H4": {
         "kind": "choice",
-        "question": "You need a head of sales. Two finalists remain.",
+        "question": "You need a Head of Sales. Two finalists remain.",
         "body": "Candidate A scored 82 of 100 on a structured work sample and "
                 "has solid references. Candidate B scored 71 of 100 but was the "
                 "most convincing person in the interview and gave you a very "
                 "strong gut feeling. Either hire adds €7,000 to monthly burn.",
-        "event": "Head of sales",
+        "event": "Head of Sales",
         "options": [
             {"key": "A", "label": "Hire A",
              "effects": {"burn": 7_000, "team_size": 1}},
@@ -603,8 +606,9 @@ SCREENS = {
 
     "G2": {
         "kind": "contest",
-        "question": "A lead customer is tendering a contract worth {prize}.",
-        "body": "10 start-ups apply and an independent panel picks the best "
+        "question": "A large potential customer is putting a contract worth "
+                    "{prize} out to tender.",
+        "body": "Ten startups apply and an independent panel picks the best "
                 "proposal. A basic application costs {base_cost}.",
         "scenario": ILLUSTRATIVE + " One contract, awarded by the panel.",
         "event": "Customer tender",
@@ -638,9 +642,8 @@ SCREENS = {
         "kind": "multi",
         "question": "A big trade fair is coming up. What do you plan for the two "
                     "days?",
-        "body": "Select all that apply. To help us check that the questions are "
-                "being read, please include the investor breakfast in your "
-                "selection.",
+        "body": "Select all that apply. To show that you are reading carefully, "
+                "please include “The investor breakfast” in your selection.",
         "options": [
             {"key": "A", "label": "Three customer meetings a day"},
             {"key": "B", "label": "Walk the floor to see competitors"},
@@ -671,15 +674,10 @@ SUSPICION = {
 
 END = {
     "title": "Thank you",
-    "body": f"""
-That is everything for today. Thank you for the 20 minutes, and for playing it
-as seriously as you did.
+    "body": """
+That is everything for today. Thank you for your time, and for taking the decisions as seriously as you did.
 
-**In one week** we will email you a short follow-up of about 5 minutes. It also
-explains in full what the study looked at and why.
-
-If you would like your data removed, write to {CONTACT_EMAIL} within
-{WITHDRAWAL_WEEKS} weeks of today. No reason is needed.
+**In one week** we will email you a short follow-up of about 5 minutes.
 """,
 }
 

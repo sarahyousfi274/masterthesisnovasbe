@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     consent          INTEGER,
     is_founder       INTEGER,
     withdrawn        INTEGER DEFAULT 0,
+    duration_seconds DOUBLE PRECISION,
     app_version      TEXT,
     codebook_version TEXT
 );
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS responses (
     text_value       TEXT,
     response_seconds REAL,
     state_json       TEXT,
+    entered_at       TEXT,
     answered_at      TEXT,
     UNIQUE (code, screen_id)
 );
@@ -87,6 +89,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     consent          INTEGER,
     is_founder       INTEGER,
     withdrawn        INTEGER DEFAULT 0,
+    duration_seconds DOUBLE PRECISION,
     app_version      TEXT,
     codebook_version TEXT
 );
@@ -105,6 +108,7 @@ CREATE TABLE IF NOT EXISTS responses (
     text_value       TEXT,
     response_seconds DOUBLE PRECISION,
     state_json       TEXT,
+    entered_at       TEXT,
     answered_at      TEXT,
     UNIQUE (code, screen_id)
 );
@@ -117,6 +121,21 @@ CREATE TABLE IF NOT EXISTS followup (
 """
 
 TABLES = ("sessions", "responses", "followup")
+
+# Columns added after the first release. Older databases get them on first use.
+MIGRATIONS = [("responses", "entered_at", "TEXT"),
+              ("sessions", "duration_seconds", "DOUBLE PRECISION")]
+
+
+def _migrate(conn) -> None:
+    for table, column, kind in MIGRATIONS:
+        if backend() == "postgres":
+            with conn.cursor() as cur:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {kind}")
+        else:
+            cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
+            if column not in cols:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
 
 
 # ---------------------------------------------------------------------------
@@ -167,6 +186,7 @@ def connect():
             if not _initialised:
                 with conn.cursor() as cur:
                     cur.execute(POSTGRES_SCHEMA)
+                _migrate(conn)
                 conn.commit()
                 _initialised = True
             yield conn
@@ -181,6 +201,7 @@ def connect():
         conn = sqlite3.connect(DB_PATH, timeout=30)
         try:
             conn.executescript(SQLITE_SCHEMA)
+            _migrate(conn)
             yield conn
             conn.commit()
         except Exception:
@@ -237,31 +258,43 @@ def update_session(code: str, **fields) -> None:
 
 
 def complete_session(code: str) -> None:
-    update_session(code, completed_at=_now())
+    """Mark the session complete and store its total duration in seconds."""
+    now = datetime.now(timezone.utc)
+    with connect() as conn:
+        rows = _fetch(conn, "SELECT started_at FROM sessions WHERE code = ?", (code,))
+    duration = None
+    if rows and rows[0]["started_at"]:
+        started = datetime.fromisoformat(rows[0]["started_at"])
+        duration = round((now - started).total_seconds(), 1)
+    update_session(code, completed_at=now.isoformat(timespec="seconds"),
+                   duration_seconds=duration)
 
 
 def save_response(code: str, screen: dict, screen_index: int, *,
                   option_key: str | None = None, option_index: int | None = None,
                   numeric_value: float | None = None, text_value: str | None = None,
                   response_seconds: float | None = None,
-                  state: dict | None = None) -> None:
+                  state: dict | None = None,
+                  entered_at: str | None = None) -> None:
     with connect() as conn:
         _execute(
             conn,
             "INSERT INTO responses "
             "(code, screen_id, node, domain, block_position, node_position, "
             " screen_index, option_key, option_index, numeric_value, text_value, "
-            " response_seconds, state_json, answered_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+            " response_seconds, state_json, entered_at, answered_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT (code, screen_id) DO UPDATE SET "
             " option_key = EXCLUDED.option_key, option_index = EXCLUDED.option_index, "
             " numeric_value = EXCLUDED.numeric_value, text_value = EXCLUDED.text_value, "
             " response_seconds = EXCLUDED.response_seconds, "
-            " state_json = EXCLUDED.state_json, answered_at = EXCLUDED.answered_at",
+            " state_json = EXCLUDED.state_json, entered_at = EXCLUDED.entered_at,"
+            " answered_at = EXCLUDED.answered_at",
             (code, screen["id"], screen.get("node"), screen.get("domain"),
              screen.get("block_position"), screen.get("node_position"),
              screen_index, option_key, option_index, numeric_value, text_value,
-             response_seconds, json.dumps(state) if state else None, _now()))
+             response_seconds, json.dumps(state) if state else None, entered_at,
+             _now()))
 
 
 def save_followup(code: str, email: str) -> None:

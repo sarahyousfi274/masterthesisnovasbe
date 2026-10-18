@@ -115,11 +115,17 @@ button[data-testid="stNumberInputStepUp"], button[data-testid="stNumberInputStep
 div[data-testid="stWidgetLabel"] p {{ font-weight: 500; color: {INK} !important; font-size: 0.95rem; }}
 ul[role="listbox"], div[data-baseweb="popover"] li {{ background: {CARD} !important; color: {INK} !important; }}
 
+div[data-testid="InputInstructions"] {{ display: none !important; }}
+input, textarea {{ color: {INK} !important; -webkit-text-fill-color: {INK} !important; caret-color: {ACCENT}; }}
+input::placeholder, textarea::placeholder {{ color: #9AA0AA !important; -webkit-text-fill-color: #9AA0AA !important; }}
+*:focus-visible {{ outline-color: {ACCENT} !important; }}
+
 /* ---------- answer cards (radio) ---------- */
 div[data-testid="stElementContainer"]:has(div[data-testid="stRadio"]),
 div[data-testid="stRadio"], div[data-testid="stRadio"] > div {{ width: 100% !important; }}
 div[role="radiogroup"] {{ gap: 0.5rem; width: 100% !important; display: flex; flex-direction: column; }}
-div[role="radiogroup"] > label {{ align-self: stretch; }}
+div[role="radiogroup"] {{ align-items: stretch !important; }}
+div[role="radiogroup"] > div, div[role="radiogroup"] > label {{ width: 100% !important; align-self: stretch; }}
 label[data-testid="stRadioOption"] {{
   display: flex; align-items: center; width: 100%; box-sizing: border-box;
   padding: 0.85rem 1rem; margin: 0; border-radius: 12px;
@@ -134,12 +140,27 @@ label[data-testid="stRadioOption"]:has(input:checked) {{
   box-shadow: 0 0 0 1px {ACCENT} inset;
 }}
 div[role="radiogroup"][aria-orientation="horizontal"] {{ flex-direction: row; flex-wrap: wrap; }}
-div[role="radiogroup"][aria-orientation="horizontal"] > label {{ align-self: auto; }}
+div[role="radiogroup"][aria-orientation="horizontal"] {{ align-items: center !important; }}
+div[role="radiogroup"][aria-orientation="horizontal"] > div,
+div[role="radiogroup"][aria-orientation="horizontal"] > label {{ width: auto !important; align-self: auto; }}
 div[role="radiogroup"][aria-orientation="horizontal"] label[data-testid="stRadioOption"] {{
   width: auto; padding: 0.5rem 0.9rem;
 }}
 
 /* ---------- pills ---------- */
+div[data-testid="stButtonGroup"] button {{
+  background: {CARD} !important; border: 1px solid {LINE} !important; color: {INK} !important;
+  border-radius: 999px !important;
+}}
+div[data-testid="stButtonGroup"] button * {{ color: {INK} !important; }}
+div[data-testid="stButtonGroup"] button[aria-pressed="true"],
+div[data-testid="stButtonGroup"] button[aria-checked="true"],
+div[data-testid="stButtonGroup"] button[kind$="Active"] {{
+  background: {ACCENT} !important; border-color: {ACCENT} !important;
+}}
+div[data-testid="stButtonGroup"] button[aria-pressed="true"] *,
+div[data-testid="stButtonGroup"] button[aria-checked="true"] *,
+div[data-testid="stButtonGroup"] button[kind$="Active"] * {{ color: #FFFFFF !important; }}
 div[data-testid="stButtonGroup"] button[data-testid="stBaseButton-pills"] {{
   background: {CARD} !important; border: 1px solid {LINE} !important;
   border-radius: 999px !important; min-width: 2.75rem; min-height: 2.5rem;
@@ -237,6 +258,17 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-chart {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.9rem 0.9rem 0.5rem 0.9rem; margin-bottom: 1.1rem; }}
 .fs-chart .cap {{ font-size: 0.78rem; color: {MUTED}; margin-bottom: 0.3rem; }}
 
+.fs-facts {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 1.2rem 0 1.6rem 0; }}
+@media (max-width: 640px) {{ .fs-facts {{ grid-template-columns: 1fr; }} }}
+.fs-fact {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.85rem 1rem; }}
+.fs-fact .t {{ font-weight: 650; color: {INK}; font-size: 0.98rem; }}
+.fs-fact .d {{ color: {MUTED}; font-size: 0.85rem; margin-top: 0.15rem; }}
+.fs-terms {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.3rem 1.1rem; margin-bottom: 1.4rem; }}
+.fs-terms .row {{ padding: 0.8rem 0; border-bottom: 1px solid {LINE}; }}
+.fs-terms .row:last-child {{ border-bottom: none; }}
+.fs-terms .h {{ font-weight: 600; color: {INK}; font-size: 0.92rem; margin-bottom: 0.15rem; }}
+.fs-terms .b {{ color: {INK_2}; font-size: 0.92rem; line-height: 1.55; }}
+.fs-hud .cap {{ width: 100%; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
 .fs-echo {{ font-size: 0.8rem; color: {MUTED}; margin: -0.5rem 0 0.6rem 0; }}
 .fs-hero {{ padding: 0.4rem 0 0.2rem 0; }}
 .fs-hero .lead {{ font-size: 1.1rem; color: {INK_2}; margin-top: -0.3rem; }}
@@ -339,8 +371,10 @@ def status_cards(state: dict, before: dict | None = None) -> None:
                f'<div class="fs-grid two">{"".join(scales)}</div>')
 
 
-def hud(state: dict) -> None:
-    """Compact strip of the key numbers on every simulation question."""
+def hud(state: dict, caption: str = "At the start of this area") -> None:
+    """Compact strip of the key numbers on every simulation question. It shows
+    the situation at the start of the area and does not move with the answers
+    inside the area, so a single decision never gets visible feedback."""
     items = [("Cash", game.format_value("cash", state)),
              ("Burn", game.format_value("burn", state) + "/mo"),
              ("Runway", game.format_value("runway", state)),
@@ -349,7 +383,7 @@ def hud(state: dict) -> None:
     if state.get("pending_hires"):
         items.insert(4, ("Open roles", str(state["pending_hires"])))
     inner = "".join(f'<span>{_h(k)}<b>{_h(v)}</b></span>' for k, v in items)
-    html_block(f'<div class="fs-hud">{inner}</div>')
+    html_block(f'<div class="fs-hud"><div class="cap">{_h(caption)}</div>{inner}</div>')
 
 
 def changes(events: list[dict]) -> None:
@@ -415,3 +449,15 @@ def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: st
     svg = (f'<svg viewBox="0 0 {w} {h}" width="100%" role="img" aria-label="{_h(caption)}" '
            f'xmlns="http://www.w3.org/2000/svg">{"".join(parts)}</svg>')
     html_block(f'<div class="fs-chart"><div class="cap">{_h(caption)}</div>{svg}</div>')
+
+
+def facts(items: list[tuple[str, str]]) -> None:
+    cells = "".join(f'<div class="fs-fact"><div class="t">{_h(t)}</div>'
+                    f'<div class="d">{_h(d)}</div></div>' for t, d in items)
+    html_block(f'<div class="fs-facts">{cells}</div>')
+
+
+def terms(items: list[tuple[str, str]]) -> None:
+    rows = "".join(f'<div class="row"><div class="h">{_h(t)}</div>'
+                   f'<div class="b">{_h(b)}</div></div>' for t, b in items)
+    html_block(f'<div class="fs-terms">{rows}</div>')

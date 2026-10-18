@@ -87,13 +87,22 @@ def sections(screens: list[dict]) -> list[str]:
 
 
 def back_allowed(screens: list[dict], index: int) -> bool:
-    """Back is offered among the questions about the person, and on any screen
-    whose previous screen was information only. Never on the end screen."""
-    if index <= 0 or screens[index]["kind"] == "end":
+    """Where a Back button is offered.
+
+    - Among the questions about the person (filter to risk attitude).
+    - In "How it works", from the first example back to the overview.
+    - In the simulation only once per area: from the first decision back to the
+      area's starting situation. Never between decisions, never from an area
+      intro to the previous report, never in the wrap-up.
+    """
+    if index <= 0:
         return False
-    if screens[index].get("section") in BACK_SECTIONS:
+    here, prev = screens[index], screens[index - 1]
+    if here.get("section") in BACK_SECTIONS:
         return True
-    return screens[index - 1]["kind"] in INFO_KINDS
+    if here.get("section") == content.SECTION_HOW:
+        return prev["kind"] == "warmup_intro"
+    return prev["kind"] == "block_intro" and here.get("node") is not None
 
 
 def assign_track(rng: random.Random) -> int:

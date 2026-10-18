@@ -143,7 +143,9 @@ def ladder_reference(node_id: str, state: dict | None = None) -> float:
     """
     spec = node(node_id)
     if "reference_rule" in spec and state is not None:
-        runway = state.get("runway", 0)
+        # The runway the participant read in the question (the area's starting
+        # value) takes precedence over the live value, if it was logged.
+        runway = state.get("runway_shown", state.get("runway", 0))
         return max(0.0, runway - spec["reference_runway_remaining"])
     return float(spec["reference_value"])
 

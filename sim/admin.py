@@ -78,6 +78,36 @@ def render() -> None:
             disabled=not data, key=f"dl_{table}")
 
     st.divider()
+    st.subheader("Time")
+    st.caption(
+        "Participants never see a timer. Every answer row stores when the screen "
+        "was opened (entered_at), when it was answered (answered_at) and the "
+        "seconds in between (response_seconds). Sessions store their total "
+        "duration once completed."
+    )
+    if st.button("Show time per screen"):
+        import statistics
+        sessions = [s for s in storage.fetch_all("sessions") if s.get("duration_seconds")]
+        if sessions:
+            mins = [s["duration_seconds"] / 60 for s in sessions]
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Completed sessions", len(mins))
+            c2.metric("Median duration", f"{statistics.median(mins):.1f} min")
+            c3.metric("Range", f"{min(mins):.0f} to {max(mins):.0f} min")
+        per_screen: dict[str, list[float]] = {}
+        for row in storage.fetch_all("responses"):
+            if row.get("response_seconds"):
+                per_screen.setdefault(row["screen_id"], []).append(row["response_seconds"])
+        if per_screen:
+            table = [{"screen": k, "answers": len(v),
+                      "median seconds": round(statistics.median(v), 1),
+                      "max seconds": round(max(v), 1)}
+                     for k, v in sorted(per_screen.items())]
+            st.dataframe(table, use_container_width=True, hide_index=True)
+        else:
+            st.info("No answers yet.")
+
+    st.divider()
     st.subheader("Group results so far")
     st.caption(
         "Descriptive only, and the design supports group level reading, not "

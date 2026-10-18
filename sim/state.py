@@ -44,8 +44,11 @@ def apply(state: dict, effects: dict) -> dict:
     """Return a new state with `effects` applied."""
     new = copy.deepcopy(state)
 
-    if effects.get("spend_launch_budget"):
-        new["cash"] -= launch_budget(state)
+    spend = effects.get("spend_launch_budget")
+    if spend:
+        # True: a quarter of current cash. A number: the amount that was shown
+        # in the question, so the deduction always matches what was read.
+        new["cash"] -= launch_budget(state) if spend is True else int(spend)
 
     for key, delta in effects.items():
         if key == "spend_launch_budget":
