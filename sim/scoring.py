@@ -65,6 +65,18 @@ def score_participant(responses: list[dict], seed: int | None = None) -> dict:
             if lo is None or hi is None:
                 continue
             out[node_id] = _score_interval(node_id, lo, hi, rng)
+        elif kind == "rank":
+            row = by_screen.get(node_id)
+            if row is None or row["option_key"] is None:
+                continue
+            rank = int(row["option_key"])
+            out[node_id] = {
+                "node": node_id, "form": "overplacement", "domain": spec["domain"],
+                "rank": rank, "reference_rank": spec["reference_rank"],
+                "rank_score": spec["reference_rank"] - rank,
+                "contest": spec["contest"],
+                "response_seconds": row["response_seconds"],
+            }
         elif kind == "attention_check":
             row = by_screen.get(node_id)
             if row is not None:
@@ -154,6 +166,11 @@ def _score_interval(node_id: str, opt_row: dict, pes_row: dict,
     if a is None or b is None:
         return {"node": node_id, "form": "overprecision", "domain": spec["domain"],
                 "incomplete": True}
+    if spec.get("scale_with"):
+        state = json.loads(opt_row["state_json"]) if opt_row.get("state_json") else {}
+        factor = (state.get(spec["scale_with"]) or spec["scale_base"]) / spec["scale_base"]
+        if factor > 0:
+            a, b = a / factor, b / factor
     lower, upper = (a, b) if a <= b else (b, a)
     reversed_order = a > b  # participant's optimistic value was the larger one
 
@@ -200,6 +217,8 @@ def _primary(entry: dict) -> float | None:
     if form == "overestimation":
         return entry["raw_distance"]
     if form == "overplacement":
+        if "rank_score" in entry:
+            return float(entry["rank_score"])     # positive = above average
         return float(entry["ordinal"])
     if form == "overprecision":
         return -entry["log_width_ratio"]   # positive = narrower than reference
@@ -305,6 +324,11 @@ def sample_summary(standardised: dict[str, dict]) -> dict:
                     e["expected_coverage"] for e in valid)
                 row["hit_rate"] = statistics.fmean(e["hit"] for e in valid)
                 row["target_coverage"] = TARGET_COVERAGE
+        elif spec.get("type") == "rank":
+            ranks = [e["rank"] for e in entries]
+            row["mean_rank"] = statistics.fmean(ranks)
+            row["share_top_half"] = sum(r <= 5 for r in ranks) / len(ranks)
+            row["reference_rank"] = spec["reference_rank"]
         elif spec.get("type") == "attention_check":
             row["pass_rate"] = statistics.fmean(e["passed"] for e in entries)
         elif spec.get("type") == "outcome":

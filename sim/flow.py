@@ -3,10 +3,11 @@
 Half the participants get Track 1 and half Track 2, so that order and fatigue
 effects can be checked.
 
-Within a block, nodes that build on each other keep their order (you decide
+Within an area, nodes that build on each other keep their order (you decide
 when to fundraise before you decide how; you open roles before you fill one).
-The remaining nodes, including the attention check, are inserted at random
-positions, so the attention check does not sit at a predictable place.
+Each contest comes as a pair with its rank question, which is asked first, and
+the pair is inserted at a random position. The two attention checks sit in the
+second and third area of the track, at a random position but never first.
 
 Every screen carries a `section`, which drives the bar at the top.
 """
@@ -52,18 +53,25 @@ def build(track: int, seed: int) -> list[dict]:
         screens.append({"id": f"intro_{domain}", "kind": "block_intro",
                         "domain": domain, "section": section})
 
-        nodes = list(block["sequence"])
-        for node_id in block["floating"]:
-            nodes.insert(rng.randint(0, len(nodes)), node_id)
+        # Story order first; units (rank question + its contest) are inserted
+        # as a pair at a random position.
+        units: list[list[str]] = [[n] for n in block["sequence"]]
+        for unit in block.get("units", []):
+            units.insert(rng.randint(0, len(units)), list(unit))
+        # Attention checks go into areas 2 and 3, never as the first decision.
+        if position in (2, 3):
+            check = content.ATTENTION_CHECKS[position - 2]
+            units.insert(rng.randint(1, len(units)), [check])
+        nodes = [n for unit in units for n in unit]
 
         for order_in_block, node_id in enumerate(nodes, start=1):
             spec = content.SCREENS[node_id]
             screen = {"id": node_id, "kind": spec["kind"], "node": node_id,
                       "domain": domain, "block_position": position,
                       "node_position": order_in_block, "section": section}
-            if spec["kind"] == "interval":
-                # Which of the two fields comes first is randomised.
-                screen["first"] = rng.choice(["best", "worst"])
+            if spec["kind"] == "hire":
+                # Which candidate is described first is randomised and stored.
+                screen["first"] = rng.choice(["A", "B"])
             screens.append(screen)
 
         screens.append({"id": f"report_{domain}", "kind": "report",

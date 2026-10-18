@@ -213,7 +213,7 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-hud b {{ color: {INK}; font-weight: 600; margin-left: 0.25rem; }}
 
 .fs-grid {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0.4rem 0 0.6rem 0; }}
-.fs-grid.two {{ grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 1.2rem 0; }}
+.fs-grid.two {{ grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 1.2rem 0; }}
 @media (max-width: 640px) {{ .fs-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
 .fs-card {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.8rem 0.9rem;
   box-shadow: 0 1px 2px rgba(14,17,22,0.04); }}
@@ -234,10 +234,10 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
   padding: 0.55rem 0.7rem; border-radius: 8px; box-shadow: 0 6px 20px rgba(14,17,22,0.18); }}
 
 .fs-changes {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.4rem 0.9rem; margin-bottom: 1.3rem; }}
-.fs-changes .row {{ display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0;
-  border-bottom: 1px solid {LINE}; font-size: 0.9rem; color: {INK_2}; }}
+.fs-changes .row {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1rem;
+  padding: 0.55rem 0; border-bottom: 1px solid {LINE}; font-size: 0.9rem; color: {INK_2}; }}
 .fs-changes .row:last-child {{ border-bottom: none; }}
-.fs-changes .row span:last-child {{ color: {INK}; font-weight: 500; text-align: right; white-space: nowrap; }}
+.fs-changes .row span:last-child {{ color: {INK}; font-weight: 500; text-align: right; }}
 
 .fs-points {{ display: grid; gap: 0.6rem; margin: 0.6rem 0 1.2rem 0; }}
 .fs-point {{ display: flex; gap: 0.8rem; background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.85rem 1rem; }}
@@ -269,6 +269,9 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-terms .h {{ font-weight: 600; color: {INK}; font-size: 0.92rem; margin-bottom: 0.15rem; }}
 .fs-terms .b {{ color: {INK_2}; font-size: 0.92rem; line-height: 1.55; }}
 .fs-hud .cap {{ width: 100%; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
+.fs-scale-ends {{ display: flex; justify-content: space-between; gap: 1rem; font-size: 0.78rem;
+  color: {MUTED}; margin: -0.4rem 0 1.1rem 0; max-width: 34rem; }}
+.fs-changes .row span.note {{ color: {MUTED}; font-weight: 400; font-style: italic; }}
 .fs-echo {{ font-size: 0.8rem; color: {MUTED}; margin: -0.5rem 0 0.6rem 0; }}
 .fs-hero {{ padding: 0.4rem 0 0.2rem 0; }}
 .fs-hero .lead {{ font-size: 1.1rem; color: {INK_2}; margin-top: -0.3rem; }}
@@ -366,7 +369,7 @@ def status_cards(state: dict, before: dict | None = None) -> None:
         card = (f'<div class="fs-card"><div class="lbl">{_h(label)}'
                 f'<i class="fs-tip" tabindex="0" data-tip="{_h(help_text)}">i</i></div>'
                 f'<div class="val">{_h(value)}</div>{delta}{extra}</div>')
-        (scales if extra else cards).append(card)
+        (scales if (extra or key in ("ownership", "pending_hires")) else cards).append(card)
     html_block(f'<div class="fs-grid">{"".join(cards)}</div>'
                f'<div class="fs-grid two">{"".join(scales)}</div>')
 
@@ -376,8 +379,9 @@ def hud(state: dict, caption: str = "At the start of this area") -> None:
     the situation at the start of the area and does not move with the answers
     inside the area, so a single decision never gets visible feedback."""
     items = [("Cash", game.format_value("cash", state)),
-             ("Burn", game.format_value("burn", state) + "/mo"),
+             ("Net burn", game.format_value("burn", state) + "/mo"),
              ("Runway", game.format_value("runway", state)),
+             ("Revenue", game.format_value("revenue", state) + "/mo"),
              ("Team", game.format_value("team_size", state)),
              ("Customers", game.format_value("customers", state))]
     if state.get("pending_hires"):
@@ -390,15 +394,17 @@ def changes(events: list[dict]) -> None:
     if not events:
         return
     rows = []
+    labels = dict((k, l) for k, l, _ in content.STATUS_FIELDS)
     for ev in events:
-        parts = []
-        for key, d in ev["delta"].items():
-            label = dict((k, l) for k, l, _ in content.STATUS_FIELDS).get(key, key)
-            parts.append(f"{label} {game.format_delta(key, d)}")
-        if not parts:
+        parts = [f"{labels.get(key, key)} {game.format_delta(key, d)}"
+                 for key, d in ev["delta"].items()]
+        if parts:
+            right = f'<span>{_h(" · ".join(parts))}</span>'
+        elif ev.get("note"):
+            right = f'<span class="note">{_h(ev["note"])}</span>'
+        else:
             continue
-        rows.append(f'<div class="row"><span>{_h(ev["label"])}</span>'
-                    f'<span>{_h(" · ".join(parts))}</span></div>')
+        rows.append(f'<div class="row"><span>{_h(ev["label"])}</span>{right}</div>')
     if rows:
         html_block(f'<div class="fs-changes">{"".join(rows)}</div>')
 
@@ -438,12 +444,17 @@ def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: st
         if chg:
             parts.append(f'<text x="{x + bw / 2:.1f}" y="{y + 17:.1f}" text-anchor="middle" font-size="11" '
                          f'font-weight="600" fill="#FFFFFF">{_h(chg)}</text>')
+    # The future slot is a small box on the baseline, so its height suggests no
+    # magnitude.
     fx = slot * n + 10
     fw = w - fx - 4
-    parts.append(f'<rect x="{fx:.1f}" y="{pad_t:.1f}" width="{fw:.1f}" height="{h - pad_b - pad_t:.1f}" rx="8" '
+    fh = 34
+    parts.append(f'<line x1="6" y1="{h - pad_b:.1f}" x2="{w - 4}" y2="{h - pad_b:.1f}" '
+                 f'stroke="{LINE}" stroke-width="1"/>')
+    parts.append(f'<rect x="{fx:.1f}" y="{h - pad_b - fh:.1f}" width="{fw:.1f}" height="{fh}" rx="8" '
                  f'fill="{ACCENT_SOFT}" stroke="{ACCENT}" stroke-dasharray="5 5"/>')
-    parts.append(f'<text x="{fx + fw / 2:.1f}" y="{(h - pad_b + pad_t) / 2 + 6:.1f}" text-anchor="middle" '
-                 f'font-size="22" font-weight="700" fill="{ACCENT}">?</text>')
+    parts.append(f'<text x="{fx + fw / 2:.1f}" y="{h - pad_b - fh / 2 + 6:.1f}" text-anchor="middle" '
+                 f'font-size="18" font-weight="700" fill="{ACCENT}">?</text>')
     parts.append(f'<text x="{fx + fw / 2:.1f}" y="{h - 12:.1f}" text-anchor="middle" font-size="11.5" '
                  f'fill="{ACCENT}" font-weight="600">{_h(future_label)}</text>')
     svg = (f'<svg viewBox="0 0 {w} {h}" width="100%" role="img" aria-label="{_h(caption)}" '

@@ -130,6 +130,9 @@ def render() -> None:
                 if row["form"] == "overestimation":
                     detail = (f"mean distance {row['mean_distance']:+.2f}, "
                               f"{row['share_above_reference']:.0%} above reference")
+                elif row["form"] == "overplacement" and "mean_rank" in row:
+                    detail = (f"mean rank {row['mean_rank']:.1f} (average 5.5), "
+                              f"{row['share_top_half']:.0%} expect the top half")
                 elif row["form"] == "overplacement":
                     detail = (f"entry {row['entry_rate']:.0%} "
                               f"(break-even {row['break_even_entry_rate']:.0%})")

@@ -1,5 +1,5 @@
 {
-  "codebook_version": "0.5.0",
+  "codebook_version": "0.7.0",
   "updated": "2026-10-18",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
   "contest_variant": "harmonised",
@@ -61,7 +61,8 @@
       "sources": [
         "Camerer and Lovallo (1999)",
         "Moore and Cain (2007): entry 61 percent under random rank, 71 percent under a simple quiz, 42 percent under a difficult quiz, 91 participants"
-      ]
+      ],
+      "display_note": "Since 0.7.0 the screen states that an average startup has a 1 in 10 chance and that the upgrade raises it to 1 in 8, so the expected values of -2,000 and -4,500 euros are computable for everyone. Entry is a bet on being above average."
     },
     "T3": {
       "form": "overprecision",
@@ -77,20 +78,14 @@
         "0.90": 30
       },
       "provenance": "derived",
-      "basis": "Median anchored on commercial MVP timelines of three to four months. The spread is right-skewed, following the software schedule literature: effort and schedule overruns are common and the upper tail is long.",
+      "basis": "Median anchored on commercial MVP timelines of three to four months. The spread is right-skewed, following the software schedule literature: effort and schedule overruns are common and the upper tail is long. Since 0.7.0 the question states the assumption (the equivalent of 2 full-time developers), so all participants estimate against the same plan.",
       "sources": [
         "Netguru MVP timeline guide (industry): about four months",
         "Joergensen (2004), A review of studies on expert estimation of software development effort",
-        "Buehler, Griffin and Ross (1994)"
+        "Buehler, Griffin and Ross (1994)",
+        "Flyvbjerg and Budzier (2011), Why your IT project may be riskier than you think, HBR: 1,471 IT projects, average cost overrun 27 percent, one in six projects overran by 200 percent"
       ],
       "open": "If the interviews give MVP durations for comparable teams, replace the percentiles with that distribution."
-    },
-    "T4": {
-      "form": "none",
-      "domain": "team",
-      "type": "attention_check",
-      "correct_option": "D",
-      "note": "Instructed response in the question text: choose the standing meeting (D)."
     },
     "F1": {
       "form": "overestimation",
@@ -107,7 +102,7 @@
       "reference_runway_remaining": 9,
       "sign": 1,
       "provenance": "derived",
-      "basis": "The scored quantity is the runway left when the raise starts. An active seed process runs about two to three months, successful seed founders in the DocSend sample held about 40 investor meetings, and a first attempt that fails needs a second. Nine months of runway remaining is the reference; starting with less assumes a fast round.",
+      "basis": "The scored quantity is the runway left when the raise starts. An active seed process runs about two to three months, successful seed founders in the DocSend sample held about 40 investor meetings, and a first attempt that fails needs a second. Nine months of runway remaining is the reference; starting with less assumes a fast round. Since 0.7.0 the months until the chosen start are paid from cash when the round money arrives (F4), so the choice has a consequence. The reference is computed from the runway shown in the question (runway_shown in the snapshot), which is the runway at the start of the area.",
       "sources": [
         "Elad Gil: a round takes about two to three months; start a round with at least six months of cash",
         "DocSend seed report, 175 seed-stage startups: successful founders contacted 77 investors and held about 40 meetings",
@@ -136,11 +131,12 @@
         }
       },
       "provenance": "derived",
-      "basis": "Same structure as T2, now framed as an accelerator selection so that it does not repeat the pitch contest of the first area.",
+      "basis": "Same structure as T2, now framed as an accelerator selection so that it does not repeat the pitch contest of the first area. The prize is a grant, no equity taken, so the expected value is not affected by dilution.",
       "sources": [
         "Camerer and Lovallo (1999)",
         "Cain, Moore and Haran (2015)"
-      ]
+      ],
+      "display_note": "Since 0.7.0 the screen states that an average startup has a 1 in 10 chance and that the upgrade raises it to 1 in 8, so the expected values of -2,000 and -4,500 euros are computable for everyone. Entry is a bet on being above average."
     },
     "F3": {
       "form": "overprecision",
@@ -162,7 +158,10 @@
         "ChartMogul SaaS Growth Report 2023, more than 2,200 SaaS businesses: median monthly growth 2 to 2.5 percent across the lifecycle",
         "Cassar (2010)"
       ],
-      "open": "The 10th and 90th percentiles are extrapolated beyond the published quartiles. State this in the codebook appendix."
+      "open": "The 10th and 90th percentiles are extrapolated beyond the published quartiles. State this in the codebook appendix.",
+      "scale_with": "revenue_shown",
+      "scale_base": 8000,
+      "scale_note": "If GTM comes before Finance (Track 2), revenue at the start of Finance can exceed 8,000 euros. The chart and the question then show the actual revenue, and the answers are divided by revenue_shown / 8,000 before scoring, so the reference distribution keeps its meaning as a growth multiple."
     },
     "F4": {
       "form": "none",
@@ -193,7 +192,7 @@
         "DHI-DFH Mean Vacancy Duration Measure, Information industry (FRED series DHIDFHDMII)",
         "Buehler, Griffin and Ross (1994)"
       ],
-      "open": "Options are now 0, 1, 2, 3, 4, 5 and 6 or more, scored as 6. With the reference at 2 the ladder has four options above and two below, which removes the earlier ceiling problem."
+      "open": "Options 0 to 6 or more (scored as 6). Since 0.7.0 each new hire adds 5,000 euros to monthly costs when they join at the end of the Team area; four or more joining at once lower morale by 1."
     },
     "H2": {
       "form": "overplacement",
@@ -216,7 +215,7 @@
         }
       },
       "provenance": "derived",
-      "basis": "Harmonised with T2 and F2 so that entry rates are comparable across domains. The walkthrough version used eight competitors, a 30,000 euro saving and an upgrade to one in five, which gave an expected value of -1,250 and -4,000 instead of -2,000 and -4,500.",
+      "basis": "Harmonised with T2 and F2 so that entry rates are comparable across domains. The walkthrough version used eight competitors, a 30,000 euro saving and an upgrade to one in five, which gave an expected value of -1,250 and -4,000 instead of -2,000 and -4,500. The upgrade is a higher salary and signing bonus, not equity, for the same reason.",
       "sources": [
         "Camerer and Lovallo (1999)",
         "Cain, Moore and Haran (2015)"
@@ -238,7 +237,8 @@
             "win_probability": 0.2
           }
         }
-      }
+      },
+      "display_note": "Since 0.7.0 the screen states that an average startup has a 1 in 10 chance and that the upgrade raises it to 1 in 8, so the expected values of -2,000 and -4,500 euros are computable for everyone. Entry is a bet on being above average."
     },
     "H3": {
       "form": "overprecision",
@@ -264,7 +264,7 @@
       "form": "none",
       "domain": "hiring",
       "type": "outcome",
-      "prediction": "Higher overprecision scores make option B, the gut-feeling hire, more likely (Kausel, Culbertson and Madrid 2016; Dawes, Faust and Meehl 1989)."
+      "prediction": "Higher overprecision scores make option B, the gut-feeling hire, more likely (Kausel, Culbertson and Madrid 2016; Dawes, Faust and Meehl 1989). Since 0.7.0 the order in which the two candidates are described is randomised (screen field 'first'); key A is always the work-sample candidate, B the gut-feeling candidate."
     },
     "G1": {
       "form": "overestimation",
@@ -332,7 +332,8 @@
             "win_probability": 0.125
           }
         }
-      }
+      },
+      "display_note": "Since 0.7.0 the screen states that an average startup has a 1 in 10 chance and that the upgrade raises it to 1 in 8, so the expected values of -2,000 and -4,500 euros are computable for everyone. Entry is a bet on being above average."
     },
     "G3": {
       "form": "overprecision",
@@ -355,13 +356,93 @@
       ],
       "open": "Weakest of the eight. The decay shape is an assumption, not a measured distribution. Anchor it on the founder interviews or on the team's own pilot data before fielding."
     },
-    "G4": {
-      "form": "none",
+    "T5": {
+      "form": "overplacement",
+      "domain": "team",
+      "type": "rank",
+      "contest": "T2",
+      "scale": [
+        1,
+        10
+      ],
+      "reference_rank": 5.5,
+      "provenance": "derived",
+      "basis": "Belief about one's own rank among the 10 entrants of the contest that follows, asked before the entry decision. With no information about the others, the expected rank of an average entrant is 5.5. Score = 5.5 minus the stated rank, positive meaning a belief of being above average. This is the belief component of overplacement (Moore and Healy 2008; Benoit, Dubra and Moore 2015) and separates it from risk attitude, which also drives contest entry (Camerer and Lovallo 1999).",
+      "sources": [
+        "Moore and Healy (2008), The trouble with overconfidence",
+        "Benoit, Dubra and Moore (2015), Does the better-than-average effect show that people are overconfident?",
+        "Camerer and Lovallo (1999), Overconfidence and excess entry"
+      ]
+    },
+    "F5": {
+      "form": "overplacement",
+      "domain": "finance",
+      "type": "rank",
+      "contest": "F2",
+      "scale": [
+        1,
+        10
+      ],
+      "reference_rank": 5.5,
+      "provenance": "derived",
+      "basis": "Belief about one's own rank among the 10 entrants of the contest that follows, asked before the entry decision. With no information about the others, the expected rank of an average entrant is 5.5. Score = 5.5 minus the stated rank, positive meaning a belief of being above average. This is the belief component of overplacement (Moore and Healy 2008; Benoit, Dubra and Moore 2015) and separates it from risk attitude, which also drives contest entry (Camerer and Lovallo 1999).",
+      "sources": [
+        "Moore and Healy (2008), The trouble with overconfidence",
+        "Benoit, Dubra and Moore (2015), Does the better-than-average effect show that people are overconfident?",
+        "Camerer and Lovallo (1999), Overconfidence and excess entry"
+      ]
+    },
+    "H5": {
+      "form": "overplacement",
+      "domain": "hiring",
+      "type": "rank",
+      "contest": "H2",
+      "scale": [
+        1,
+        10
+      ],
+      "reference_rank": 5.5,
+      "provenance": "derived",
+      "basis": "Belief about one's own rank among the 10 entrants of the contest that follows, asked before the entry decision. With no information about the others, the expected rank of an average entrant is 5.5. Score = 5.5 minus the stated rank, positive meaning a belief of being above average. This is the belief component of overplacement (Moore and Healy 2008; Benoit, Dubra and Moore 2015) and separates it from risk attitude, which also drives contest entry (Camerer and Lovallo 1999).",
+      "sources": [
+        "Moore and Healy (2008), The trouble with overconfidence",
+        "Benoit, Dubra and Moore (2015), Does the better-than-average effect show that people are overconfident?",
+        "Camerer and Lovallo (1999), Overconfidence and excess entry"
+      ],
+      "open": "H2 rewards the candidate's choice rather than the founder's ability; the rank question asks how attractive the startup is to her, which is a belief about the own company relative to the other nine."
+    },
+    "G5": {
+      "form": "overplacement",
       "domain": "gtm",
+      "type": "rank",
+      "contest": "G2",
+      "scale": [
+        1,
+        10
+      ],
+      "reference_rank": 5.5,
+      "provenance": "derived",
+      "basis": "Belief about one's own rank among the 10 entrants of the contest that follows, asked before the entry decision. With no information about the others, the expected rank of an average entrant is 5.5. Score = 5.5 minus the stated rank, positive meaning a belief of being above average. This is the belief component of overplacement (Moore and Healy 2008; Benoit, Dubra and Moore 2015) and separates it from risk attitude, which also drives contest entry (Camerer and Lovallo 1999).",
+      "sources": [
+        "Moore and Healy (2008), The trouble with overconfidence",
+        "Benoit, Dubra and Moore (2015), Does the better-than-average effect show that people are overconfident?",
+        "Camerer and Lovallo (1999), Overconfidence and excess entry"
+      ]
+    },
+    "AC1": {
+      "form": "none",
+      "domain": "none",
       "type": "attention_check",
-      "mode": "includes",
-      "correct_option": "C",
-      "note": "Multiple selection; the question text asks to include the investor breakfast (C). Passed if C is among the selected keys."
+      "correct_option": "B",
+      "note": "Instructed response in the question text; placed in area 2 of the track, never first."
+    },
+    "AC2": {
+      "form": "none",
+      "domain": "none",
+      "type": "attention_check",
+      "mode": "exact",
+      "correct_option": "E",
+      "note": "Multiple selection; passed only if exactly E is selected. Placed in area 3, never first."
     }
   },
   "scoring": {
@@ -375,5 +456,12 @@
       "software_source": "Joergensen (2004), Eliminating over-confidence in software development effort estimates: 62 percent hit rate for requested 90 percent intervals, 195 student project activities."
     },
     "note": "Overestimation and overplacement scores are signed so that positive means more aggressive than the reference. Overprecision uses the width ratio, where below 1 means narrower than the reference, plus the expected coverage of the reference distribution by the participant's interval."
+  },
+  "display_rules": {
+    "status_strip": "The strip on decision screens shows the situation at the start of the area and does not move with decisions inside the area (team decision, 18 October). The current state before every answer is stored in state_json as the control variable.",
+    "launch_budget": "G1 uses a quarter of the cash at the start of the area, so the number in the question matches the strip.",
+    "net_burn": "Costs 28,000, revenue 8,000 (90 customers at about 89 euros each), net burn 20,000, runway 14 months. Revenue follows customers.",
+    "popover": "'About this scenario' says the scenario is fictional and names its scientific background by author and year only. No benchmark that could serve as an answer is shown.",
+    "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product."
   }
 }
