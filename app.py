@@ -69,6 +69,7 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
     if target in ids:
         ss.index = ids.index(target)
         ss.startup_name = "Northwind"
+        ss.industry_label = "software"
         ss.jumped = True
         if target.startswith("report_"):
             dom = target.split("_", 1)[1]
@@ -76,6 +77,9 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
             ss.state = game.apply(ss.state, {"cash": -12_000})
             ss.events.append({"domain": dom, "label": "MVP development: About half "
                               "to external developers", "delta": {"cash": -12_000}})
+            if dom == "hiring":
+                ss.state = game.apply(ss.state, {"pending_hires": 2, "pending_hires_extra": 1,
+                                                 "pending_cost_extra": 7_000})
 
 
 def screen() -> dict:
@@ -112,6 +116,7 @@ def log(screen_override: dict | None = None, **kwargs) -> None:
     snap = game.snapshot(ss.state)
     if sc.get("domain"):
         snap["runway_shown"] = area_start()["runway"]
+        snap["revenue_shown"] = area_start()["revenue"]
     storage.save_response(ss.code, sc, ss.index, response_seconds=kwargs.pop(
         "response_seconds", elapsed()), state=snap, entered_at=ss.screen_entered_at,
         **kwargs)
@@ -125,19 +130,30 @@ def recalled(key: str, default=None):
     return ss.answers.get(screen()["id"], {}).get(key, default)
 
 
-def apply_effects(effects: dict, label: str | None) -> None:
+def apply_effects(effects: dict, label: str | None, note: str | None = None) -> None:
+    """Apply effects and record what changed. A `note` records a decision that
+    changes no number yet (for example a planned fundraising start)."""
     before = ss.state
     ss.state = game.apply(ss.state, effects)
     delta = game.diff(before, ss.state)
-    if label and delta:
+    if label and (delta or note):
         ss.events.append({"domain": screen().get("domain"), "label": label,
-                          "delta": delta})
+                          "delta": delta, "note": note})
 
 
-def fill(text: str) -> str:
+def startup_name() -> str:
+    return ss.get("startup_name") or "your startup"
+
+
+def fill(text: str, **extra) -> str:
+    """Fill the placeholders a text may use. Numbers come from the start of the
+    area, so the text always matches the status strip."""
     s = area_start()
-    return text.format(runway=s["runway"],
-                       launch_budget=game.money(game.launch_budget(s)))
+    values = {"name": startup_name(), "industry": ss.get("industry_label", "early-stage"),
+              "runway": s["runway"],
+              "launch_budget": game.money(game.launch_budget(s))}
+    values.update(extra)
+    return text.format(**values)
 
 
 def money(v: float) -> str:
@@ -158,14 +174,17 @@ def frame() -> None:
 
 
 def scenario(spec: dict) -> None:
-    if not spec.get("scenario"):
+    """The scenario is fictional; the background is named by author and year
+    only. No benchmark that could serve as an answer is ever shown here."""
+    if not (spec.get("background") or spec.get("scenario_extra")):
         return
     with st.popover("ⓘ  About this scenario"):
-        st.markdown(spec["scenario"])
-        if spec.get("sources"):
-            st.markdown("**Data behind the scenario**")
-            for src in spec["sources"]:
-                st.markdown(f"- {src}")
+        text = content.FICTIONAL
+        if spec.get("scenario_extra"):
+            text += " " + fill(spec["scenario_extra"])
+        st.markdown(text)
+        if spec.get("background"):
+            st.markdown("**Scientific background:** " + "; ".join(spec["background"]))
 
 
 def continue_button(key: str, label: str = "Continue") -> bool:
@@ -248,22 +267,33 @@ def render_email(sc: dict) -> None:
 
 
 def _profile_widget(field: dict):
+    """One profile field. Where "Other" is chosen, a text field appears below."""
     key, label, kind = field["key"], field["label"], field["kind"]
     saved = recalled(key)
     wkey = f"profile_{key}"
     if kind == "number":
-        return st.number_input(label, min_value=field["min"], max_value=field["max"],
-                               step=1, value=saved, key=wkey, placeholder="Type a number")
-    if kind == "select":
+        value = st.number_input(label, min_value=field["min"], max_value=field["max"],
+                                step=1, value=saved, key=wkey,
+                                placeholder=f"{field['min']} or more" if field["min"]
+                                else "Type a number")
+    elif kind == "select":
         opts = field["options"]
-        return st.selectbox(label, opts, index=opts.index(saved) if saved in opts else None,
-                            placeholder="Select", key=wkey)
-    if kind == "pills":
-        return st.pills(label, field["options"], default=saved, key=wkey)
-    if kind == "multi":
-        return st.pills(label, field["options"], selection_mode="multi",
-                        default=saved or [], key=wkey)
-    return st.text_input(label, value=saved or "", key=wkey)
+        value = st.selectbox(label, opts, index=opts.index(saved) if saved in opts else None,
+                             placeholder="Select", key=wkey)
+    elif kind == "pills":
+        value = st.pills(label, field["options"], default=saved, key=wkey)
+    elif kind == "multi":
+        value = st.pills(label, field["options"], selection_mode="multi",
+                         default=saved or [], key=wkey)
+    else:
+        value = st.text_input(label, value=saved or "", key=wkey)
+    chose_other = value == "Other" or (isinstance(value, list) and "Other" in value)
+    other = None
+    if chose_other:
+        other = st.text_input(content.OTHER_LABEL, value=recalled(f"{key}_other", ""),
+                              key=f"{wkey}_other", label_visibility="collapsed",
+                              placeholder=f"{content.OTHER_LABEL}: {label.split(' (')[0].lower()}")
+    return value, other
 
 
 def render_profile(sc: dict) -> None:
@@ -271,33 +301,43 @@ def render_profile(sc: dict) -> None:
     about_header()
     ui.question(content.PROFILE["question"], content.PROFILE["body"])
     values: dict = {}
-    with st.form("profile_form", border=False):
-        fields = content.PROFILE_FIELDS
-        i = 0
-        while i < len(fields):
-            f = fields[i]
-            nxt = fields[i + 1] if i + 1 < len(fields) else None
-            if "col" in f and nxt is not None and "col" in nxt:
-                c1, c2 = st.columns(2)
-                with c1:
-                    values[f["key"]] = _profile_widget(f)
-                with c2:
-                    values[nxt["key"]] = _profile_widget(nxt)
-                i += 2
-            else:
-                values[f["key"]] = _profile_widget(f)
-                i += 1
-        submitted = st.form_submit_button("Continue", type="primary")
-    if submitted:
-        missing = [f["label"] for f in content.PROFILE_FIELDS
+    others: dict = {}
+
+    def put(field):
+        values[field["key"]], others[field["key"]] = _profile_widget(field)
+
+    fields = content.PROFILE_FIELDS
+    i = 0
+    while i < len(fields):
+        f = fields[i]
+        nxt = fields[i + 1] if i + 1 < len(fields) else None
+        if "col" in f and nxt is not None and "col" in nxt:
+            c1, c2 = st.columns(2)
+            with c1:
+                put(f)
+            with c2:
+                put(nxt)
+            i += 2
+        else:
+            put(f)
+            i += 1
+
+    if continue_button("profile_continue"):
+        missing = [f["label"].split(" (")[0] for f in fields
                    if values.get(f["key"]) in (None, "", [])]
+        missing += [f'{f["label"].split(" (")[0]} (other)' for f in fields
+                    if others.get(f["key"]) is not None and not others[f["key"]].strip()]
         if missing:
             st.warning("Please answer every question. Still open: "
-                       + "; ".join(m.split(" (")[0] for m in missing) + ".")
+                       + "; ".join(missing) + ".")
             return
-        remember(**values)
+        stored = dict(values)
+        for k, o in others.items():
+            if o is not None:
+                stored[f"{k}_other"] = o.strip()
+        remember(**stored)
         log(text_value="; ".join(
-            f"{k}={'|'.join(v) if isinstance(v, list) else v}" for k, v in values.items()))
+            f"{k}={'|'.join(v) if isinstance(v, list) else v}" for k, v in stored.items()))
         advance()
 
 
@@ -309,7 +349,7 @@ def render_experience(sc: dict) -> None:
     with st.form("experience_form", border=False):
         for field in content.EXPERIENCE_FIELDS:
             values[field["key"]] = st.pills(
-                field["label"], content.EXPERIENCE_OPTIONS,
+                field["label"], field["options"],
                 default=recalled(field["key"]), key=f"exp_{field['key']}")
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
@@ -333,10 +373,8 @@ def render_risk(sc: dict) -> None:
             values[item["key"]] = st.pills(
                 item["label"], scale, default=recalled(item["key"]),
                 label_visibility="collapsed", key=f"risk_{item['key']}")
-            ui.html_block(
-                '<div style="display:flex;justify-content:space-between;'
-                'font-size:0.78rem;color:#6B7280;margin:-0.4rem 0 1.1rem 0;max-width:34rem">'
-                f'<span>0 = {item["low"]}</span><span>10 = {item["high"]}</span></div>')
+            ui.html_block(f'<div class="fs-scale-ends"><span>0 = {item["low"]}</span>'
+                          f'<span>10 = {item["high"]}</span></div>')
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
         if any(v is None for v in values.values()):
@@ -380,15 +418,15 @@ def render_practice_range(sc: dict) -> None:
     frame()
     spec = content.PRACTICE_RANGE
     ui.eyebrow(spec["tag"], muted=True)
-    ui.question(spec["question"], spec["intro"])
+    ui.question(spec["question"], content.RANGE_INSTRUCTION)
     ui.range_diagram("lower", "higher")
     c1, c2 = st.columns(2)
     with c1:
-        low = st.number_input(spec["low_label"], min_value=0, max_value=5000, step=1,
+        low = st.number_input("Low estimate", min_value=0, max_value=5000, step=1,
                               value=None, key="practice_low", placeholder=spec["unit"])
         st.caption(spec["low_help"])
     with c2:
-        high = st.number_input(spec["high_label"], min_value=0, max_value=5000, step=1,
+        high = st.number_input("High estimate", min_value=0, max_value=5000, step=1,
                                value=None, key="practice_high", placeholder=spec["unit"])
         st.caption(spec["high_help"])
     if continue_button("practice_range_continue"):
@@ -410,19 +448,22 @@ def render_practice_range(sc: dict) -> None:
 def render_setup(sc: dict) -> None:
     frame()
     ui.question(content.SETUP["question"], content.SETUP["body"])
-    with st.form("setup_form", border=False):
-        name = st.text_input(content.SETUP["name_label"],
-                             placeholder=content.SETUP["name_placeholder"])
-        industry = st.selectbox(content.SETUP["industry_label"], content.INDUSTRIES,
-                                index=None, placeholder="Select")
-        solo = st.radio(content.SETUP["solo_label"], content.SETUP["solo_options"],
-                        index=None, horizontal=True)
-        submitted = st.form_submit_button("Continue", type="primary")
-    if submitted:
+    name = st.text_input(content.SETUP["name_label"], key="setup_name",
+                         placeholder=content.SETUP["name_placeholder"])
+    industry = st.selectbox(content.SETUP["industry_label"], content.INDUSTRIES,
+                            index=None, placeholder="Select", key="setup_industry")
+    other = None
+    if industry == "Other":
+        other = st.text_input(content.OTHER_LABEL, key="setup_industry_other",
+                              label_visibility="collapsed",
+                              placeholder=f"{content.OTHER_LABEL}: industry")
+    solo = st.radio(content.SETUP["solo_label"], content.SETUP["solo_options"],
+                    index=None, horizontal=True, key="setup_solo")
+    if continue_button("setup_continue"):
         missing = []
         if not (name or "").strip():
             missing.append("a name")
-        if industry is None:
+        if industry is None or (industry == "Other" and not (other or "").strip()):
             missing.append("the industry")
         if solo is None:
             missing.append("alone or with co-founders")
@@ -431,17 +472,19 @@ def render_setup(sc: dict) -> None:
             return
         ss.solo = solo == "Alone"
         ss.state = game.new_state(solo=ss.solo)
-        ss.startup_name = name.strip()
-        storage.update_session(ss.code, solo=int(ss.solo), startup_name=name.strip(),
-                               industry=industry)
-        log(text_value=f"{name.strip()} | {industry} | {solo}")
+        ss.startup_name = " ".join(name.split())[:40]
+        label = other.strip() if industry == "Other" else industry
+        ss.industry_label = content.INDUSTRY_LABELS.get(industry, label.lower())
+        storage.update_session(ss.code, solo=int(ss.solo), startup_name=ss.startup_name,
+                               industry=label)
+        log(text_value=f"{ss.startup_name} | {label} | {solo}")
         advance()
 
 
 def render_starting_situation(sc: dict) -> None:
     frame()
     st.subheader(content.STARTING_SITUATION["title"])
-    st.markdown(content.STARTING_SITUATION["body"])
+    st.markdown(fill(content.STARTING_SITUATION["body"]))
     ui.status_cards(ss.state)
     if continue_button("starting_continue", content.STARTING_SITUATION["button"]):
         log(option_key="seen")
@@ -461,8 +504,8 @@ def render_block_intro(sc: dict) -> None:
     n = content.TRACKS[ss.track].index(domain) + 1
     ui.eyebrow(f"Area {n} of 4")
     st.subheader(block["title"])
-    st.markdown(block.get("intro_solo") if ss.solo and "intro_solo" in block
-                else block["intro"])
+    st.markdown(fill(block.get("intro_solo") if ss.solo and "intro_solo" in block
+                     else block["intro"]))
     st.markdown("**Where you start this area**")
     ui.status_cards(ss.state)
     if continue_button(f"intro_{domain}_continue"):
@@ -506,7 +549,15 @@ def render_choice(sc: dict) -> None:
         effects = dict(opt.get("effects", {}))
         if effects.get("spend_launch_budget") is True:
             effects["spend_launch_budget"] = game.launch_budget(area_start())
-        apply_effects(effects, event)
+        if "raise" in effects:
+            # The running costs until the round starts are paid first (F1).
+            months = ss.state.get("fundraise_delay", 0)
+            if months:
+                apply_effects({"cash": -game.delay_cost(ss.state)},
+                              f"Running costs until fundraising starts ({months} months)")
+                ss.state["fundraise_delay"] = 0
+        note = "planned" if "fundraise_delay" in effects else None
+        apply_effects(effects, event, note=note)
         advance()
 
 
@@ -534,9 +585,9 @@ def render_contest(sc: dict) -> None:
     spec = content.SCREENS[node_id]
     params = codebook.contest_params(node_id)
     ui.hud(area_start())
-    ui.question(spec["question"].format(prize=money(params["prize"])),
-                spec["body"].format(prize=money(params["prize"]),
-                                    base_cost=money(params["base_cost"])))
+    ui.question(fill(spec["question"], prize=money(params["prize"])),
+                fill(spec["body"], prize=money(params["prize"]),
+                     base_cost=money(params["base_cost"])))
     scenario(spec)
     labels = []
     for opt in spec["options"]:
@@ -544,6 +595,7 @@ def render_contest(sc: dict) -> None:
         labels.append(_option_label(opt, cost_override=cost if cost else None))
     choice = st.radio("Options", labels, index=None, label_visibility="collapsed",
                       key=f"contest_{node_id}")
+    st.caption(content.CONTEST_NOTE)
     if continue_button(f"contest_{node_id}_continue"):
         if choice is None:
             st.warning("Please choose one of the options.")
@@ -558,11 +610,8 @@ def render_contest(sc: dict) -> None:
 
 
 def _interval_input(spec: dict, which: str, node_id: str):
-    unit = spec["unit"]
-    more = spec["optimistic_is_high"] == (which == "best")
-    label = f'{spec[f"{which}_label"]} ({"more" if more else "fewer"} {unit})'
     is_money = spec["unit"] == "euros"
-    val = st.number_input(label, min_value=int(spec["min_value"]),
+    val = st.number_input(f"{which.capitalize()} estimate", min_value=int(spec["min_value"]),
                           max_value=int(spec["max_value"]), step=int(spec["step"]),
                           value=None, key=f"interval_{node_id}_{which}",
                           placeholder="€" if is_money else spec["unit"])
@@ -577,41 +626,95 @@ def render_interval(sc: dict) -> None:
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
     ui.hud(area_start())
+    revenue_now = area_start()["revenue"]
     if spec.get("chart") == "revenue":
-        ui.bar_chart(content.CHART_REVENUE, money, "Monthly revenue so far",
-                     "In 12 months")
+        factor = revenue_now / 8_000
+        series = [(lab, round(v * factor, -1), chg) for lab, v, chg in content.CHART_REVENUE]
+        series[-1] = (series[-1][0], revenue_now, series[-1][2])
+        ui.bar_chart(series, money, "Monthly revenue so far", "In 12 months")
     elif spec.get("chart") == "customers":
         ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
-                     "New paying customers from the channel", "Next 6 months")
-    ui.question(fill(spec["question"]),
-                "Give two numbers, a best case and a worst case, so that you are "
-                "fairly sure the real value lies between them.")
+                     "New paying customers per month", "Total, months 4 to 9")
+    ui.question(fill(spec["question"], revenue_now=money(revenue_now)),
+                content.RANGE_INSTRUCTION)
     scenario(spec)
-    high_is_best = spec["optimistic_is_high"]
-    unit = spec["unit"]
-    ui.range_diagram(f"fewer {unit}", f"more {unit}")
+    ui.range_diagram("lower", "higher")
 
-    order = ["best", "worst"] if sc.get("first", "best") == "best" else ["worst", "best"]
-    cols = st.columns(2)
-    vals = {}
-    for col, which in zip(cols, order):
-        with col:
-            vals[which] = _interval_input(spec, which, node_id)
+    c1, c2 = st.columns(2)            # always: low on the left, high on the right
+    with c1:
+        low = _interval_input(spec, "low", node_id)
+    with c2:
+        high = _interval_input(spec, "high", node_id)
 
     if continue_button(f"interval_{node_id}_continue"):
-        best, worst = vals["best"], vals["worst"]
-        if best is None or worst is None:
+        if low is None or high is None:
             st.warning("Please enter both numbers.")
             return
-        if (high_is_best and best < worst) or (not high_is_best and best > worst):
-            st.warning("Your best case is worse than your worst case. "
+        if low > high:
+            st.warning("Your low estimate is higher than your high estimate. "
                        "Please check the two numbers.")
             return
+        # Stored as the optimistic and the pessimistic value, as the scoring
+        # expects. For durations the optimistic value is the low one.
+        opt, pes = (high, low) if spec["optimistic_is_high"] else (low, high)
         t = elapsed()
-        log({**sc, "id": f"{node_id}_opt"}, numeric_value=float(best),
-            text_value=f"first={order[0]}", response_seconds=t)
-        log({**sc, "id": f"{node_id}_pes"}, numeric_value=float(worst),
-            text_value=f"first={order[0]}", response_seconds=0.0)
+        log({**sc, "id": f"{node_id}_opt"}, numeric_value=float(opt),
+            text_value=f"low={low}; high={high}", response_seconds=t)
+        log({**sc, "id": f"{node_id}_pes"}, numeric_value=float(pes),
+            text_value=f"low={low}; high={high}", response_seconds=0.0)
+        advance()
+
+
+def render_rank(sc: dict) -> None:
+    frame()
+    node_id = sc["node"]
+    spec = content.SCREENS[node_id]
+    ui.hud(area_start())
+    ui.question(fill(spec["question"]), fill(spec["body"]))
+    scenario(spec)
+    choice = st.pills("Rank", content.RANK_SCALE, label_visibility="collapsed",
+                      key=f"rank_{node_id}")
+    ui.html_block('<div class="fs-scale-ends"><span>' + content.RANK_ENDS[0]
+                  + '</span><span>' + content.RANK_ENDS[1] + '</span></div>')
+    if continue_button(f"rank_{node_id}_continue"):
+        if choice is None:
+            st.warning("Please choose a rank from 1 to 10.")
+            return
+        log(option_key=str(choice), option_index=int(choice) - 1)
+        advance()
+
+
+def render_hire(sc: dict) -> None:
+    """H4. The order in which the two candidates are described is randomised.
+    Key A is always the work-sample candidate, key B the gut-feeling one."""
+    frame()
+    node_id = sc["node"]
+    spec = content.SCREENS[node_id]
+    ui.hud(area_start())
+    order = ["A", "B"] if sc.get("first", "A") == "A" else ["B", "A"]
+    body = (f"Candidate 1 {spec['candidates'][order[0]]}. "
+            f"Candidate 2 {spec['candidates'][order[1]]}. {spec['after']}")
+    ui.question(fill(spec["question"]), body)
+    scenario(spec)
+    second = spec["options"][2]
+    labels = ["Hire Candidate 1", "Hire Candidate 2", _option_label(second)]
+    keys = [order[0], order[1], second["key"]]
+    choice = st.radio("Options", labels, index=None, label_visibility="collapsed",
+                      key=f"hire_{node_id}")
+    if continue_button(f"hire_{node_id}_continue"):
+        if choice is None:
+            st.warning("Please choose one of the options.")
+            return
+        idx = labels.index(choice)
+        key = keys[idx]
+        opt = next(o for o in spec["options"] if o["key"] == key)
+        log(option_key=key, option_index="ABC".index(key),
+            text_value=f"first={order[0]}")
+        if key == "C":
+            apply_effects(opt["effects"], f'{spec["event"]}: second structured round')
+        else:
+            apply_effects(opt["effects"], f'{spec["event"]}: Candidate {idx + 1} hired',
+                          note="starts at the end of this area")
         advance()
 
 
@@ -619,10 +722,9 @@ def render_report(sc: dict) -> None:
     frame()
     domain = sc["domain"]
     if domain not in ss.closed:
-        before = ss.state
-        ss.state = game.advance_block(ss.state)
-        ss.events.append({"domain": domain, "label": "One month of running costs",
-                          "delta": game.diff(before, ss.state)})
+        ss.state, events = game.end_of_area(ss.state, domain)
+        for ev in events:
+            ss.events.append({"domain": domain, **ev})
         ss.closed.add(domain)
     block = content.BLOCKS[domain]
     ui.eyebrow(f"Area {content.TRACKS[ss.track].index(domain) + 1} of 4 complete")
@@ -671,7 +773,8 @@ RENDERERS = {
     "practice_range": render_practice_range, "setup": render_setup,
     "starting_situation": render_starting_situation, "block_intro": render_block_intro,
     "choice": render_choice, "multi": render_multi, "contest": render_contest,
-    "interval": render_interval, "report": render_report,
+    "interval": render_interval, "rank": render_rank, "hire": render_hire,
+    "report": render_report,
     "suspicion": render_suspicion, "end": render_end,
 }
 
