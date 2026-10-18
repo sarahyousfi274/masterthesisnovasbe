@@ -46,6 +46,9 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
     index = 0
 
     for sc in screens:
+        if sc["kind"] == "report":
+            st = game.advance_block(st, sc["domain"])
+            continue
         node_id = sc.get("node")
         if node_id is None:
             continue
@@ -104,11 +107,19 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
             rows.append(_row(code, node_id, sc, index, snap,
                              screen_id=f"{node_id}_pes", numeric_value=upper))
 
+        elif kind == "rank":
+            # Believed rank: 5.5 for an unbiased entrant, better (lower) with a
+            # higher overplacement parameter.
+            rank = int(min(10, max(1, round(5.5 - 2.0 * (truth["plc"]
+                                                         + rng.gauss(0, NOISE))))))
+            rows.append(_row(code, node_id, sc, index, snap,
+                             option_key=str(rank), option_index=rank - 1))
+
         elif kind == "attention_check":
             passed = rng.random() < 0.93
             correct = spec["correct_option"]
-            if spec.get("mode") == "includes":
-                key = "A," + correct if passed else "A,B"
+            if spec.get("mode") == "exact":
+                key = correct if passed else "A,E"
                 idx = None
             else:
                 key = correct if passed else rng.choice(
@@ -132,8 +143,6 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
             st = game.apply(st, content.SCREENS[node_id]["options"][idx].get("effects", {}))
 
         index += 1
-        if sc.get("node_position") == 4:
-            st = game.advance_block(st)
 
     return rows
 
@@ -226,6 +235,9 @@ def main() -> int:
                   f"{row['share_below_reference']:.0%}  |  "
                   f"options above reference: {row['options_above_reference']}, "
                   f"below: {row['options_below_reference']}")
+        elif row["form"] == "overplacement" and "mean_rank" in row:
+            print(f"  {node_id}  mean believed rank {row['mean_rank']:.2f} "
+                  f"(average 5.5), top half {row['share_top_half']:.0%}")
         elif row["form"] == "overplacement":
             print(f"  {node_id}  entry rate {row['entry_rate']:.0%} "
                   f"(break-even {row['break_even_entry_rate']:.0%}), "

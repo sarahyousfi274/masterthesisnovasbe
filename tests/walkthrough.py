@@ -49,17 +49,21 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         for f in content.PROFILE_FIELDS:
             w = f"profile_{f['key']}"
             if f["kind"] == "number":
-                at.number_input(key=w).set_value(max(f["min"], 3) if f["key"] != "age" else 34)
+                at.number_input(key=w).set_value(34 if f["key"] == "age" else max(f["min"], 3))
             elif f["kind"] == "select":
-                at.selectbox(key=w).select(f["options"][1])
+                at.selectbox(key=w).select(f["options"][-1] if f["key"] == "country"
+                                           else f["options"][1])
             elif f["kind"] == "pills":
                 at.pills(key=w).set_value(f["options"][1])
             elif f["kind"] == "multi":
-                at.pills(key=w).set_value(f["options"][:2])
-        submit(at)
+                at.pills(key=w).set_value([f["options"][1], "Other"])
+        at.run()   # the "Other" text fields appear
+        at.text_input(key="profile_country_other").set_value("Andorra")
+        at.text_input(key="profile_funding_other").set_value("Crowdfunding")
+        at.button(key="profile_continue").click()
     elif kind == "experience":
         for f in content.EXPERIENCE_FIELDS:
-            at.pills(key=f"exp_{f['key']}").set_value("2")
+            at.pills(key=f"exp_{f['key']}").set_value(f["options"][2])
         submit(at)
     elif kind == "risk":
         for item in content.RISK_ITEMS:
@@ -75,10 +79,14 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         at.number_input(key="practice_high").set_value(40)
         at.button(key="practice_range_continue").click()
     elif kind == "setup":
-        at.text_input[0].set_value("Testwerk")
-        at.selectbox[0].select("Software and SaaS")
-        at.radio[0].set_value(rng.choice(["With co-founders", "Alone"]))
-        submit(at)
+        at.text_input(key="setup_name").set_value("Testwerk")
+        industry = rng.choice(["Software and SaaS", "Other"])
+        at.selectbox(key="setup_industry").select(industry)
+        at.radio(key="setup_solo").set_value(rng.choice(["With co-founders", "Alone"]))
+        at.run()
+        if industry == "Other":
+            at.text_input(key="setup_industry_other").set_value("Robotics")
+        at.button(key="setup_continue").click()
     elif kind == "starting_situation":
         at.button(key="starting_continue").click()
     elif kind == "block_intro":
@@ -94,20 +102,27 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
     elif kind == "multi":
         node = sc["node"]
         w = at.pills(key=f"multi_{node}")
-        w.set_value([w.options[0], w.options[2]])
+        w.set_value([w.options[4]] if rng.random() < 0.8 else [w.options[0], w.options[4]])
         at.button(key=f"multi_{node}_continue").click()
     elif kind == "contest":
         node = sc["node"]
         w = at.radio(key=f"contest_{node}")
         w.set_value(rng.choice(w.options))
         at.button(key=f"contest_{node}_continue").click()
+    elif kind == "rank":
+        node = sc["node"]
+        at.pills(key=f"rank_{node}").set_value(str(rng.randint(1, 10)))
+        at.button(key=f"rank_{node}_continue").click()
+    elif kind == "hire":
+        node = sc["node"]
+        w = at.radio(key=f"hire_{node}")
+        w.set_value(rng.choice(w.options))
+        at.button(key=f"hire_{node}_continue").click()
     elif kind == "interval":
         node = sc["node"]
-        spec = content.SCREENS[node]
-        a, b = sorted(rng.sample(range(5, 120), 2))
-        best, worst = (b, a) if spec["optimistic_is_high"] else (a, b)
-        at.number_input(key=f"interval_{node}_best").set_value(best)
-        at.number_input(key=f"interval_{node}_worst").set_value(worst)
+        low, high = sorted(rng.sample(range(5, 120), 2))
+        at.number_input(key=f"interval_{node}_low").set_value(low)
+        at.number_input(key=f"interval_{node}_high").set_value(high)
         at.button(key=f"interval_{node}_continue").click()
     elif kind == "report":
         at.button(key=f"report_{sc['domain']}_continue").click()
@@ -186,7 +201,7 @@ def main() -> int:
         for ev in r["events"][:4]:
             print(f"      event: {ev['label']}  {ev['delta']}")
         checks = {
-            "16 nodes scored": len(scored) == 16,
+            "20 nodes scored": len(scored) == 20,
             "three forms present": {"overestimation", "overplacement",
                                     "overprecision"} <= forms,
             "email stored apart": storage.code_for_email(r["email"]) == r["code"],
@@ -194,7 +209,9 @@ def main() -> int:
             "every row has a snapshot": all(row["state_json"] for row in nodes),
             "every row has entered_at": all(row["entered_at"] for row in rows),
             "attention checks passed or failed cleanly":
-                all("passed" in scored[n] for n in ("T4", "G4")),
+                all("passed" in scored[n] for n in ("AC1", "AC2")),
+            "four rank beliefs": all(scored[n].get("rank") for n in ("T5", "F5", "H5", "G5")),
+            "hires joined the team": r["final_state"]["pending_hires"] == 0,
         }
         for label, passed in checks.items():
             if not passed:
