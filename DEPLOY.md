@@ -41,6 +41,13 @@ Install cloudflared with `brew install cloudflared` on macOS or from
 
 ## 3 Streamlit Community Cloud
 
+**Two files decide how the app looks online.** `requirements.txt` pins Streamlit
+to the exact version the app was tested with; without the pin the cloud
+installs the newest release and the styling can break. `.streamlit/config.toml`
+fixes the light theme and the accent color; without it Streamlit falls back to
+its red default and follows the visitor's dark mode. Both must be in the
+repository at exactly these paths.
+
 ### Three things to know before you start
 
 **The repository has to be private.** Not as a preference: `sim/codebook.json` holds every

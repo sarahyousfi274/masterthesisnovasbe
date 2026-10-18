@@ -5,6 +5,14 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.6.0** applies the notes of 18 October (V3): Streamlit pinned to
+1.65.0 so the cloud runs the exact tested version, accent color indigo instead
+of red for every selection, light mode enforced, Back only once per area (from
+the first decision to the area's starting situation), the status strip fixed at
+each area's starting numbers, a new welcome page, a general screening question,
+timestamps per screen (entered_at, answered_at) and total duration per session,
+and a full copy edit in American English ("startup").
+
 **Version 0.5.0** applies the team notes of 18 October: a new light-only design
 system (`sim/ui.py`), a section bar at the top, the email address instead of a
 pseudonym code, the questions about the person first, a logical order inside

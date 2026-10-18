@@ -13,6 +13,7 @@ import copy
 import random
 import re
 import time
+from datetime import datetime, timezone
 
 import streamlit as st
 
@@ -29,6 +30,10 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
 # Session
 # ---------------------------------------------------------------------------
 
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
 def init() -> None:
     if "code" in st.session_state:
         return
@@ -44,6 +49,7 @@ def init() -> None:
     ss.solo = False
     ss.state = game.new_state(solo=False)
     ss.screen_entered = time.monotonic()
+    ss.screen_entered_at = _now()
     ss.answers = {}            # screen id -> values, to pre-fill after Back
     ss.events = []             # what changed the numbers, per area
     ss.block_start = {}        # area -> situation when the area began
@@ -83,19 +89,32 @@ def elapsed() -> float:
 def advance() -> None:
     ss.index += 1
     ss.screen_entered = time.monotonic()
+    ss.screen_entered_at = _now()
     st.rerun()
 
 
 def go_back() -> None:
     ss.index -= 1
     ss.screen_entered = time.monotonic()
+    ss.screen_entered_at = _now()
     st.rerun()
+
+
+def area_start() -> dict:
+    """The situation at the start of the current area. It is what the status
+    strip and the numbers inside the questions show, so the display never
+    moves with the decisions inside an area."""
+    return ss.block_start.get(screen().get("domain"), ss.state)
 
 
 def log(screen_override: dict | None = None, **kwargs) -> None:
     sc = screen_override or screen()
+    snap = game.snapshot(ss.state)
+    if sc.get("domain"):
+        snap["runway_shown"] = area_start()["runway"]
     storage.save_response(ss.code, sc, ss.index, response_seconds=kwargs.pop(
-        "response_seconds", elapsed()), state=game.snapshot(ss.state), **kwargs)
+        "response_seconds", elapsed()), state=snap, entered_at=ss.screen_entered_at,
+        **kwargs)
 
 
 def remember(**values) -> None:
@@ -116,7 +135,7 @@ def apply_effects(effects: dict, label: str | None) -> None:
 
 
 def fill(text: str) -> str:
-    s = ss.state
+    s = area_start()
     return text.format(runway=s["runway"],
                        launch_budget=game.money(game.launch_budget(s)))
 
@@ -158,10 +177,12 @@ def continue_button(key: str, label: str = "Continue") -> bool:
 # ---------------------------------------------------------------------------
 
 def render_consent(sc: dict) -> None:
+    ui.eyebrow("Research study")
     st.title(content.CONSENT["title"])
     ui.html_block(f'<div class="fs-hero"><div class="lead">{content.CONSENT["lead"]}'
                   '</div></div>')
-    st.markdown(content.CONSENT["body"])
+    ui.facts(content.CONSENT["facts"])
+    ui.terms(content.CONSENT["sections"])
     c1, c2 = st.columns([1.3, 1])
     if c1.button(content.CONSENT["agree"], type="primary", key="consent_agree",
                  use_container_width=True):
@@ -383,7 +404,7 @@ def render_practice_range(sc: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Your start-up
+# Your startup
 # ---------------------------------------------------------------------------
 
 def render_setup(sc: dict) -> None:
@@ -419,7 +440,6 @@ def render_setup(sc: dict) -> None:
 
 def render_starting_situation(sc: dict) -> None:
     frame()
-    ui.eyebrow(ss.get("startup_name") or content.SECTION_STARTUP)
     st.subheader(content.STARTING_SITUATION["title"])
     st.markdown(content.STARTING_SITUATION["body"])
     ui.status_cards(ss.state)
@@ -463,7 +483,7 @@ def render_choice(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(ss.state)
+    ui.hud(area_start())
     q = spec.get("question_solo") if ss.solo and "question_solo" in spec else spec["question"]
     ui.question(fill(q), fill(spec["body"]) if spec.get("body") else None)
     scenario(spec)
@@ -483,7 +503,10 @@ def render_choice(sc: dict) -> None:
         opt = spec["options"][idx]
         log(option_key=opt["key"], option_index=idx)
         event = f'{spec["event"]}: {opt["label"]}' if spec.get("event") else None
-        apply_effects(opt.get("effects", {}), event)
+        effects = dict(opt.get("effects", {}))
+        if effects.get("spend_launch_budget") is True:
+            effects["spend_launch_budget"] = game.launch_budget(area_start())
+        apply_effects(effects, event)
         advance()
 
 
@@ -491,7 +514,7 @@ def render_multi(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(ss.state)
+    ui.hud(area_start())
     ui.question(spec["question"], spec.get("body"))
     labels = [o["label"] for o in spec["options"]]
     picked = st.pills("Options", labels, selection_mode="multi",
@@ -510,7 +533,7 @@ def render_contest(sc: dict) -> None:
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
     params = codebook.contest_params(node_id)
-    ui.hud(ss.state)
+    ui.hud(area_start())
     ui.question(spec["question"].format(prize=money(params["prize"])),
                 spec["body"].format(prize=money(params["prize"]),
                                     base_cost=money(params["base_cost"])))
@@ -553,7 +576,7 @@ def render_interval(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(ss.state)
+    ui.hud(area_start())
     if spec.get("chart") == "revenue":
         ui.bar_chart(content.CHART_REVENUE, money, "Monthly revenue so far",
                      "In 12 months")
@@ -561,8 +584,8 @@ def render_interval(sc: dict) -> None:
         ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
                      "New paying customers from the channel", "Next 6 months")
     ui.question(fill(spec["question"]),
-                "Give two numbers: a best case and a worst case. Pick them so that "
-                "you are fairly sure the real value lands between them.")
+                "Give two numbers, a best case and a worst case, so that you are "
+                "fairly sure the real value lies between them.")
     scenario(spec)
     high_is_best = spec["optimistic_is_high"]
     unit = spec["unit"]
@@ -602,7 +625,7 @@ def render_report(sc: dict) -> None:
                           "delta": game.diff(before, ss.state)})
         ss.closed.add(domain)
     block = content.BLOCKS[domain]
-    ui.eyebrow(f"End of {block['title'].lower()}")
+    ui.eyebrow(f"Area {content.TRACKS[ss.track].index(domain) + 1} of 4 complete")
     st.subheader("Where things stand")
     ui.status_cards(ss.state, before=ss.block_start.get(domain))
     st.markdown("**What changed in this area**")
