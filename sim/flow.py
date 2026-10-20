@@ -1,7 +1,8 @@
 """Builds the sequence of screens for one session.
 
-Half the participants get Track 1 and half Track 2, so that order and fatigue
-effects can be checked.
+Participants are spread evenly over three tracks (a Latin square of the three
+areas after Building the product), so order and fatigue effects are balanced
+across areas and can be checked. See assign_track for the balanced allocation.
 
 Within an area, nodes that build on each other keep their order (you decide
 when to fundraise before you decide how; you open roles before you fill one).
@@ -119,8 +120,17 @@ def back_allowed(screens: list[dict], index: int) -> bool:
     return prev["kind"] == "block_intro" and here.get("node") is not None
 
 
-def assign_track(rng: random.Random) -> int:
-    return rng.choice([1, 2])
+def assign_track(rng: random.Random, load: dict | None = None) -> int:
+    """Balanced allocation. `load` counts, per track, the sessions completed so
+    far plus those still running (see storage.track_load). The new participant
+    gets the track with the lowest count; ties are broken at random. Without
+    counts (for example if the database cannot be reached) the track is drawn
+    at random, which is still unbiased, only less even."""
+    tracks = sorted(content.TRACKS)
+    if not load:
+        return rng.choice(tracks)
+    low = min(load.get(t, 0) for t in tracks)
+    return rng.choice([t for t in tracks if load.get(t, 0) == low])
 
 
 def make_code(rng: random.Random) -> str:

@@ -61,6 +61,16 @@ def render() -> None:
     cols[2].metric("Withdrawn", numbers["withdrawn"])
     cols[3].metric("Answers stored", numbers["answers"])
 
+    from . import content
+    sessions = storage.fetch_all("sessions")
+    done = [s for s in sessions if s.get("completed_at") and not s.get("withdrawn")]
+    st.caption("Completed sessions per track (balanced allocation; the area order of "
+               "each track is shown below the number)")
+    tcols = st.columns(len(content.TRACKS))
+    for col, (t, order) in zip(tcols, content.TRACKS.items()):
+        col.metric(f"Track {t}", sum(1 for s in done if s.get("track") == t))
+        col.caption(" → ".join(content.BLOCKS[d]["title"] for d in order))
+
     st.divider()
     st.subheader("Download")
     st.caption(

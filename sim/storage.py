@@ -349,6 +349,31 @@ def fetch_all(table: str) -> list[dict]:
         return _fetch(conn, f"SELECT * FROM {table}")
 
 
+def track_load(tracks, window_minutes: int = 45) -> dict:
+    """Per track: completed sessions plus sessions started in the last
+    `window_minutes` that are still running. Counting the running ones keeps
+    participants who start at the same time from all landing in one track.
+    Withdrawn sessions and non-founders are left out."""
+    with connect() as conn:
+        rows = _fetch(conn, "SELECT track, started_at, completed_at, withdrawn, is_founder "
+                            "FROM sessions")
+    cutoff = datetime.now(timezone.utc).timestamp() - window_minutes * 60
+    load = {t: 0 for t in tracks}
+    for r in rows:
+        if r["track"] not in load or r.get("withdrawn") or r.get("is_founder") == 0:
+            continue
+        if r["completed_at"]:
+            load[r["track"]] += 1
+            continue
+        try:
+            started = datetime.fromisoformat(str(r["started_at"])).timestamp()
+        except (TypeError, ValueError):
+            continue
+        if started >= cutoff:
+            load[r["track"]] += 1
+    return load
+
+
 def counts() -> dict:
     with connect() as conn:
         started = _fetch(conn, "SELECT COUNT(*) AS n FROM sessions")[0]["n"]

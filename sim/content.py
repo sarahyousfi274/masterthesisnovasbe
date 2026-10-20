@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.9.0"
+APP_VERSION = "0.9.1"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -451,9 +451,14 @@ BLOCKS = {
     },
 }
 
+# Building the product always comes first. The other three areas form a Latin
+# square: across the three tracks each of them appears once in position 2, 3
+# and 4, so position effects (fatigue, learning, the state of the company) are
+# spread evenly over the areas and can be tested with track as a factor.
 TRACKS = {
     1: ["team", "finance", "hiring", "gtm"],
     2: ["team", "gtm", "finance", "hiring"],
+    3: ["team", "hiring", "gtm", "finance"],
 }
 
 ATTENTION_CHECKS = ["AC1", "AC2"]      # into areas 2 and 3 of every track
