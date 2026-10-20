@@ -19,14 +19,18 @@ import streamlit as st
 
 from sim import codebook, content, flow, state as game, storage, ui
 
-st.set_page_config(page_title="Decisions in founding", page_icon="◆",
+from pathlib import Path  # noqa: E402
+
+_ICON = Path(__file__).parent / "assets" / "favicon.png"
+st.set_page_config(page_title="Decisions in founding",
+                   page_icon=str(_ICON) if _ICON.exists() else "◆",
                    layout="centered", initial_sidebar_state="collapsed")
 ui.inject_css()
 
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.8.0"
+APP_RELEASE = "0.9.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -63,6 +67,8 @@ def init() -> None:
     ss.screen_entered_at = _now()
     ss.answers = {}            # screen id -> values, to pre-fill after Back
     ss.events = []             # what changed the numbers, per area
+    ss.journey = []            # every decision, for the timeline at the end
+    ss.product = None          # what Lumora does, from the industry
     ss.block_start = {}        # area -> situation when the area began
     ss.closed = set()          # areas whose month of burn has been paid
     ss.completed = False
@@ -81,7 +87,19 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
     if target in ids:
         ss.index = ids.index(target)
         ss.industry_label = "software"
+        ss.product = content.INDUSTRY_PRODUCTS["Software and SaaS"]
+        ss.solo = st.query_params.get("solo") == "1"
+        ss.state = game.new_state(solo=ss.solo)
         ss.jumped = True
+        if target == "end":
+            ss.journey = [
+                {"id": "T1", "domain": "team", "event": "MVP development",
+                 "choice": "About half to external developers"},
+                {"id": "T2", "domain": "team", "event": "Pitch contest", "choice": "Take part"},
+                {"id": "F1", "domain": "finance", "event": "Fundraising starts",
+                 "choice": "In 3 months"},
+                {"id": "K1", "domain": "final", "event": "Grant raffle",
+                 "choice": "Do not enter"}]
         if target.startswith("report_"):
             dom = target.split("_", 1)[1]
             ss.block_start[dom] = copy.deepcopy(ss.state)
@@ -154,6 +172,52 @@ def apply_effects(effects: dict, label: str | None, note: str | None = None) -> 
 
 def startup_name() -> str:
     return content.STARTUP_NAME
+
+
+def month_of(domain: str | None) -> int:
+    """Each area is one month of Lumora's life; the final round is the month after."""
+    order = content.TRACKS[ss.track]
+    return order.index(domain) + 1 if domain in order else len(order) + 1
+
+
+def month_label(domain: str | None) -> str:
+    return content.MONTH.format(n=month_of(domain))
+
+
+def panel() -> None:
+    """The numbers panel above every simulation question."""
+    sc = screen()
+    ui.hud(area_start(), caption=f"{month_label(sc.get('domain'))} · at the start of this area"
+           if sc.get("domain") in content.TRACKS[ss.track] else month_label(sc.get("domain")),
+           brand=startup_name())
+
+
+def decision_eyebrow() -> None:
+    """'Finance · Decision 2 of 5' above each decision inside an area."""
+    sc = screen()
+    dom = sc.get("domain")
+    if dom not in content.BLOCKS:
+        ui.eyebrow(content.SECTION_FINAL)
+        return
+    nodes = [s["id"] for s in ss.screens if s.get("domain") == dom and s.get("node")]
+    ui.eyebrow(f"{content.BLOCKS[dom]['title']} · Decision {nodes.index(sc['id']) + 1} "
+               f"of {len(nodes)}")
+
+
+def note_decision(spec: dict, choice_label: str) -> None:
+    """Remember a decision for the timeline on the end screen."""
+    if spec.get("event"):
+        ss.journey = [j for j in ss.journey if j["id"] != screen()["id"]]
+        ss.journey.append({"id": screen()["id"], "domain": screen().get("domain"),
+                           "event": spec["event"], "choice": choice_label})
+
+
+def pick(spec: dict, key: str):
+    """The sole-founder version of a text (key + "_solo") if the participant runs
+    the startup alone and one exists, otherwise the version with the co-founder."""
+    if ss.get("solo") and f"{key}_solo" in spec:
+        return spec[f"{key}_solo"]
+    return spec.get(key)
 
 
 def fill(text: str, **extra) -> str:
@@ -333,9 +397,6 @@ def render_profile(sc: dict) -> None:
             if o is not None:
                 stored[f"{k}_other"] = o.strip()
         remember(**stored)
-        ss.solo = values["team_composition"] == "Solo founder"
-        ss.state = game.new_state(solo=ss.solo)
-        storage.update_session(ss.code, solo=int(ss.solo))
         log(text_value="; ".join(
             f"{k}={'|'.join(v) if isinstance(v, list) else v}" for k, v in stored.items()))
         advance()
@@ -456,7 +517,13 @@ def render_transition(sc: dict) -> None:
 def render_setup(sc: dict) -> None:
     frame()
     spec = content.SETUP
-    ui.question(fill(spec["question"]), fill(spec["body_solo"] if ss.solo else spec["body_team"]))
+    ui.question(fill(spec["question"]), fill(spec["body"]))
+    team_keys = [k for k, _ in spec["team_options"]]
+    team_labels = [lab for _, lab in spec["team_options"]]
+    saved_team = recalled("team")
+    team_choice = st.radio(fill(spec["team_label"]), team_labels,
+                           index=team_keys.index(saved_team) if saved_team in team_keys else None,
+                           key="setup_team", help=spec["team_help"])
     own = ss.answers.get("profile", {})
     own_industry = own.get("industry_real")
     options = content.INDUSTRIES
@@ -471,22 +538,41 @@ def render_setup(sc: dict) -> None:
                               label_visibility="collapsed",
                               placeholder=f"{content.OTHER_LABEL}: industry")
     if continue_button("setup_continue"):
+        if team_choice is None:
+            st.warning("Please choose whether you run the startup on your own or "
+                       "with a co-founder.")
+            return
         if industry is None or (industry == "Other" and not (other or "").strip()):
             st.warning("Please choose the industry.")
             return
+        team = team_keys[team_labels.index(team_choice)]
+        remember(team=team)
+        ss.solo = team == "solo"
+        ss.state = game.new_state(solo=ss.solo)     # no decision has been made yet
         label = other.strip() if industry == "Other" else industry
         ss.industry_label = content.INDUSTRY_LABELS.get(industry, label.lower())
-        storage.update_session(ss.code, startup_name=content.STARTUP_NAME, industry=label)
-        log(text_value=f"{content.STARTUP_NAME} | {label} | "
-                       f"{'solo' if ss.solo else 'co-founders'}")
+        ss.product = content.INDUSTRY_PRODUCTS.get(
+            industry, content.PRODUCT_OTHER.format(label=label.lower()))
+        storage.update_session(ss.code, startup_name=content.STARTUP_NAME, industry=label,
+                               solo=int(ss.solo))
+        log(option_key=team,
+            text_value=f"{content.STARTUP_NAME} | {label} | "
+                       f"{'solo' if ss.solo else 'co-founder'}")
         advance()
 
 
 def render_starting_situation(sc: dict) -> None:
     frame()
+    ui.eyebrow(month_label(content.TRACKS[ss.track][0]))
     st.subheader(content.STARTING_SITUATION["title"])
-    st.markdown(fill(content.STARTING_SITUATION["body"]))
-    ui.status_cards(ss.state)
+    c = content.COMPANY
+    product = ss.get("product") or content.PRODUCT_OTHER.format(label="its field")
+    ui.company_card(startup_name(), c["founded"],
+                    fill(c["product"], product=product),
+                    [c["run_solo"] if ss.solo else c["run_team"],
+                     ss.get("industry_label", "early-stage").capitalize()])
+    st.markdown(fill(pick(content.STARTING_SITUATION, "body")))
+    ui.status_cards(ss.state, solo=ss.solo)
     if continue_button("starting_continue", content.STARTING_SITUATION["button"]):
         log(option_key="seen")
         advance()
@@ -503,18 +589,17 @@ def render_block_intro(sc: dict) -> None:
     if domain not in ss.block_start:
         ss.block_start[domain] = copy.deepcopy(ss.state)
     n = content.TRACKS[ss.track].index(domain) + 1
-    ui.eyebrow(f"Area {n} of 4")
+    ui.eyebrow(f"{content.MONTH.format(n=n)} · Area {n} of 4")
     st.subheader(block["title"])
-    st.markdown(fill(block.get("intro_solo") if ss.solo and "intro_solo" in block
-                     else block["intro"]))
+    st.markdown(fill(pick(block, "intro")))
     st.markdown("**Where you start this area**")
-    ui.status_cards(ss.state)
+    ui.status_cards(ss.state, solo=ss.solo)
     if continue_button(f"intro_{domain}_continue"):
         advance()
 
 
 def _option_label(opt: dict, cost_override: int | None = None) -> str:
-    label = opt.get("label_solo") if ss.solo and "label_solo" in opt else opt["label"]
+    label = pick(opt, "label")
     cost = cost_override if cost_override is not None else opt.get("cost")
     if cost is not None:
         label += f"  ·  {money(cost)}" if cost else "  ·  no cash cost"
@@ -527,9 +612,10 @@ def render_choice(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(area_start())
-    q = spec.get("question_solo") if ss.solo and "question_solo" in spec else spec["question"]
-    ui.question(fill(q), fill(spec["body"]) if spec.get("body") else None,
+    panel()
+    decision_eyebrow()
+    body = pick(spec, "body")
+    ui.question(fill(pick(spec, "question")), fill(body) if body else None,
                 sources=spec.get("background"))
 
     labels = [_option_label(o) for o in spec["options"]]
@@ -546,7 +632,8 @@ def render_choice(sc: dict) -> None:
         idx = labels.index(choice)
         opt = spec["options"][idx]
         log(option_key=opt["key"], option_index=idx)
-        event = f'{spec["event"]}: {opt["label"]}' if spec.get("event") else None
+        note_decision(spec, pick(opt, "label"))
+        event = f'{spec["event"]}: {pick(opt, "label")}' if spec.get("event") else None
         effects = dict(opt.get("effects", {}))
         if effects.get("spend_launch_budget") is True:
             effects["spend_launch_budget"] = game.launch_budget(area_start())
@@ -566,7 +653,8 @@ def render_multi(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(area_start())
+    panel()
+    decision_eyebrow()
     ui.question(spec["question"], spec.get("body"))
     labels = [o["label"] for o in spec["options"]]
     picked = st.pills("Options", labels, selection_mode="multi",
@@ -585,7 +673,11 @@ def render_contest(sc: dict) -> None:
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
     params = codebook.contest_params(node_id)
-    ui.hud(area_start())
+    panel()
+    decision_eyebrow()
+    if spec.get("message"):
+        sender, subject = content.MESSAGES.get(node_id, ("", ""))
+        ui.message(sender, subject, fill(spec["message"], prize=money(params["prize"])))
     ui.question(fill(spec["question"], prize=money(params["prize"])),
                 fill(spec["body"], prize=money(params["prize"]),
                      base_cost=money(params["base_cost"])),
@@ -604,6 +696,7 @@ def render_contest(sc: dict) -> None:
         idx = labels.index(choice)
         key = spec["options"][idx]["key"]
         log(option_key=key, option_index=idx)
+        note_decision(spec, spec["options"][idx]["label"])
         cost = params["options"][key]["cost"]
         apply_effects(game.contest_effects(cost),
                       f'{spec["event"]}: {spec["options"][idx]["label"]}' if cost else None)
@@ -626,7 +719,8 @@ def render_interval(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(area_start())
+    panel()
+    decision_eyebrow()
     revenue_now = area_start()["revenue"]
     if spec.get("chart") == "revenue":
         factor = revenue_now / 8_000
@@ -669,8 +763,11 @@ def render_rank(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(area_start())
-    ui.question(fill(spec["question"]), fill(spec["body"]), sources=spec.get("background"))
+    panel()
+    decision_eyebrow()
+    sender, subject = content.MESSAGES.get(node_id, ("", ""))
+    ui.message(sender, subject, fill(spec["question"]))
+    ui.question(fill(spec["body"]), sources=spec.get("background"))
     choice = st.pills("Rank", content.RANK_SCALE, label_visibility="collapsed",
                       key=f"rank_{node_id}")
     ui.html_block('<div class="fs-scale-ends"><span>' + content.RANK_ENDS[0]
@@ -689,10 +786,12 @@ def render_hire(sc: dict) -> None:
     frame()
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
-    ui.hud(area_start())
+    panel()
+    decision_eyebrow()
     order = ["A", "B"] if sc.get("first", "A") == "A" else ["B", "A"]
-    body = (f"Candidate 1 {spec['candidates'][order[0]]}. "
-            f"Candidate 2 {spec['candidates'][order[1]]}. {spec['after']}")
+    cands = pick(spec, "candidates")
+    body = (f"Candidate 1 {cands[order[0]]}. "
+            f"Candidate 2 {cands[order[1]]}. {spec['after']}")
     ui.question(fill(spec["question"]), body, sources=spec.get("background"))
     second = spec["options"][2]
     labels = ["Hire Candidate 1", "Hire Candidate 2", _option_label(second)]
@@ -708,6 +807,8 @@ def render_hire(sc: dict) -> None:
         opt = next(o for o in spec["options"] if o["key"] == key)
         log(option_key=key, option_index="ABC".index(key),
             text_value=f"first={order[0]}")
+        note_decision(spec, "Second structured round" if key == "C"
+                      else f"Hired Candidate {idx + 1}")
         if key == "C":
             apply_effects(opt["effects"], f'{spec["event"]}: second structured round')
         else:
@@ -724,12 +825,14 @@ def render_report(sc: dict) -> None:
         for ev in events:
             ss.events.append({"domain": domain, **ev})
         ss.closed.add(domain)
-    block = content.BLOCKS[domain]
-    ui.eyebrow(f"Area {content.TRACKS[ss.track].index(domain) + 1} of 4 complete")
+    n = month_of(domain)
+    ui.month_end(content.MONTH_END["title"].format(n=n),
+                 fill(content.MONTH_END["body"]))
+    ui.eyebrow(f"{content.MONTH.format(n=n)} · Area {n} of 4 complete")
     st.subheader("Where things stand")
-    ui.status_cards(ss.state, before=ss.block_start.get(domain))
+    ui.status_cards(ss.state, before=ss.block_start.get(domain), solo=ss.solo, animate=True)
     st.markdown("**What changed in this area**")
-    ui.changes([e for e in ss.events if e["domain"] == domain])
+    ui.changes([e for e in ss.events if e["domain"] == domain], solo=ss.solo)
     if continue_button(f"report_{domain}_continue"):
         log(option_key="seen")
         advance()
@@ -762,6 +865,20 @@ def render_end(sc: dict) -> None:
     ui.steps(ss.sections, sc.get("section"), 1.0)
     st.title(content.END["title"])
     st.markdown(content.END["body"])
+    j = content.JOURNEY
+    months = []
+    for dom in content.TRACKS[ss.track] + ["final"]:
+        items = [(e["event"], e["choice"]) for e in ss.journey if e["domain"] == dom]
+        if not items:
+            continue
+        title = content.BLOCKS[dom]["title"] if dom in content.BLOCKS else content.SECTION_FINAL
+        months.append((month_label(dom), title, items))
+    if months:
+        st.subheader(fill(j["title"]))
+        st.markdown(j["body"])
+        ui.journey(months)
+        st.markdown(f"**{fill(j['final'])}**")
+        ui.status_cards(ss.state, solo=ss.solo)
 
 
 def render_final_intro(sc: dict) -> None:
@@ -800,4 +917,5 @@ elif ss.get("not_founder"):
     st.markdown(content.THANK_YOU_NOT_FOUNDER)
 else:
     sc = screen()
-    RENDERERS[sc["kind"]](sc)
+    with st.container(key=f"screen_{ss.index}"):
+        RENDERERS[sc["kind"]](sc)

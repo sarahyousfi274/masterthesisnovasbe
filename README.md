@@ -5,6 +5,20 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.9.0** gives the simulation its own look and feel: a warm
+"boardroom" palette (paper white, navy, deep teal), Lumora as a company with a
+logo and a one-line product per industry, simulated time (each area is one
+month), a numbers panel on every question, contest invitations as messages,
+a short "End of month" curtain with rolling numbers in each monthly report, a
+timeline of the participant's decisions on the end screen, a sticky Continue
+button on phones, a fade between screens and a favicon (`assets/favicon.png`).
+No measured question, option or reference value changed.
+
+**Version 0.8.1** brings back the choice at setup: participants run Lumora
+on their own or with one co-founder. Every text that mentions the founder
+adapts ("you" or "you and your co-founder"), as do the status labels. The
+team composition in the demographics describes the real company only.
+
 **Version 0.8.0** shows the scientific background per question on hover over a
 link icon (author and year only), removes the scenario dropdown, gives "About you"
 its own form look, adds an animated transition into the simulation, lets every
@@ -120,7 +134,7 @@ which they never see. The story reacts only to the effect table in
 welcome and consent
 About you        founder filter → email → profile → experience → risk attitude
 How it works     overview → example choice → example range (not part of the study)
-Your start-up    name, industry, solo or co-founders → starting situation
+Your startup     Lumora: on your own or with a co-founder, industry → starting situation
 4 areas          intro with status → 4 decisions → status with "what changed"
 Wrap-up          "what do you think this study was about?" → thank you
 ```

@@ -76,6 +76,10 @@ without `DATABASE_URL` means losing data, silently.
 3. Go to `share.streamlit.io`, sign in with GitHub and choose *Create app*. Grant the
    extra permission for private repositories when it asks. Pick the repository, branch
    `main`, main file `app.py`. Give it a URL you are happy to put in a recruitment mail.
+   An existing app can get a new address later: on share.streamlit.io open the app's
+   menu (three dots), *Settings*, *General*, *App URL*, for example
+   `decisions-in-founding` → `https://decisions-in-founding.streamlit.app`. The old
+   address stops working, so change it before any invitation goes out.
 4. Open *Advanced settings* and paste your secrets:
 
    ```toml
