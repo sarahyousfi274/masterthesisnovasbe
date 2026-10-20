@@ -500,7 +500,8 @@
     "net_burn": "Costs 28,000, revenue 8,000 (90 customers at about 89 euros each), net burn 20,000, runway 14 months. Revenue follows customers.",
     "popover": "Removed in 0.8.0. The scientific background appears on hover over a link icon next to the question, author and year only. Assumptions a participant needs are written into the question text.",
     "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product.",
-    "startup": "Every participant runs the same fictional startup, Lumora. Solo or co-founders is taken from the team composition given in the demographics; the industry is chosen at setup (pre-selected from the participant's own industry) and used as a label only."
+    "presentation": "From 0.9.0 each area is shown as one month of Lumora (Month 1 to 4, the final round Month 5). The scenario text of the four rank items and of K1 is shown inside a message card from an institution or role (never a named or pictured person); wording unchanged except K1, where the raffle description moved into the message and the question reads Do you enter the raffle?. A company card states one generic product sentence per chosen industry. The end screen lists the participant's own decisions without any evaluation, after the suspicion question.",
+    "startup": "Every participant runs the same fictional startup, Lumora. At setup the participant chooses to run it alone or with one co-founder (stored as sessions.solo and in the setup row); texts that mention the founder adapt to that choice. The team composition in the demographics describes the real company and is not used for this; the industry is chosen at setup (pre-selected from the participant's own industry) and used as a label only."
   },
   "shown_background": {
     "note": "What participants see on hover over the link icon, author and year only (team decision, 20 October).",

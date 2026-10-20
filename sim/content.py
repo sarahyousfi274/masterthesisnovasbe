@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.8.0"
+APP_VERSION = "0.9.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -55,11 +55,12 @@ STATUS_FIELDS = [
                          "burn per month."),
     ("revenue", "Revenue per month", "Recurring revenue from paying customers."),
     ("customers", "Customers", "Paying customers using the product today."),
-    ("team_size", "Team", "People working in the startup, founders included."),
+    ("team_size", "Team", "People working in the startup, you and your "
+                          "co-founder included."),
     ("pending_hires", "Open roles", "Positions you have opened. New hires join "
                                     "the team at the end of the Team area."),
-    ("ownership", "Founders’ ownership", "Share of the company held by the "
-                                         "founders."),
+    ("ownership", "Founders’ ownership", "Share of the company held by you and "
+                                         "your co-founder together."),
     ("morale", "Team morale", "Mood of the team, from 1 (very low) to 5 (very "
                               "high). 3 is neutral."),
     ("market_confidence", "Market confidence", "How positive the signals from "
@@ -67,6 +68,22 @@ STATUS_FIELDS = [
                                                "are, from 1 (very low) to 5 "
                                                "(very high). 3 is neutral."),
 ]
+
+# Labels that change for a sole founder.
+STATUS_SOLO = {
+    "team_size": ("Team", "People working in the startup, you included."),
+    "ownership": ("Your ownership", "Share of the company you hold."),
+    "morale": ("Morale", "Your drive and that of anyone who joins you, from 1 "
+                         "(very low) to 5 (very high). 3 is neutral."),
+}
+
+
+def status_fields(solo: bool) -> list[tuple[str, str, str]]:
+    """STATUS_FIELDS with the sole-founder labels where they apply."""
+    if not solo:
+        return STATUS_FIELDS
+    return [(k, *STATUS_SOLO[k]) if k in STATUS_SOLO else (k, lab, h)
+            for k, lab, h in STATUS_FIELDS]
 
 INDUSTRIES = [
     "Software and SaaS",
@@ -94,6 +111,59 @@ INDUSTRY_LABELS = {
     "Education": "education",
     "Food and beverages": "food",
     "Media and entertainment": "media",
+}
+
+# What Lumora does, one generic sentence per industry. Shown on the company
+# card. "Other" uses the participant's own words.
+INDUSTRY_PRODUCTS = {
+    "Software and SaaS": "software that helps small businesses plan and run their "
+                         "daily work",
+    "Marketplace or e-commerce": "an online marketplace where independent shops sell "
+                                 "to customers across Europe",
+    "Fintech or insurtech": "an app that helps small businesses manage invoices and "
+                            "cash flow",
+    "Health and life sciences": "software that helps clinics stay in touch with "
+                                "their patients between visits",
+    "Industrial, hardware or deep tech": "a sensor kit that helps small factories "
+                                         "spot machine problems early",
+    "Consumer products or services": "a subscription service that delivers everyday "
+                                     "products to households",
+    "Energy, mobility or climate": "software that helps companies measure and cut "
+                                   "their energy use",
+    "Education": "an online learning platform that companies use to train their "
+                 "staff",
+    "Food and beverages": "a healthy lunch subscription for offices",
+    "Media and entertainment": "a platform that helps independent creators run paid "
+                               "communities",
+}
+PRODUCT_OTHER = "a new product in {label} for its first customers"
+
+COMPANY = {
+    "founded": "Founded last year · Lisbon",
+    "product": "{name} builds {product}.",
+    "run_solo": "Run by you",
+    "run_team": "Run by you and your co-founder",
+}
+
+# Simulated time: each area is one month of Lumora's life.
+MONTH = "Month {n}"
+MONTH_END = {"title": "End of month {n}", "body": "Closing the books for {name}"}
+
+# Decisions that arrive as a message. The sender is an institution or a role,
+# never a named or pictured person, so no persona colors the answer.
+MESSAGES = {
+    "T5": ("Your mentor", "Invitation to a pitch contest"),
+    "F5": ("Accelerator program", "You are on the shortlist"),
+    "H5": ("Recruiting update", "A Head of Growth is choosing"),
+    "G5": ("Procurement, potential customer", "Call for proposals"),
+    "K1": ("Founders’ network", "Grant raffle"),
+}
+
+JOURNEY = {
+    "title": "Your time at {name}",
+    "body": "The decisions you made, month by month. How the contests turned out "
+            "is announced after the study.",
+    "final": "Where {name} stands now",
 }
 
 COUNTRIES = [
@@ -305,9 +375,12 @@ RANGE_INSTRUCTION = ("Give a low and a high estimate, so that you are 80% sure "
 
 SETUP = {
     "question": "Meet {name}",
-    "body_solo": "You are the founder of {name}, a young startup. You run it alone.",
-    "body_team": "You are one of the co-founders of {name}, a young startup. You "
-                 "run it together with your co-founders.",
+    "body": "{name} is a young startup with its first paying customers. Before "
+            "you take over, decide how you run it and which industry it is in.",
+    "team_label": "Do you run {name} on your own or with a co-founder?",
+    "team_options": [("solo", "On my own, as the sole founder"),
+                     ("team", "Together with a co-founder")],
+    "team_help": "Cash, costs and customers at the start are the same either way.",
     "industry_label": "Which industry is {name} in?",
     "industry_help": "Pick the industry you know best. We have pre-selected the one "
                      "you gave for your own company.",
@@ -322,10 +395,14 @@ TRANSITION = {
 
 STARTING_SITUATION = {
     "title": "Your starting situation",
-    "body": "This is where you take over {name}. The numbers change with your "
-            "decisions, and you see your current status at the start and end "
-            "of each area. Hover over or tap the (i) next to a label to see "
-            "what it means.",
+    "body": "This is where you and your co-founder take over {name}. The numbers "
+            "change with your decisions, and you see your current status at the "
+            "start and end of each area. Hover over or tap the (i) next to a "
+            "label to see what it means.",
+    "body_solo": "This is where you take over {name}. The numbers change with "
+                 "your decisions, and you see your current status at the start "
+                 "and end of each area. Hover over or tap the (i) next to a label "
+                 "to see what it means.",
     "button": "Start the first area",
 }
 
@@ -340,7 +417,7 @@ STARTING_SITUATION = {
 BLOCKS = {
     "team": {
         "title": "Building the product",
-        "intro": "You and your co-founders have agreed to build a first version "
+        "intro": "You and your co-founder have agreed to build a first version "
                  "of {name}, the minimum viable product (MVP). The next "
                  "decisions are about how you get it done.",
         "intro_solo": "You have decided to build a first version of {name}, the "
@@ -358,8 +435,8 @@ BLOCKS = {
     },
     "hiring": {
         "title": "Team",
-        "intro": "The work is outgrowing what your team can do. The next "
-                 "decisions are about who joins and when.",
+        "intro": "The work is outgrowing what you and your co-founder can do. The "
+                 "next decisions are about who joins and when.",
         "intro_solo": "The work is outgrowing what you can do alone. The next "
                       "decisions are about who joins and when.",
         "sequence": ["H1", "H3", "H4"],
@@ -403,20 +480,23 @@ SCREENS = {
     "T1": {
         "kind": "choice",
         "question": "The MVP of {name} has 5 core features. How much of the "
-                    "development do you do in-house?",
+                    "development do you and your co-founder do yourselves?",
         "question_solo": "The MVP of {name} has 5 core features. How much of the "
                          "development do you do yourself?",
-        "body": "In-house work costs no cash but takes founder time away from "
-                "fundraising, hiring and sales. External developers are paid "
-                "from your cash.",
+        "body": "Work you two do yourselves costs no cash but takes your time "
+                "away from fundraising, hiring and sales. External developers are "
+                "paid from your cash.",
+        "body_solo": "Work you do yourself costs no cash but takes your time away "
+                     "from fundraising, hiring and sales. External developers are "
+                     "paid from your cash.",
         "background": ["Buehler, Griffin & Ross (1994)", "Kahneman & Lovallo (1993)"],
         "event": "MVP development",
         "options": [
-            {"key": "A", "label": "Everything in-house",
+            {"key": "A", "label": "Everything ourselves",
              "label_solo": "Everything myself",
              "extra": "no cash cost · about 12 weeks of founder time",
              "effects": {"morale": -1}},
-            {"key": "B", "label": "About three quarters in-house, the rest to "
+            {"key": "B", "label": "About three quarters ourselves, the rest to "
                                   "freelancers",
              "label_solo": "About three quarters myself, the rest to freelancers",
              "extra": "€6,000 · about 8 weeks of founder time",
@@ -473,8 +553,10 @@ SCREENS = {
     # ----------------------------------------------------------------- Finance
     "F1": {
         "kind": "choice",
-        "question": "{name} has {runway} months of runway. When do you start "
-                    "fundraising?",
+        "question": "{name} has {runway} months of runway. When do you and your "
+                    "co-founder start fundraising?",
+        "question_solo": "{name} has {runway} months of runway. When do you start "
+                         "fundraising?",
         "body": "Starting means preparing the deck and contacting investors. "
                 "Until then, {name} keeps paying its running costs from the "
                 "cash it has.",
@@ -623,6 +705,13 @@ SCREENS = {
             "A": "scored 82 of 100 on a structured work sample and has solid "
                  "references",
             "B": "scored 71 of 100 on the work sample but was the most convincing "
+                 "person in the interview and gave you and your co-founder a very "
+                 "strong gut feeling",
+        },
+        "candidates_solo": {
+            "A": "scored 82 of 100 on a structured work sample and has solid "
+                 "references",
+            "B": "scored 71 of 100 on the work sample but was the most convincing "
                  "person in the interview and gave you a very strong gut feeling",
         },
         "after": "Either hire adds €7,000 to the monthly costs and joins at the end "
@@ -644,9 +733,13 @@ SCREENS = {
         "kind": "choice",
         "question": "You set aside {launch_budget} for the launch of {name}. How "
                     "do you split it?",
-        "body": "Your <b>first channel</b> is the one you believe in most, based on "
-                "talks with early customers. The rest goes into small tests of two "
-                "or three other channels to see which ones work.",
+        "body": "Your <b>first channel</b> is the one you and your co-founder "
+                "believe in most, based on talks with early customers. The rest "
+                "goes into small tests of two or three other channels to see which "
+                "ones work.",
+        "body_solo": "Your <b>first channel</b> is the one you believe in most, "
+                     "based on talks with early customers. The rest goes into small "
+                     "tests of two or three other channels to see which ones work.",
         "background": ["Koning, Hasan & Chatterji (2022)", "Berman & Van den Bulte (2022)"],
         "event": "Launch budget",
         "options": [
@@ -727,11 +820,12 @@ SCREENS = {
     # -------------------------------------------------------------- Final round
     "K1": {
         "kind": "contest",
-        "question": "A founders’ network raffles a grant of {prize} among 10 "
-                    "startups. Do you enter?",
-        "body": "The winner is drawn by lot. The quality of the startups plays no "
-                "role. Entering costs {base_cost}. Every entry has a 1 in 10 chance "
-                "of winning.",
+        "message": "A founders’ network raffles a grant of {prize} among 10 "
+                   "startups. The winner is drawn by lot. The quality of the "
+                   "startups plays no role.",
+        "question": "Do you enter the raffle?",
+        "body": "Entering costs {base_cost}. Every entry has a 1 in 10 chance of "
+                "winning.",
         "background": ["Camerer & Lovallo (1999)"],
         "event": "Grant raffle",
         "options": [

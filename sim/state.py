@@ -154,7 +154,7 @@ def end_of_area(state: dict, domain: str) -> tuple[dict, list[dict]]:
     if s["runway"] < content.SHORT_RUNWAY_MONTHS and s["morale"] > 1:
         before = copy.deepcopy(s)
         s["morale"] -= 1
-        events.append({"label": "Short runway weighs on the team",
+        events.append({"label": "Short runway weighs on morale",
                        "delta": diff(before, s)})
 
     return refresh(s), events

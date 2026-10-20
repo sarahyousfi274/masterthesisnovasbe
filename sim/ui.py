@@ -16,15 +16,15 @@ import streamlit as st
 
 from . import content, state as game
 
-INK = "#0E1116"
-INK_2 = "#3D4450"
-MUTED = "#6B7280"
-LINE = "#E6E8EC"
-BG = "#F7F7F5"
-CARD = "#FFFFFF"
-ACCENT = "#3346D3"
-ACCENT_SOFT = "#EEF0FD"
-ACCENT_LINE = "#C9CFF7"
+INK = "#0E1A2B"
+INK_2 = "#3F4654"
+MUTED = "#76705F"
+LINE = "#E3DDD0"
+BG = "#F7F5F0"
+CARD = "#FFFDF8"
+ACCENT = "#1F5F5B"
+ACCENT_SOFT = "#EAF2EF"
+ACCENT_LINE = "#A9C9C1"
 
 CSS = f"""
 <style>
@@ -62,7 +62,7 @@ button[data-testid="stBaseButton-primaryFormSubmit"] * {{
   color: #FFFFFF !important; font-weight: 600 !important;
 }}
 button[data-testid="stBaseButton-primary"]:hover,
-button[data-testid="stBaseButton-primaryFormSubmit"]:hover {{ background: #262B35 !important; }}
+button[data-testid="stBaseButton-primaryFormSubmit"]:hover {{ background: #1C2C44 !important; }}
 button[data-testid="stBaseButton-primary"]:active,
 button[data-testid="stBaseButton-primaryFormSubmit"]:active {{ transform: scale(0.98); }}
 button[data-testid="stBaseButton-secondary"],
@@ -117,7 +117,7 @@ ul[role="listbox"], div[data-baseweb="popover"] li {{ background: {CARD} !import
 
 div[data-testid="InputInstructions"] {{ display: none !important; }}
 input, textarea {{ color: {INK} !important; -webkit-text-fill-color: {INK} !important; caret-color: {ACCENT}; }}
-input::placeholder, textarea::placeholder {{ color: #9AA0AA !important; -webkit-text-fill-color: #9AA0AA !important; }}
+input::placeholder, textarea::placeholder {{ color: #A49D8C !important; -webkit-text-fill-color: #A49D8C !important; }}
 *:focus-visible {{ outline-color: {ACCENT} !important; }}
 
 /* ---------- answer cards (radio) ---------- */
@@ -130,7 +130,7 @@ label[data-testid="stRadioOption"] {{
   display: flex; align-items: center; width: 100%; box-sizing: border-box;
   padding: 0.85rem 1rem; margin: 0; border-radius: 12px;
   border: 1px solid {LINE} !important; background: {CARD} !important;
-  box-shadow: 0 1px 2px rgba(14,17,22,0.04);
+  box-shadow: 0 1px 2px rgba(14,26,43,0.04);
   transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }}
 label[data-testid="stRadioOption"] * {{ color: {INK} !important; }}
@@ -189,8 +189,8 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-steps {{ display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }}
 .fs-steps::-webkit-scrollbar {{ display: none; }}
 .fs-step {{ white-space: nowrap; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em;
-  padding: 0.28rem 0.7rem; border-radius: 999px; color: {MUTED}; background: transparent;
-  border: 1px solid {LINE}; }}
+  padding: 0.28rem 0.7rem; border-radius: 999px; color: #645E50; background: #EFEBE2;
+  border: 1px solid #EFEBE2; }}
 .fs-step.done {{ color: {INK_2}; background: {CARD}; }}
 .fs-step.done::before {{ content: "✓ "; color: {ACCENT}; }}
 .fs-step.now {{ color: #FFFFFF; background: {INK}; border-color: {INK}; }}
@@ -216,9 +216,9 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-grid.two {{ grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 1.2rem 0; }}
 @media (max-width: 640px) {{ .fs-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
 .fs-card {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.8rem 0.9rem;
-  box-shadow: 0 1px 2px rgba(14,17,22,0.04); }}
+  box-shadow: 0 1px 2px rgba(14,26,43,0.04); }}
 .fs-card .lbl {{ font-size: 0.78rem; color: {MUTED}; display: flex; align-items: center; gap: 0.3rem; }}
-.fs-card .val {{ font-size: 1.22rem; font-weight: 650; color: {INK}; margin-top: 0.15rem; letter-spacing: -0.01em; }}
+.fs-card .val {{ font-size: 1.22rem; font-weight: 650; color: {INK}; margin-top: 0.15rem; letter-spacing: -0.01em; line-height: 1.2; }}
 .fs-card .dl {{ display: inline-block; margin-top: 0.3rem; font-size: 0.74rem; font-weight: 500; color: {INK_2};
   background: {BG}; border: 1px solid {LINE}; border-radius: 999px; padding: 0.05rem 0.5rem; }}
 .fs-card .scale {{ display: flex; gap: 3px; margin-top: 0.45rem; }}
@@ -231,7 +231,7 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
   justify-content: center; cursor: help; font-style: normal; }}
 .fs-tip:hover::after, .fs-tip:focus::after {{ content: attr(data-tip); position: absolute; left: -0.5rem; top: 1.4rem;
   width: 15rem; z-index: 20; background: {INK}; color: #fff; font-size: 0.78rem; font-weight: 400; line-height: 1.45;
-  padding: 0.55rem 0.7rem; border-radius: 8px; box-shadow: 0 6px 20px rgba(14,17,22,0.18); }}
+  padding: 0.55rem 0.7rem; border-radius: 8px; box-shadow: 0 6px 20px rgba(14,26,43,0.18); }}
 
 .fs-changes {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.4rem 0.9rem; margin-bottom: 1.3rem; }}
 .fs-changes .row {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1rem;
@@ -279,7 +279,7 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-src:hover::after, .fs-src:focus::after {{ content: attr(data-tip); position: absolute; left: 50%;
   transform: translateX(-50%); top: 2.1rem; width: max-content; max-width: 17rem; z-index: 30;
   background: {INK}; color: #fff; font-size: 0.78rem; font-weight: 400; line-height: 1.45; letter-spacing: 0;
-  padding: 0.55rem 0.75rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(14,17,22,0.2); white-space: normal; }}
+  padding: 0.55rem 0.75rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(14,26,43,0.2); white-space: normal; }}
 .fs-about-banner {{ display: flex; gap: 0.8rem; align-items: flex-start; background: #1E2A3B; color: #fff;
   border-radius: 14px; padding: 0.9rem 1.05rem; margin: 0 0 1.4rem 0; }}
 .fs-about-banner .ic {{ flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: rgba(255,255,255,0.12);
@@ -289,6 +289,92 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-echo {{ font-size: 0.8rem; color: {MUTED}; margin: -0.5rem 0 0.6rem 0; }}
 .fs-hero {{ padding: 0.4rem 0 0.2rem 0; }}
 .fs-hero .lead {{ font-size: 1.1rem; color: {INK_2}; margin-top: -0.3rem; }}
+
+/* ---------- simulation feel (0.9.0) ---------- */
+.stApp {{ font-variant-numeric: tabular-nums; }}
+div[data-testid="stElementContainer"][data-stale="true"], .stale-element {{ opacity: 1 !important; transition: none !important; }}
+div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1); }}
+@keyframes fs-in {{ from {{ opacity: 0; transform: translateY(8px); }} to {{ opacity: 1; transform: none; }} }}
+@media (max-width: 640px) {{
+  div[data-testid="stElementContainer"]:has(> div > button[data-testid="stBaseButton-primary"]),
+  div[data-testid="stElementContainer"]:has(button[data-testid="stBaseButton-primary"]) {{
+    position: sticky; bottom: 0; z-index: 20; padding: 1.1rem 0 0.9rem 0; width: 100% !important;
+    background: linear-gradient(to bottom, rgba(247,245,240,0), {BG} 38%);
+  }}
+  div[data-testid="stElementContainer"]:has(button[data-testid="stBaseButton-primary"]) div[data-testid="stButton"],
+  button[data-testid="stBaseButton-primary"] {{ width: 100% !important; }}
+  .fs-hud .hd {{ flex-wrap: wrap !important; row-gap: 0.15rem; }}
+  .fs-hud .cap {{ width: 100% !important; text-align: left !important; }}
+}}
+
+.fs-hud {{ display: block; padding: 0; background: {CARD}; border: 1px solid {LINE}; border-radius: 14px;
+  overflow: hidden; margin-bottom: 1.4rem; }}
+.fs-hud .hd {{ display: flex; justify-content: space-between; align-items: center; gap: 0.8rem;
+  padding: 0.5rem 0.85rem; border-bottom: 1px solid {LINE}; background: #FBF9F4; }}
+.fs-hud .brand {{ display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 650; font-size: 0.85rem; color: {INK}; }}
+.fs-hud .cap {{ width: auto; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+  color: {MUTED}; text-align: right; }}
+.fs-hud .cells {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(98px, 1fr)); gap: 1px; background: {LINE}; }}
+.fs-hud .cells div {{ background: {CARD}; padding: 0.5rem 0.85rem 0.55rem 0.85rem; }}
+.fs-hud small {{ display: block; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
+.fs-hud b {{ margin: 0; font-size: 0.98rem; font-weight: 650; color: {INK}; letter-spacing: -0.01em; white-space: nowrap; }}
+
+.fs-company {{ display: flex; gap: 1rem; align-items: flex-start; background: {CARD}; border: 1px solid {LINE};
+  border-radius: 16px; padding: 1.1rem 1.15rem; margin: 0.3rem 0 1.2rem 0; box-shadow: 0 1px 2px rgba(14,26,43,0.04); }}
+.fs-company .nm {{ font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; color: {INK}; line-height: 1.2; }}
+.fs-company .mt {{ font-size: 0.8rem; color: {MUTED}; margin-top: 0.1rem; }}
+.fs-company .pd {{ font-size: 0.98rem; color: {INK_2}; line-height: 1.55; margin-top: 0.55rem; }}
+.fs-company .tags {{ display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }}
+.fs-company .tags span {{ font-size: 0.75rem; color: {INK_2}; background: #F1EDE4; border-radius: 999px; padding: 0.18rem 0.6rem; }}
+
+.fs-msg {{ background: {CARD}; border: 1px solid {LINE}; border-left: 3px solid {ACCENT}; border-radius: 14px;
+  padding: 0.85rem 1rem 0.95rem 1rem; margin: 0 0 1.1rem 0; box-shadow: 0 1px 2px rgba(14,26,43,0.04);
+  animation: fs-msg 520ms 120ms cubic-bezier(.2,.7,.2,1) both; }}
+@keyframes fs-msg {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: none; }} }}
+.fs-msg .hd {{ display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.55rem; }}
+.fs-msg .ic {{ flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: {ACCENT_SOFT}; color: {ACCENT};
+  display: flex; align-items: center; justify-content: center; }}
+.fs-msg .from {{ font-size: 0.84rem; font-weight: 650; color: {INK}; line-height: 1.25; }}
+.fs-msg .sub {{ font-size: 0.8rem; color: {MUTED}; line-height: 1.25; }}
+.fs-msg .tag {{ margin-left: auto; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: {ACCENT}; background: {ACCENT_SOFT}; border-radius: 999px; padding: 0.15rem 0.5rem; }}
+.fs-msg .tx {{ font-size: 1rem; line-height: 1.6; color: {INK_2}; }}
+
+.odo {{ display: inline-flex; align-items: flex-start; white-space: pre; line-height: 1.2em; height: 1.2em; vertical-align: top; }}
+.odo .s, .odo .d {{ display: inline-block; height: 1.2em; line-height: 1.2em; }}
+.odo .d {{ overflow: hidden; }}
+.odo .d > span {{ display: flex; flex-direction: column; transform: translateY(var(--to));
+  animation: fs-roll 1300ms 1500ms cubic-bezier(.2,.75,.25,1) backwards; }}
+.odo .d i {{ font-style: normal; height: 1.2em; line-height: 1.2em; text-align: center; }}
+@keyframes fs-roll {{ from {{ transform: translateY(var(--from)); }} to {{ transform: translateY(var(--to)); }} }}
+.fs-card.chg {{ animation: fs-glow 1600ms 1500ms ease-out backwards; }}
+@keyframes fs-glow {{ 0% {{ box-shadow: 0 0 0 0 rgba(31,95,91,0.0); }} 30% {{ box-shadow: 0 0 0 3px rgba(31,95,91,0.18); }} 100% {{ box-shadow: 0 1px 2px rgba(14,26,43,0.04); }} }}
+
+.fs-veil {{ position: fixed; inset: 0; z-index: 999990; background: #0B1424; display: flex; align-items: center;
+  justify-content: center; pointer-events: none; animation: fs-veil 2100ms ease forwards; }}
+.fs-veil .t {{ color: #F7F5F0; font-size: clamp(1.9rem, 5.5vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em;
+  animation: fs-up 700ms 100ms ease-out both; }}
+.fs-veil .b {{ color: #A9D1C8; font-size: 1rem; margin-top: 0.4rem; animation: fs-up 700ms 350ms ease-out both; }}
+.fs-veil .ln {{ height: 2px; width: 0; margin-top: 1.3rem; border-radius: 2px;
+  background: linear-gradient(90deg, #1F5F5B, #4E9A8F, #C9A46A); animation: fs-line 1000ms 450ms ease-out forwards; }}
+@keyframes fs-veil {{ 0%, 62% {{ opacity: 1; visibility: visible; }} 100% {{ opacity: 0; visibility: hidden; }} }}
+@keyframes fs-up {{ from {{ opacity: 0; transform: translateY(12px); }} to {{ opacity: 1; transform: none; }} }}
+@keyframes fs-line {{ to {{ width: 100%; }} }}
+
+.fs-journey {{ position: relative; margin: 0.6rem 0 1.4rem 0; padding-left: 1.4rem; }}
+.fs-journey::before {{ content: ""; position: absolute; left: 0.42rem; top: 0.4rem; bottom: 0.4rem; width: 2px; background: {LINE}; }}
+.fs-journey .m {{ position: relative; margin-bottom: 1.1rem; }}
+.fs-journey .m::before {{ content: ""; position: absolute; left: -1.22rem; top: 0.3rem; width: 0.7rem; height: 0.7rem;
+  border-radius: 50%; background: {CARD}; border: 2px solid {ACCENT}; }}
+.fs-journey .mh {{ font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: {ACCENT}; }}
+.fs-journey .mt {{ font-weight: 650; color: {INK}; font-size: 1rem; margin: 0.05rem 0 0.35rem 0; }}
+.fs-journey .it {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 0.8rem; font-size: 0.88rem;
+  padding: 0.38rem 0; border-top: 1px solid {LINE}; color: {MUTED}; }}
+.fs-journey .it span:last-child {{ color: {INK}; font-weight: 500; }}
+@media (prefers-reduced-motion: reduce) {{
+  div[class*="st-key-screen_"], .fs-msg, .odo .d > span, .fs-card.chg {{ animation: none !important; }}
+  .fs-veil {{ display: none !important; }}
+}}
 </style>
 """
 
@@ -368,41 +454,77 @@ def points(items: list[tuple[str, str]]) -> None:
 # Situation
 # ---------------------------------------------------------------------------
 
-def _visible_fields(state: dict) -> list[tuple[str, str, str]]:
+def _visible_fields(state: dict, solo: bool = False) -> list[tuple[str, str, str]]:
     out = []
-    for key, label, help_text in content.STATUS_FIELDS:
+    for key, label, help_text in content.status_fields(solo):
         if key == "pending_hires" and not state.get("pending_hires"):
             continue
         out.append((key, label, help_text))
     return out
 
 
-def status_cards(state: dict, before: dict | None = None) -> None:
-    """Cards for the situation, with the change since `before` if given."""
+_ROLL_CELLS = "".join(f"<i>{d}</i>" for d in "0123456789") + "<i>&nbsp;</i>"
+
+
+def odometer(before: str, after: str) -> str:
+    """The new value, with each digit rolling from the old one (pure CSS, so it
+    works inside Streamlit's markdown). Without motion it simply shows `after`."""
+    n = max(len(before), len(after))
+    b, a = before.rjust(n), after.rjust(n)
+    out, started = [], False
+    for cb, ca in zip(b, a):
+        if ca == " " and not started:
+            continue                      # leading padding of a shorter number
+        started = True
+        if ca.isdigit() and (cb.isdigit() or cb == " ") and cb != ca:
+            fi = 10 if cb == " " else int(cb)
+            out.append(f'<span class="d" style="--from:{-fi * 1.2:.1f}em;--to:{-int(ca) * 1.2:.1f}em">'
+                       f'<span>{_ROLL_CELLS}</span></span>')
+        else:
+            out.append(f'<span class="s">{_h(ca)}</span>')
+    return f'<span class="odo" aria-label="{_h(after)}">{"".join(out)}</span>'
+
+
+def status_cards(state: dict, before: dict | None = None, solo: bool = False,
+                 animate: bool = False) -> None:
+    """Cards for the situation, with the change since `before` if given. With
+    `animate`, changed numbers roll from the old to the new value."""
     cards, scales = [], []
-    for key, label, help_text in _visible_fields(state):
+    for key, label, help_text in _visible_fields(state, solo):
         value = game.format_value(key, state)
-        delta = ""
+        value_html, delta, cls = _h(value), "", ""
         if before is not None:
             d = (state.get(key) or 0) - (before.get(key) or 0)
             if d:
                 delta = f'<div class="dl">{_h(game.format_delta(key, d))}</div>'
+                value_html = odometer(game.format_value(key, before), value) if animate else value_html
+                cls = " chg" if animate else ""
         extra = ""
         if key in ("morale", "market_confidence"):
             v = int(state.get(key) or 0)
             bars = "".join(f'<span class="{"on" if i < v else ""}"></span>' for i in range(5))
             extra = (f'<div class="scale">{bars}</div>'
                      f'<div class="ends"><span>low</span><span>high</span></div>')
-        card = (f'<div class="fs-card"><div class="lbl">{_h(label)}'
+        card = (f'<div class="fs-card{cls}"><div class="lbl">{_h(label)}'
                 f'<i class="fs-tip" tabindex="0" data-tip="{_h(help_text)}">i</i></div>'
-                f'<div class="val">{_h(value)}</div>{delta}{extra}</div>')
+                f'<div class="val">{value_html}</div>{delta}{extra}</div>')
         (scales if (extra or key in ("ownership", "pending_hires")) else cards).append(card)
     html_block(f'<div class="fs-grid">{"".join(cards)}</div>'
                f'<div class="fs-grid two">{"".join(scales)}</div>')
 
 
-def hud(state: dict, caption: str = "At the start of this area") -> None:
-    """Compact strip of the key numbers on every simulation question. It shows
+LOGO_SVG = ('<svg viewBox="0 0 32 32" width="{w}" height="{w}" aria-hidden="true">'
+            '<rect width="32" height="32" rx="8" fill="#0E1A2B"/>'
+            '<path d="M8 21a8 8 0 0 1 16 0z" fill="#C9A46A"/>'
+            '<rect x="6" y="22.6" width="20" height="1.8" rx="0.9" fill="#F7F5F0"/></svg>')
+
+
+def logo(size: int = 20) -> str:
+    return LOGO_SVG.replace("{w}", str(size))
+
+
+def hud(state: dict, caption: str = "At the start of this area", brand: str = "") -> None:
+    """Compact panel of the key numbers on every simulation question. It shows
     the situation at the start of the area and does not move with the answers
     inside the area, so a single decision never gets visible feedback."""
     items = [("Cash", game.format_value("cash", state)),
@@ -412,16 +534,18 @@ def hud(state: dict, caption: str = "At the start of this area") -> None:
              ("Team", game.format_value("team_size", state)),
              ("Customers", game.format_value("customers", state))]
     if state.get("pending_hires"):
-        items.insert(4, ("Open roles", str(state["pending_hires"])))
-    inner = "".join(f'<span>{_h(k)}<b>{_h(v)}</b></span>' for k, v in items)
-    html_block(f'<div class="fs-hud"><div class="cap">{_h(caption)}</div>{inner}</div>')
+        items.insert(5, ("Open roles", str(state["pending_hires"])))
+    cells = "".join(f'<div><small>{_h(k)}</small><b>{_h(v)}</b></div>' for k, v in items)
+    head = f'<span class="brand">{logo(18)}{_h(brand)}</span>' if brand else "<span></span>"
+    html_block(f'<div class="fs-hud"><div class="hd">{head}<span class="cap">{_h(caption)}</span></div>'
+               f'<div class="cells">{cells}</div></div>')
 
 
-def changes(events: list[dict]) -> None:
+def changes(events: list[dict], solo: bool = False) -> None:
     if not events:
         return
     rows = []
-    labels = dict((k, l) for k, l, _ in content.STATUS_FIELDS)
+    labels = dict((k, l) for k, l, _ in content.status_fields(solo))
     for ev in events:
         parts = [f"{labels.get(key, key)} {game.format_delta(key, d)}"
                  for key, d in ev["delta"].items()]
@@ -462,7 +586,7 @@ def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: st
         x = slot * i + (slot - bw) / 2 + 6
         bh = (h - pad_b - pad_t) * v / vmax
         y = h - pad_b - bh
-        fill = ACCENT if i == n - 1 else "#AAB3EF"
+        fill = ACCENT if i == n - 1 else "#A9C7C0"
         parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" rx="6" fill="{fill}"/>')
         parts.append(f'<text x="{x + bw / 2:.1f}" y="{y - 7:.1f}" text-anchor="middle" font-size="13" '
                      f'font-weight="600" fill="{INK}">{_h(unit_fmt(v))}</text>')
@@ -511,7 +635,7 @@ html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
   background: #E9EDF2 !important;
 }}
 .block-container {{
-  background: {CARD}; border: 1px solid #DCE2EA; border-radius: 22px;
+  background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 22px;
   box-shadow: 0 10px 40px rgba(30,42,59,0.08);
   margin-top: 1.6rem; padding: 1.8rem 2rem 2.4rem 2rem !important;
 }}
@@ -536,16 +660,16 @@ def about_mode(title: str, body: str) -> None:
 
 TRANSITION_CSS = f"""
 <style>
-html, body, .stApp {{ background: #0B0F17 !important; }}
+html, body, .stApp {{ background: #0B1424 !important; }}
 [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {{
   background: transparent !important;
 }}
 .stApp::before {{
   content: ""; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(40% 35% at 30% 35%, rgba(51,70,211,0.55), transparent 70%),
-    radial-gradient(35% 30% at 70% 60%, rgba(120,92,255,0.35), transparent 70%),
-    radial-gradient(30% 30% at 55% 25%, rgba(0,190,255,0.18), transparent 70%);
+    radial-gradient(40% 35% at 30% 35%, rgba(31,95,91,0.60), transparent 70%),
+    radial-gradient(35% 30% at 70% 60%, rgba(176,141,87,0.32), transparent 70%),
+    radial-gradient(30% 30% at 55% 25%, rgba(70,120,170,0.22), transparent 70%);
   filter: blur(30px); animation: fs-aurora 9s ease-in-out infinite alternate;
 }}
 @keyframes fs-aurora {{
@@ -555,20 +679,20 @@ html, body, .stApp {{ background: #0B0F17 !important; }}
 [data-testid="stMain"] {{ position: relative; z-index: 1; }}
 .block-container {{ padding-top: 18vh !important; }}
 .fs-curtain {{ text-align: left; }}
-.fs-curtain .ey {{ color: #9FB0FF; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.18em;
+.fs-curtain .ey {{ color: #A9D1C8; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.18em;
   text-transform: uppercase; opacity: 0; animation: fs-up 700ms 150ms ease-out forwards; }}
 .fs-curtain .ti {{ color: #FFFFFF; font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; line-height: 1.08;
   letter-spacing: -0.035em; margin: 0.6rem 0 0.9rem 0; opacity: 0; animation: fs-up 900ms 450ms cubic-bezier(.2,.7,.2,1) forwards; }}
-.fs-curtain .bd {{ color: #C7CEE0; font-size: 1.08rem; line-height: 1.6; max-width: 30rem; opacity: 0;
+.fs-curtain .bd {{ color: #C9CFD9; font-size: 1.08rem; line-height: 1.6; max-width: 30rem; opacity: 0;
   animation: fs-up 800ms 900ms ease-out forwards; }}
 .fs-curtain .ln {{ height: 2px; width: 0; margin: 1.8rem 0 1.6rem 0; border-radius: 2px;
-  background: linear-gradient(90deg, #3346D3, #8C7BFF, #00BEFF); animation: fs-line 1200ms 1100ms ease-out forwards; }}
+  background: linear-gradient(90deg, #1F5F5B, #4E9A8F, #C9A46A); animation: fs-line 1200ms 1100ms ease-out forwards; }}
 @keyframes fs-up {{ from {{ opacity: 0; transform: translateY(14px); }} to {{ opacity: 1; transform: none; }} }}
 @keyframes fs-line {{ to {{ width: 100%; }} }}
-button[data-testid="stBaseButton-primary"] {{ background: #FFFFFF !important; border-color: #FFFFFF !important;
+button[data-testid="stBaseButton-primary"] {{ background: #F7F5F0 !important; border-color: #F7F5F0 !important;
   opacity: 0; animation: fs-up 700ms 1500ms ease-out forwards; }}
-button[data-testid="stBaseButton-primary"] * {{ color: #0B0F17 !important; }}
-button[data-testid="stBaseButton-primary"]:hover {{ background: #E8ECFF !important; }}
+button[data-testid="stBaseButton-primary"] * {{ color: #0B1424 !important; }}
+button[data-testid="stBaseButton-primary"]:hover {{ background: #F1ECE0 !important; }}
 @media (prefers-reduced-motion: reduce) {{
   .stApp::before, .fs-curtain *, button[data-testid="stBaseButton-primary"] {{ animation: none !important; opacity: 1 !important; width: auto; }}
   .fs-curtain .ln {{ width: 100%; }}
@@ -584,3 +708,44 @@ def transition(eyebrow: str, title: str, body: str) -> None:
     html_block(f'<div class="fs-curtain"><div class="ey">{_h(eyebrow)}</div>'
                f'<div class="ti">{_h(title)}</div><div class="bd">{_h(body)}</div>'
                f'<div class="ln"></div></div>')
+
+
+# ---------------------------------------------------------------------------
+# Lumora: company card, messages, month end, journey
+# ---------------------------------------------------------------------------
+
+MAIL_SVG = ('<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+            '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>')
+
+
+def company_card(name: str, meta: str, product: str, tags: list[str]) -> None:
+    chips = "".join(f"<span>{_h(t)}</span>" for t in tags)
+    html_block(f'<div class="fs-company">{logo(52)}<div><div class="nm">{_h(name)}</div>'
+               f'<div class="mt">{_h(meta)}</div><div class="pd">{_h(product)}</div>'
+               f'<div class="tags">{chips}</div></div></div>')
+
+
+def message(sender: str, subject: str, text: str) -> None:
+    """A decision that arrives as a message from an institution or a role."""
+    html_block(f'<div class="fs-msg"><div class="hd"><span class="ic">{MAIL_SVG}</span><div>'
+               f'<div class="from">{_h(sender)}</div><div class="sub">{_h(subject)}</div></div>'
+               f'<span class="tag">New</span></div><div class="tx">{_h(text)}</div></div>')
+
+
+def month_end(title: str, body: str) -> None:
+    """Short dark curtain over the monthly report; it fades by itself and never
+    blocks a click."""
+    html_block(f'<div class="fs-veil" aria-hidden="true"><div><div class="t">{_h(title)}</div>'
+               f'<div class="b">{_h(body)}</div><div class="ln"></div></div></div>')
+
+
+def journey(months: list[tuple[str, str, list[tuple[str, str]]]]) -> None:
+    """Timeline of the decisions: (month label, area title, [(decision, choice)])."""
+    out = []
+    for head, title, items in months:
+        rows = "".join(f'<div class="it"><span>{_h(d)}</span><span>{_h(c)}</span></div>'
+                       for d, c in items)
+        out.append(f'<div class="m"><div class="mh">{_h(head)}</div>'
+                   f'<div class="mt">{_h(title)}</div>{rows}</div>')
+    html_block(f'<div class="fs-journey">{"".join(out)}</div>')
