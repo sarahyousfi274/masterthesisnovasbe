@@ -85,6 +85,10 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
     elif kind == "transition":
         at.button(key="transition_continue").click()
     elif kind == "setup":
+        # Solo or with a co-founder: alternates by seed so both variants run.
+        labels = [lab for _, lab in content.SETUP["team_options"]]
+        at.radio(key="setup_team").set_value(labels[0] if email.startswith("tester1")
+                                             or int(email[6:].split("@")[0]) % 2 else labels[1])
         # Pre-selected from the participant's own industry; sometimes changed.
         if rng.random() < 0.5:
             at.selectbox(key="setup_industry").select("Other")
@@ -184,7 +188,7 @@ def play(seed: int, try_back: bool = False) -> dict:
 
 def main() -> int:
     results, tracks, seed = [], set(), 1
-    while (len(tracks) < 2 or len(results) < 3) and seed < 30:
+    while (len(tracks) < 2 or len(results) < 4) and seed < 30:
         r = play(seed, try_back=(seed == 1))
         results.append(r)
         tracks.add(r["track"])
@@ -220,6 +224,8 @@ def main() -> int:
             "hires joined the team": r["final_state"]["pending_hires"] == 0,
             "raffle is a control, not overplacement": scored["K1"]["form"] == "control",
             "G4 answered": "G4" in scored,
+            "setup choice stored": any(row["screen_id"] == "setup" and row["option_key"]
+                                       == ("solo" if r["solo"] else "team") for row in rows),
         }
         for label, passed in checks.items():
             if not passed:
