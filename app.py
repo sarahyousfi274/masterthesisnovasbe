@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.9.0"
+APP_RELEASE = "0.9.1"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -266,6 +266,15 @@ def render_consent(sc: dict) -> None:
     c1, c2 = st.columns([1.3, 1])
     if c1.button(content.CONSENT["agree"], type="primary", key="consent_agree",
                  use_container_width=True):
+        # Balanced allocation, decided at the moment of consent so the counts
+        # are as fresh as possible. Consent is the first screen in every track.
+        try:
+            load = storage.track_load(content.TRACKS)
+        except Exception:
+            load = None
+        ss.track = flow.assign_track(random.Random(ss.seed), load)
+        ss.screens = flow.build(ss.track, ss.seed)
+        ss.sections = flow.sections(ss.screens)
         storage.start_session(ss.code, ss.track, ss.seed, content.APP_VERSION,
                               codebook.version())
         storage.update_session(ss.code, consent=1)

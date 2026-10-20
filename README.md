@@ -5,6 +5,12 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.9.1** uses three tracks instead of two. Building the product
+always comes first; the other three areas form a Latin square, so each of them
+appears once in position 2, 3 and 4. Allocation is balanced: at consent, a new
+participant gets the track with the fewest completed plus currently running
+sessions (ties at random). The data page shows completed sessions per track.
+
 **Version 0.9.0** gives the simulation its own look and feel: a warm
 "boardroom" palette (paper white, navy, deep teal), Lumora as a company with a
 logo and a one-line product per industry, simulated time (each area is one
@@ -98,7 +104,7 @@ module. It reports how well each form score recovers the parameter that
 produced it and whether the three form scores stay independent. Current
 result: r = 0.93 / 0.84 / 0.83 with cross correlations below 0.09.
 
-`walkthrough` drives the real app through both tracks with Streamlit's
+`walkthrough` drives the real app through all three tracks with Streamlit's
 AppTest harness and checks that every screen is stored, timed and carries a
 snapshot of the situation.
 
