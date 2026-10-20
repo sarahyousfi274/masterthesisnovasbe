@@ -1,4 +1,4 @@
-"""End to end check: play the whole session through, in both tracks.
+"""End to end check: play the whole session through, in all three tracks.
 
 Uses Streamlit's own AppTest harness, so the real app code runs. Verifies that
 every screen renders, that every answer is stored, that the email is stored
@@ -188,12 +188,25 @@ def play(seed: int, try_back: bool = False) -> dict:
 
 def main() -> int:
     results, tracks, seed = [], set(), 1
-    while (len(tracks) < 2 or len(results) < 4) and seed < 30:
+    while (len(tracks) < 3 or len(results) < 4) and seed < 30:
         r = play(seed, try_back=(seed == 1))
         results.append(r)
         tracks.add(r["track"])
         seed += 1
     print(f"Sessions played: {len(results)}   tracks covered: {sorted(tracks)}\n")
+
+    # Balanced allocation: on a fresh database the first three completed
+    # sessions must use three different tracks; and 300 sequential arrivals
+    # (each completing before the next starts) must split exactly 100/100/100.
+    from sim import flow
+    first_three = [r["track"] for r in results[:3]]
+    balanced_start = sorted(first_three) == [1, 2, 3]
+    load = {t: 0 for t in content.TRACKS}
+    rng = random.Random(5)
+    for _ in range(300):
+        load[flow.assign_track(rng, load)] += 1
+    print(f"  first three sessions: tracks {first_three}   300 arrivals: {load}")
+    ok_balance = balanced_start and set(load.values()) == {100}
 
     ok = True
     for r in results:
@@ -231,6 +244,9 @@ def main() -> int:
             if not passed:
                 ok = False
                 print(f"      FAIL: {label}")
+    if not ok_balance:
+        ok = False
+        print("  FAIL: balanced track allocation")
     print("\nRESULT:", "end to end ok" if ok else "checks failed")
     return 0 if ok else 1
 
