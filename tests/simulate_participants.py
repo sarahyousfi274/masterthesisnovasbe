@@ -73,11 +73,14 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
         elif kind == "contest":
             params = codebook.contest_params(node_id)
             # Perceived chance of winning, centred on the true 1 in 10.
+            # In the raffle (K1) own skill cannot matter, so overplacement plays
+            # no role; only noise (standing in for risk attitude) remains.
+            skill = 0.0 if spec.get("form") == "control" else truth["plc"]
             perceived = min(0.95, params["options"]["B"]["win_probability"]
-                            * math.exp(truth["plc"] + rng.gauss(0, NOISE)))
+                            * math.exp(skill + rng.gauss(0, NOISE)))
             ev_b = perceived * params["prize"] - params["options"]["B"]["cost"]
             upgrade = min(0.95, params["options"]["C"]["win_probability"]
-                          * math.exp(truth["plc"] + rng.gauss(0, NOISE)))
+                          * math.exp(skill + rng.gauss(0, NOISE)))
             ev_c = upgrade * params["prize"] - params["options"]["C"]["cost"]
             if max(ev_b, ev_c) <= 0:
                 idx, key = 0, "A"
@@ -131,13 +134,15 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
         elif kind == "outcome":
             # F4: higher overestimation makes the loan more likely.
             # H4: higher overprecision makes the gut-feeling hire more likely.
-            driver = truth["est"] if node_id == "F4" else truth["prc"]
+            driver = truth["prc"] if node_id == "H4" else truth["est"]
             p = 1 / (1 + math.exp(-1.1 * driver))
             if node_id == "F4":
                 key = "A" if rng.random() < p else rng.choice(["B", "C"])
+            elif node_id == "G4":
+                key = "A" if rng.random() < p else rng.choice(["B", "C", "D"])
             else:
                 key = "B" if rng.random() < p else rng.choice(["A", "C"])
-            idx = "ABC".index(key)
+            idx = "ABCD".index(key)
             rows.append(_row(code, node_id, sc, index, snap,
                              option_key=key, option_index=idx))
             st = game.apply(st, content.SCREENS[node_id]["options"][idx].get("effects", {}))

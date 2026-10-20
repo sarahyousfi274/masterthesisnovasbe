@@ -51,8 +51,12 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
             if f["kind"] == "number":
                 at.number_input(key=w).set_value(34 if f["key"] == "age" else max(f["min"], 3))
             elif f["kind"] == "select":
-                at.selectbox(key=w).select(f["options"][-1] if f["key"] == "country"
-                                           else f["options"][1])
+                if f["key"] == "country":
+                    at.selectbox(key=w).select(f["options"][-1])
+                elif f["key"] == "team_composition":
+                    at.selectbox(key=w).select(rng.choice(f["options"][:2]))  # solo or team
+                else:
+                    at.selectbox(key=w).select(f["options"][1])
             elif f["kind"] == "pills":
                 at.pills(key=w).set_value(f["options"][1])
             elif f["kind"] == "multi":
@@ -78,15 +82,17 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         at.number_input(key="practice_low").set_value(10)
         at.number_input(key="practice_high").set_value(40)
         at.button(key="practice_range_continue").click()
+    elif kind == "transition":
+        at.button(key="transition_continue").click()
     elif kind == "setup":
-        at.text_input(key="setup_name").set_value("Testwerk")
-        industry = rng.choice(["Software and SaaS", "Other"])
-        at.selectbox(key="setup_industry").select(industry)
-        at.radio(key="setup_solo").set_value(rng.choice(["With co-founders", "Alone"]))
-        at.run()
-        if industry == "Other":
+        # Pre-selected from the participant's own industry; sometimes changed.
+        if rng.random() < 0.5:
+            at.selectbox(key="setup_industry").select("Other")
+            at.run()
             at.text_input(key="setup_industry_other").set_value("Robotics")
         at.button(key="setup_continue").click()
+    elif kind == "final_intro":
+        at.button(key="final_intro_continue").click()
     elif kind == "starting_situation":
         at.button(key="starting_continue").click()
     elif kind == "block_intro":
@@ -201,7 +207,7 @@ def main() -> int:
         for ev in r["events"][:4]:
             print(f"      event: {ev['label']}  {ev['delta']}")
         checks = {
-            "20 nodes scored": len(scored) == 20,
+            "22 nodes scored": len(scored) == 22,
             "three forms present": {"overestimation", "overplacement",
                                     "overprecision"} <= forms,
             "email stored apart": storage.code_for_email(r["email"]) == r["code"],
@@ -212,6 +218,8 @@ def main() -> int:
                 all("passed" in scored[n] for n in ("AC1", "AC2")),
             "four rank beliefs": all(scored[n].get("rank") for n in ("T5", "F5", "H5", "G5")),
             "hires joined the team": r["final_state"]["pending_hires"] == 0,
+            "raffle is a control, not overplacement": scored["K1"]["form"] == "control",
+            "G4 answered": "G4" in scored,
         }
         for label, passed in checks.items():
             if not passed:
