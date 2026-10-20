@@ -5,6 +5,13 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.8.0** shows the scientific background per question on hover over a
+link icon (author and year only), removes the scenario dropdown, gives "About you"
+its own form look, adds an animated transition into the simulation, lets every
+participant run the same startup (Lumora), adds G4 (reaction to the first month)
+and K1 (a raffle as random-outcome control) and sets the study contact address.
+The session has 22 decisions (20 measured, 2 attention checks).
+
 **Version 0.7.0** adds four rank-belief items (one per area, asked before each
 contest), states the 1-in-10 base rate in every contest, removes every benchmark
 from the scenario popovers (fictional + author and year only), switches all range

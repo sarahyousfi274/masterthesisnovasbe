@@ -26,7 +26,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.7.1"
+APP_RELEASE = "0.8.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -66,6 +66,7 @@ def init() -> None:
     ss.block_start = {}        # area -> situation when the area began
     ss.closed = set()          # areas whose month of burn has been paid
     ss.completed = False
+    ss.startup_name = content.STARTUP_NAME
 
 
 init()
@@ -79,7 +80,6 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
     ids = [s["id"] for s in ss.screens]
     if target in ids:
         ss.index = ids.index(target)
-        ss.startup_name = "Northwind"
         ss.industry_label = "software"
         ss.jumped = True
         if target.startswith("report_"):
@@ -153,7 +153,7 @@ def apply_effects(effects: dict, label: str | None, note: str | None = None) -> 
 
 
 def startup_name() -> str:
-    return ss.get("startup_name") or "your startup"
+    return content.STARTUP_NAME
 
 
 def fill(text: str, **extra) -> str:
@@ -182,20 +182,6 @@ def frame() -> None:
     if flow.back_allowed(ss.screens, ss.index):
         if st.button("← Back", key=f"back_{sc['id']}", type="tertiary"):
             go_back()
-
-
-def scenario(spec: dict) -> None:
-    """The scenario is fictional; the background is named by author and year
-    only. No benchmark that could serve as an answer is ever shown here."""
-    if not (spec.get("background") or spec.get("scenario_extra")):
-        return
-    with st.popover("ⓘ  About this scenario"):
-        text = content.FICTIONAL
-        if spec.get("scenario_extra"):
-            text += " " + fill(spec["scenario_extra"])
-        st.markdown(text)
-        if spec.get("background"):
-            st.markdown("**Scientific background:** " + "; ".join(spec["background"]))
 
 
 def continue_button(key: str, label: str = "Continue") -> bool:
@@ -232,7 +218,7 @@ def render_consent(sc: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def about_header() -> None:
-    ui.note(content.ABOUT_NOTE)
+    ui.about_mode(content.ABOUT_NOTE, content.ABOUT_BANNER)
 
 
 def render_filter(sc: dict) -> None:
@@ -347,6 +333,9 @@ def render_profile(sc: dict) -> None:
             if o is not None:
                 stored[f"{k}_other"] = o.strip()
         remember(**stored)
+        ss.solo = values["team_composition"] == "Solo founder"
+        ss.state = game.new_state(solo=ss.solo)
+        storage.update_session(ss.code, solo=int(ss.solo))
         log(text_value="; ".join(
             f"{k}={'|'.join(v) if isinstance(v, list) else v}" for k, v in stored.items()))
         advance()
@@ -456,39 +445,40 @@ def render_practice_range(sc: dict) -> None:
 # Your startup
 # ---------------------------------------------------------------------------
 
+def render_transition(sc: dict) -> None:
+    t = content.TRANSITION
+    ui.transition(t["eyebrow"], t["title"], t["body"])
+    if continue_button("transition_continue", t["button"]):
+        log(option_key="seen")
+        advance()
+
+
 def render_setup(sc: dict) -> None:
     frame()
-    ui.question(content.SETUP["question"], content.SETUP["body"])
-    name = st.text_input(content.SETUP["name_label"], key="setup_name",
-                         placeholder=content.SETUP["name_placeholder"])
-    industry = st.selectbox(content.SETUP["industry_label"], content.INDUSTRIES,
-                            index=None, placeholder="Select", key="setup_industry")
+    spec = content.SETUP
+    ui.question(fill(spec["question"]), fill(spec["body_solo"] if ss.solo else spec["body_team"]))
+    own = ss.answers.get("profile", {})
+    own_industry = own.get("industry_real")
+    options = content.INDUSTRIES
+    industry = st.selectbox(fill(spec["industry_label"]), options,
+                            index=options.index(own_industry) if own_industry in options else None,
+                            placeholder="Select", key="setup_industry",
+                            help=spec["industry_help"])
     other = None
     if industry == "Other":
         other = st.text_input(content.OTHER_LABEL, key="setup_industry_other",
+                              value=own.get("industry_real_other", ""),
                               label_visibility="collapsed",
                               placeholder=f"{content.OTHER_LABEL}: industry")
-    solo = st.radio(content.SETUP["solo_label"], content.SETUP["solo_options"],
-                    index=None, horizontal=True, key="setup_solo")
     if continue_button("setup_continue"):
-        missing = []
-        if not (name or "").strip():
-            missing.append("a name")
         if industry is None or (industry == "Other" and not (other or "").strip()):
-            missing.append("the industry")
-        if solo is None:
-            missing.append("alone or with co-founders")
-        if missing:
-            st.warning("Please fill in " + ", ".join(missing) + ".")
+            st.warning("Please choose the industry.")
             return
-        ss.solo = solo == "Alone"
-        ss.state = game.new_state(solo=ss.solo)
-        ss.startup_name = " ".join(name.split())[:40]
         label = other.strip() if industry == "Other" else industry
         ss.industry_label = content.INDUSTRY_LABELS.get(industry, label.lower())
-        storage.update_session(ss.code, solo=int(ss.solo), startup_name=ss.startup_name,
-                               industry=label)
-        log(text_value=f"{ss.startup_name} | {label} | {solo}")
+        storage.update_session(ss.code, startup_name=content.STARTUP_NAME, industry=label)
+        log(text_value=f"{content.STARTUP_NAME} | {label} | "
+                       f"{'solo' if ss.solo else 'co-founders'}")
         advance()
 
 
@@ -539,8 +529,8 @@ def render_choice(sc: dict) -> None:
     spec = content.SCREENS[node_id]
     ui.hud(area_start())
     q = spec.get("question_solo") if ss.solo and "question_solo" in spec else spec["question"]
-    ui.question(fill(q), fill(spec["body"]) if spec.get("body") else None)
-    scenario(spec)
+    ui.question(fill(q), fill(spec["body"]) if spec.get("body") else None,
+                sources=spec.get("background"))
 
     labels = [_option_label(o) for o in spec["options"]]
     if spec.get("display") == "pills":
@@ -598,8 +588,8 @@ def render_contest(sc: dict) -> None:
     ui.hud(area_start())
     ui.question(fill(spec["question"], prize=money(params["prize"])),
                 fill(spec["body"], prize=money(params["prize"]),
-                     base_cost=money(params["base_cost"])))
-    scenario(spec)
+                     base_cost=money(params["base_cost"])),
+                sources=spec.get("background"))
     labels = []
     for opt in spec["options"]:
         cost = params["options"][opt["key"]]["cost"]
@@ -647,8 +637,7 @@ def render_interval(sc: dict) -> None:
         ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
                      "New paying customers per month", "Total, months 4 to 9")
     ui.question(fill(spec["question"], revenue_now=money(revenue_now)),
-                content.RANGE_INSTRUCTION)
-    scenario(spec)
+                content.RANGE_INSTRUCTION, sources=spec.get("background"))
     ui.range_diagram("lower", "higher")
 
     c1, c2 = st.columns(2)            # always: low on the left, high on the right
@@ -681,8 +670,7 @@ def render_rank(sc: dict) -> None:
     node_id = sc["node"]
     spec = content.SCREENS[node_id]
     ui.hud(area_start())
-    ui.question(fill(spec["question"]), fill(spec["body"]))
-    scenario(spec)
+    ui.question(fill(spec["question"]), fill(spec["body"]), sources=spec.get("background"))
     choice = st.pills("Rank", content.RANK_SCALE, label_visibility="collapsed",
                       key=f"rank_{node_id}")
     ui.html_block('<div class="fs-scale-ends"><span>' + content.RANK_ENDS[0]
@@ -705,8 +693,7 @@ def render_hire(sc: dict) -> None:
     order = ["A", "B"] if sc.get("first", "A") == "A" else ["B", "A"]
     body = (f"Candidate 1 {spec['candidates'][order[0]]}. "
             f"Candidate 2 {spec['candidates'][order[1]]}. {spec['after']}")
-    ui.question(fill(spec["question"]), body)
-    scenario(spec)
+    ui.question(fill(spec["question"]), body, sources=spec.get("background"))
     second = spec["options"][2]
     labels = ["Hire Candidate 1", "Hire Candidate 2", _option_label(second)]
     keys = [order[0], order[1], second["key"]]
@@ -777,6 +764,16 @@ def render_end(sc: dict) -> None:
     st.markdown(content.END["body"])
 
 
+def render_final_intro(sc: dict) -> None:
+    frame()
+    ui.eyebrow(content.SECTION_FINAL)
+    st.subheader(content.FINAL_INTRO["title"])
+    st.markdown(fill(content.FINAL_INTRO["body"]))
+    if continue_button("final_intro_continue"):
+        log(option_key="seen")
+        advance()
+
+
 RENDERERS = {
     "consent": render_consent, "filter": render_filter, "email": render_email,
     "profile": render_profile, "experience": render_experience, "risk": render_risk,
@@ -786,6 +783,7 @@ RENDERERS = {
     "choice": render_choice, "multi": render_multi, "contest": render_contest,
     "interval": render_interval, "rank": render_rank, "hire": render_hire,
     "report": render_report,
+    "transition": render_transition, "final_intro": render_final_intro,
     "suspicion": render_suspicion, "end": render_end,
 }
 
