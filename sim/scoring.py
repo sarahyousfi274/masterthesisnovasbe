@@ -146,8 +146,8 @@ def _score_contest(node_id: str, row: dict, rng: random.Random) -> dict:
     opt = params["options"][key]
     outcome = codebook.contest_outcome(node_id, key, rng)
     return {
-        "node": node_id, "form": "overplacement", "domain": spec["domain"],
-        "chosen_option": key,
+        "node": node_id, "form": spec.get("form", "overplacement"),
+        "domain": spec["domain"], "chosen_option": key,
         "entered": 1 if opt["win_probability"] > 0 else 0,
         "stake": opt["cost"],
         "stake_ratio": opt["cost"] / params["prize"],

@@ -5,21 +5,22 @@ participants experience, and the codebook holds the hidden reference values.
 
 Rules for this file
 - Nothing names confidence, calibration or overconfidence.
-- No benchmark that could serve as an answer appears anywhere. The "About this
-  scenario" popover says the scenario is fictional and names the scientific
-  background by author and year only, never the content.
+- No benchmark that could serve as an answer appears anywhere. The scientific
+  background of a question is shown on hover over a small link icon, by author
+  and year only, never with titles or content.
 - Text can use {name} (the startup's name), {industry} (a short industry label),
   {runway} and {launch_budget}. app.fill() supplies them.
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.7.1"
+APP_VERSION = "0.8.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
 # --------------------------------------------------------------------------
 
-CONTACT_EMAIL = "[study email]"
+CONTACT_EMAIL = "decisions-in-founding@outlook.com"
+STARTUP_NAME = "Lumora"          # the fictional startup every participant runs
 WITHDRAWAL_WEEKS = 4
 
 # --------------------------------------------------------------------------
@@ -114,6 +115,7 @@ COUNTRIES = [
 SECTION_ABOUT = "About you"
 SECTION_HOW = "How it works"
 SECTION_STARTUP = "Your startup"
+SECTION_FINAL = "Final round"
 SECTION_WRAP = "Wrap-up"
 
 # --------------------------------------------------------------------------
@@ -158,9 +160,10 @@ FILTER = {
 
 EMAIL = {
     "question": "Your email address",
-    "body": "We use it for one thing only: to send you a short follow-up a week "
-            "from now. It is stored separately from your answers and never "
-            "shared outside the research team.",
+    "body": "We use your email address for two things only: to link your answers "
+            "today with the short follow-up, and to contact you once, a week from "
+            "now. It is stored separately from your answers and never shared "
+            "outside the research team.",
     "label": "Email",
     "placeholder": "you@example.com",
 }
@@ -169,14 +172,17 @@ EMAIL = {
 # About you (not part of the simulation)
 # --------------------------------------------------------------------------
 
-ABOUT_NOTE = "This part is about you, not the simulation."
+ABOUT_NOTE = "About you · not part of the simulation"
+ABOUT_BANNER = ("A few questions about you and your company. The simulation "
+                "starts after this part.")
 OTHER_LABEL = "Please specify"
 
 PROFILE = {
     "question": "About you and your company",
-    "body": "A few questions for the analysis. If you no longer run a company, "
-            "answer for the most recent one. Your answers are never published "
-            "individually.",
+    "body": "We ask these questions so we can interpret the results of the "
+            "simulation better, for example by experience or stage of the "
+            "company. If you no longer run a company, answer for the most recent "
+            "one. Your answers are never published individually.",
 }
 
 PROFILE_FIELDS = [
@@ -298,13 +304,20 @@ RANGE_INSTRUCTION = ("Give a low and a high estimate, so that you are 80% sure "
 # --------------------------------------------------------------------------
 
 SETUP = {
-    "question": "Set up your startup",
-    "body": "From here on you are in the simulation.",
-    "name_label": "Give your startup a name",
-    "name_placeholder": "anything you like",
-    "industry_label": "Which industry is it in?",
-    "solo_label": "Do you run it alone or with co-founders?",
-    "solo_options": ["With co-founders", "Alone"],
+    "question": "Meet {name}",
+    "body_solo": "You are the founder of {name}, a young startup. You run it alone.",
+    "body_team": "You are one of the co-founders of {name}, a young startup. You "
+                 "run it together with your co-founders.",
+    "industry_label": "Which industry is {name} in?",
+    "industry_help": "Pick the industry you know best. We have pre-selected the one "
+                     "you gave for your own company.",
+}
+
+TRANSITION = {
+    "eyebrow": "Get ready",
+    "title": "Your simulation starts now",
+    "body": "From here on, you run a startup. Every decision changes its numbers.",
+    "button": "Enter the simulation",
 }
 
 STARTING_SITUATION = {
@@ -356,7 +369,7 @@ BLOCKS = {
         "title": "Go-to-market",
         "intro": "{name} is ready enough to sell. The next decisions are about "
                  "how you reach customers.",
-        "sequence": ["G1", "G3"],
+        "sequence": ["G1", "G4", "G3"],
         "units": [["G5", "G2"]],
     },
 }
@@ -367,12 +380,17 @@ TRACKS = {
 }
 
 ATTENTION_CHECKS = ["AC1", "AC2"]      # into areas 2 and 3 of every track
+FINAL_ROUND = ["K1"]                    # after all four areas, same for everyone
 
-FICTIONAL = "The scenario is fictional."
+FINAL_INTRO = {
+    "title": "One more decision",
+    "body": "Before you finish, one last opportunity comes up for {name}.",
+}
+
 CONTEST_NOTE = "Results are announced after the study."
 
-# Background shown in the popover, author and year only.
-BG_CONTEST = ["Camerer & Lovallo (1999)", "Moore & Cain (2007)"]
+# Scientific background, shown on hover over the link icon, author and year only.
+BG_CONTEST = ["Camerer & Lovallo (1999)", "Cain, Moore & Haran (2015)"]
 BG_RANK = ["Moore & Healy (2008)", "Benoît, Dubra & Moore (2015)"]
 
 # --------------------------------------------------------------------------
@@ -391,7 +409,7 @@ SCREENS = {
         "body": "In-house work costs no cash but takes founder time away from "
                 "fundraising, hiring and sales. External developers are paid "
                 "from your cash.",
-        "background": ["Kahneman & Lovallo (1993)", "Buehler, Griffin & Ross (1994)"],
+        "background": ["Buehler, Griffin & Ross (1994)", "Kahneman & Lovallo (1993)"],
         "event": "MVP development",
         "options": [
             {"key": "A", "label": "Everything in-house",
@@ -444,7 +462,7 @@ SCREENS = {
         "question": "Assume the equivalent of 2 full-time developers work on the "
                     "5 core features of the MVP. How many weeks until it is "
                     "ready?",
-        "background": ["Jørgensen (2004)", "Flyvbjerg & Budzier (2011)"],
+        "background": ["Jørgensen, Teigen & Moløkken (2004)", "Soll & Klayman (2004)"],
         "unit": "weeks",
         "optimistic_is_high": False,
         "low_help": "Only 1 in 10 similar projects would be ready sooner.",
@@ -460,7 +478,7 @@ SCREENS = {
         "body": "Starting means preparing the deck and contacting investors. "
                 "Until then, {name} keeps paying its running costs from the "
                 "cash it has.",
-        "background": ["DocSend (2020)", "Gil (2018)"],
+        "background": ["Buehler, Griffin & Ross (1994)", "Kahneman & Lovallo (1993)"],
         "event": "Fundraising starts",
         "options": [
             {"key": "A", "label": "Right away", "effects": {"fundraise_delay": 0}},
@@ -502,12 +520,10 @@ SCREENS = {
     "F3": {
         "kind": "interval",
         "chart": "revenue",
-        "question": "{name} is preparing its pitch for a seed round. Monthly "
-                    "revenue is {revenue_now} today. What will monthly revenue be "
-                    "in 12 months?",
-        "scenario_extra": "The revenue path is that of an early-stage {industry} "
-                          "startup.",
-        "background": ["SaaS Capital (2025)"],
+        "question": "{name}, an early-stage {industry} startup, is preparing its "
+                    "pitch for a seed round. Monthly revenue is {revenue_now} today. "
+                    "What will monthly revenue be in 12 months?",
+        "background": ["Cassar (2010)", "Soll & Klayman (2004)"],
         "unit": "euros",
         "optimistic_is_high": True,
         "low_help": "Only 1 in 10 comparable startups would end up lower.",
@@ -519,7 +535,7 @@ SCREENS = {
         "kind": "choice",
         "question": "{name} needs €300,000 to reach the next milestone. Which "
                     "route do you take?",
-        "background": ["Carta (2026)"],
+        "background": ["Malmendier & Tate (2005)", "Malmendier, Tate & Yan (2011)"],
         "event": "Financing",
         "options": [
             {"key": "A", "label": "Bank loan over 24 months at 9 percent",
@@ -545,7 +561,7 @@ SCREENS = {
         "body": "Opening a role starts the search. New hires join the team at the "
                 "end of this area. Each new hire adds about €5,000 to the monthly "
                 "costs.",
-        "background": ["Ashby (2026)"],
+        "background": ["Buehler, Griffin & Ross (1994)", "Kahneman & Lovallo (1993)"],
         "event": "Roles opened",
         "options": [
             {"key": "A", "label": "0", "effects": {"pending_hires": 0}},
@@ -589,11 +605,10 @@ SCREENS = {
 
     "H3": {
         "kind": "interval",
-        "question": "You start searching for a senior backend engineer today. How "
+        "question": "You start searching for a senior backend engineer today: a "
+                    "full-time, permanent role, without an external recruiter. How "
                     "many weeks until a contract is signed?",
-        "scenario_extra": "A full-time, permanent senior role, searched for "
-                          "without an external recruiter.",
-        "background": ["Ashby (2026)", "Davis, Faberman & Haltiwanger (2013)"],
+        "background": ["Soll & Klayman (2004)", "Ben-David, Graham & Harvey (2013)"],
         "unit": "weeks",
         "optimistic_is_high": False,
         "low_help": "Only 1 in 10 comparable searches would be faster.",
@@ -612,7 +627,7 @@ SCREENS = {
         },
         "after": "Either hire adds €7,000 to the monthly costs and joins at the end "
                  "of this area.",
-        "background": ["Dawes, Faust & Meehl (1989)"],
+        "background": ["Kausel, Culbertson & Madrid (2016)", "Dawes, Faust & Meehl (1989)"],
         "event": "Head of Sales",
         "options": [
             {"key": "A", "effects": {"pending_hires_extra": 1,
@@ -632,9 +647,7 @@ SCREENS = {
         "body": "Your <b>first channel</b> is the one you believe in most, based on "
                 "talks with early customers. The rest goes into small tests of two "
                 "or three other channels to see which ones work.",
-        "scenario_extra": "The launch budget is a quarter of the cash at the start "
-                          "of this area.",
-        "background": ["Kohavi & Thomke (2017)"],
+        "background": ["Koning, Hasan & Chatterji (2022)", "Berman & Van den Bulte (2022)"],
         "event": "Launch budget",
         "options": [
             {"key": "A", "label": "100% first channel, no tests",
@@ -667,7 +680,7 @@ SCREENS = {
         "body": "An independent panel picks the best of the 10 proposals. A basic "
                 "application costs {base_cost}. An average startup has a 1 in 10 "
                 "chance of winning.",
-        "background": BG_CONTEST,
+        "background": ["Camerer & Lovallo (1999)", "Moore, Oesch & Zietsma (2007)"],
         "event": "Customer tender",
         "options": [
             {"key": "A", "label": "Do not apply"},
@@ -680,16 +693,53 @@ SCREENS = {
     "G3": {
         "kind": "interval",
         "chart": "customers",
-        "question": "A new sales channel brought {name} 40, 65 and 90 new paying "
-                    "customers in its first three months. How many new customers "
+        "question": "A new paid sales channel brought {name} 40, 65 and 90 new "
+                    "paying customers in its first three months. How many new customers "
                     "will it bring in the following six months, in total?",
-        "scenario_extra": "A paid acquisition channel in its first months.",
-        "background": ["ChartMogul (2023)"],
+        "background": ["O’Connor & Lawrence (1989)", "Soll & Klayman (2004)"],
         "unit": "customers",
         "optimistic_is_high": True,
         "low_help": "Only 1 in 10 comparable channels would bring fewer.",
         "high_help": "Only 1 in 10 comparable channels would bring more.",
         "min_value": 0, "max_value": 100_000, "step": 10,
+    },
+
+    "G4": {
+        "kind": "choice",
+        "question": "One month after the launch, the first channel has brought "
+                    "{name} about 30% fewer new customers than planned. At the same "
+                    "time, several new customers came through a channel you had not "
+                    "focused on. What do you do next month?",
+        "background": ["Chen et al. (2024)", "Kirtley & O’Mahony (2023)"],
+        "event": "After the first month",
+        "options": [
+            {"key": "A", "label": "Stay the course: the first channel needs more time",
+             "effects": {"customers": 10}},
+            {"key": "B", "label": "Sharpen the first channel with new messaging, same "
+                                  "budget",
+             "effects": {"customers": 15}},
+            {"key": "C", "label": "Run a four-week test comparing both channels",
+             "effects": {"customers": 15, "market_confidence": 1}},
+            {"key": "D", "label": "Move most of the budget to the new channel now",
+             "effects": {"customers": 20, "morale": -1}},
+        ],
+    },
+    # -------------------------------------------------------------- Final round
+    "K1": {
+        "kind": "contest",
+        "question": "A founders’ network raffles a grant of {prize} among 10 "
+                    "startups. Do you enter?",
+        "body": "The winner is drawn by lot. The quality of the startups plays no "
+                "role. Entering costs {base_cost}. Every entry has a 1 in 10 chance "
+                "of winning.",
+        "background": ["Camerer & Lovallo (1999)"],
+        "event": "Grant raffle",
+        "options": [
+            {"key": "A", "label": "Do not enter"},
+            {"key": "B", "label": "Enter the raffle"},
+            {"key": "C", "label": "Enter with an extra ballot",
+             "extra": "raises the chance to 1 in 8"},
+        ],
     },
 
     # -------------------------------------------------------- Attention checks

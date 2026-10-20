@@ -42,6 +42,7 @@ def build(track: int, seed: int) -> list[dict]:
         {"id": "warmup_intro", "kind": "warmup_intro", "section": how},
         {"id": "practice_choice", "kind": "practice_choice", "section": how},
         {"id": "practice_range", "kind": "practice_range", "section": how},
+        {"id": "sim_start", "kind": "transition", "section": None},
         {"id": "setup", "kind": "setup", "section": startup},
         {"id": "starting_situation", "kind": "starting_situation",
          "section": startup},
@@ -77,6 +78,11 @@ def build(track: int, seed: int) -> list[dict]:
         screens.append({"id": f"report_{domain}", "kind": "report",
                         "domain": domain, "section": section})
 
+    final = content.SECTION_FINAL
+    screens.append({"id": "final_intro", "kind": "final_intro", "section": final})
+    for node_id in content.FINAL_ROUND:
+        screens.append({"id": node_id, "kind": content.SCREENS[node_id]["kind"],
+                        "node": node_id, "domain": "final", "section": final})
     screens += [
         {"id": "suspicion", "kind": "suspicion", "section": wrap},
         {"id": "end", "kind": "end", "section": wrap},

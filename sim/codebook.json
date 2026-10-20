@@ -1,6 +1,6 @@
 {
-  "codebook_version": "0.7.0",
-  "updated": "2026-10-18",
+  "codebook_version": "0.8.0",
+  "updated": "2026-10-20",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
   "contest_variant": "harmonised",
   "contest_rule": {
@@ -443,6 +443,43 @@
       "mode": "exact",
       "correct_option": "E",
       "note": "Multiple selection; passed only if exactly E is selected. Placed in area 3, never first."
+    },
+    "G4": {
+      "form": "none",
+      "domain": "gtm",
+      "type": "outcome",
+      "prediction": "Higher overestimation and overprecision scores make option A (stay the course) more likely and option C (a structured test) less likely: confident founders discount disconfirming early evidence and escalate commitment to their first plan. Chen, Elfenbein, Posen and Wang (2024) on programs of experimentation; Kirtley and O'Mahony (2023) on when entrepreneurial firms pivot.",
+      "sources": [
+        "Chen, Elfenbein, Posen and Wang (2024)",
+        "Kirtley and O'Mahony (2023), What is a pivot?, Strategic Management Journal"
+      ]
+    },
+    "K1": {
+      "form": "control",
+      "domain": "final",
+      "type": "contest",
+      "prize": 100000,
+      "competitors": 10,
+      "options": {
+        "A": {
+          "cost": 0,
+          "win_probability": 0.0
+        },
+        "B": {
+          "cost": 12000,
+          "win_probability": 0.1
+        },
+        "C": {
+          "cost": 17000,
+          "win_probability": 0.125
+        }
+      },
+      "provenance": "derived",
+      "basis": "Random-outcome control contest, the luck condition of Camerer and Lovallo (1999). Same prize, costs and expected values as F2 (-2,000 and -4,500 euros), but the winner is drawn by lot, so own skill cannot matter. Entry here reflects risk attitude only. The difference between entry in the four skill contests and entry in K1 is the overplacement component of contest entry. K1 is not part of the overplacement index; it is a within-person control variable. Asked after all four areas, same position for everyone.",
+      "sources": [
+        "Camerer and Lovallo (1999), Overconfidence and excess entry",
+        "Moore and Cain (2007), random-rank condition"
+      ]
     }
   },
   "scoring": {
@@ -461,7 +498,26 @@
     "status_strip": "The strip on decision screens shows the situation at the start of the area and does not move with decisions inside the area (team decision, 18 October). The current state before every answer is stored in state_json as the control variable.",
     "launch_budget": "G1 uses a quarter of the cash at the start of the area, so the number in the question matches the strip.",
     "net_burn": "Costs 28,000, revenue 8,000 (90 customers at about 89 euros each), net burn 20,000, runway 14 months. Revenue follows customers.",
-    "popover": "'About this scenario' says the scenario is fictional and names its scientific background by author and year only. No benchmark that could serve as an answer is shown.",
-    "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product."
+    "popover": "Removed in 0.8.0. The scientific background appears on hover over a link icon next to the question, author and year only. Assumptions a participant needs are written into the question text.",
+    "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product.",
+    "startup": "Every participant runs the same fictional startup, Lumora. Solo or co-founders is taken from the team composition given in the demographics; the industry is chosen at setup (pre-selected from the participant's own industry) and used as a label only."
+  },
+  "shown_background": {
+    "note": "What participants see on hover over the link icon, author and year only (team decision, 20 October).",
+    "T1": "Buehler, Griffin & Ross (1994); Kahneman & Lovallo (1993)",
+    "T5/F5/H5/G5": "Moore & Healy (2008); Benoît, Dubra & Moore (2015)",
+    "T2/F2/H2": "Camerer & Lovallo (1999); Cain, Moore & Haran (2015)",
+    "T3": "Jørgensen, Teigen & Moløkken (2004); Soll & Klayman (2004)",
+    "F1": "Buehler, Griffin & Ross (1994); Kahneman & Lovallo (1993)",
+    "F3": "Cassar (2010); Soll & Klayman (2004)",
+    "F4": "Malmendier & Tate (2005); Malmendier, Tate & Yan (2011)",
+    "H1": "Buehler, Griffin & Ross (1994); Kahneman & Lovallo (1993)",
+    "H3": "Soll & Klayman (2004); Ben-David, Graham & Harvey (2013)",
+    "H4": "Kausel, Culbertson & Madrid (2016); Dawes, Faust & Meehl (1989)",
+    "G1": "Koning, Hasan & Chatterji (2022); Berman & Van den Bulte (2022)",
+    "G2": "Camerer & Lovallo (1999); Moore, Oesch & Zietsma (2007)",
+    "G3": "O'Connor & Lawrence (1989); Soll & Klayman (2004)",
+    "G4": "Chen et al. (2024); Kirtley & O'Mahony (2023)",
+    "K1": "Camerer & Lovallo (1999)"
   }
 }

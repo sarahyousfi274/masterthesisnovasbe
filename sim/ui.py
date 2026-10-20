@@ -272,6 +272,20 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-scale-ends {{ display: flex; justify-content: space-between; gap: 1rem; font-size: 0.78rem;
   color: {MUTED}; margin: -0.4rem 0 1.1rem 0; max-width: 34rem; }}
 .fs-changes .row span.note {{ color: {MUTED}; font-weight: 400; font-style: italic; }}
+.fs-src {{ position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; margin-left: 0.35rem; vertical-align: 3px; border-radius: 50%;
+  color: {MUTED}; background: {CARD}; border: 1px solid {LINE}; cursor: help; }}
+.fs-src:hover, .fs-src:focus {{ color: {ACCENT}; border-color: {ACCENT_LINE}; outline: none; }}
+.fs-src:hover::after, .fs-src:focus::after {{ content: attr(data-tip); position: absolute; left: 50%;
+  transform: translateX(-50%); top: 2.1rem; width: max-content; max-width: 17rem; z-index: 30;
+  background: {INK}; color: #fff; font-size: 0.78rem; font-weight: 400; line-height: 1.45; letter-spacing: 0;
+  padding: 0.55rem 0.75rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(14,17,22,0.2); white-space: normal; }}
+.fs-about-banner {{ display: flex; gap: 0.8rem; align-items: flex-start; background: #1E2A3B; color: #fff;
+  border-radius: 14px; padding: 0.9rem 1.05rem; margin: 0 0 1.4rem 0; }}
+.fs-about-banner .ic {{ flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center; }}
+.fs-about-banner .t {{ font-weight: 650; font-size: 0.95rem; color: #fff; }}
+.fs-about-banner .d {{ font-size: 0.86rem; color: #C9D2DE; margin-top: 0.1rem; line-height: 1.45; }}
 .fs-echo {{ font-size: 0.8rem; color: {MUTED}; margin: -0.5rem 0 0.6rem 0; }}
 .fs-hero {{ padding: 0.4rem 0 0.2rem 0; }}
 .fs-hero .lead {{ font-size: 1.1rem; color: {INK_2}; margin-top: -0.3rem; }}
@@ -316,9 +330,22 @@ def eyebrow(text: str, muted: bool = False) -> None:
     html_block(f'<div class="fs-eyebrow{" muted" if muted else ""}">{_h(text)}</div>')
 
 
-def question(text: str, body: str | None = None) -> None:
-    """Question title plus optional body. Body may contain simple <b> tags."""
-    out = f'<div class="fs-q">{_h(text)}</div>'
+LINK_SVG = ('<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+            '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/>'
+            '<path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>')
+
+
+def question(text: str, body: str | None = None, sources: list[str] | None = None) -> None:
+    """Question title plus optional body (simple <b> tags allowed). If sources
+    are given, a small link icon follows the title; hovering over it (or tapping
+    on a phone) shows the scientific background by author and year."""
+    icon = ""
+    if sources:
+        tip = "Scientific background: " + "; ".join(sources)
+        icon = (f' <span class="fs-src" tabindex="0" role="note" aria-label="{_h(tip)}" '
+                f'data-tip="{_h(tip)}">{LINK_SVG}</span>')
+    out = f'<div class="fs-q">{_h(text)}{icon}</div>'
     if body:
         safe = _h(body).replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
         out += f'<div class="fs-body">{safe}</div>'
@@ -472,3 +499,88 @@ def terms(items: list[tuple[str, str]]) -> None:
     rows = "".join(f'<div class="row"><div class="h">{_h(t)}</div>'
                    f'<div class="b">{_h(b)}</div></div>' for t, b in items)
     html_block(f'<div class="fs-terms">{rows}</div>')
+
+
+# ---------------------------------------------------------------------------
+# Modes: "About you" looks like a form, the transition like a curtain
+# ---------------------------------------------------------------------------
+
+ABOUT_CSS = f"""
+<style>
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {{
+  background: #E9EDF2 !important;
+}}
+.block-container {{
+  background: {CARD}; border: 1px solid #DCE2EA; border-radius: 22px;
+  box-shadow: 0 10px 40px rgba(30,42,59,0.08);
+  margin-top: 1.6rem; padding: 1.8rem 2rem 2.4rem 2rem !important;
+}}
+@media (max-width: 640px) {{ .block-container {{ border-radius: 0; margin-top: 0; padding: 1.2rem 1rem 2rem 1rem !important; }} }}
+.fs-step.now {{ background: #1E2A3B; border-color: #1E2A3B; }}
+.fs-bar > div {{ background: #1E2A3B; }}
+</style>
+"""
+
+USER_SVG = ('<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2" '
+            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/>'
+            '<path d="M4 21a8 8 0 0 1 16 0"/></svg>')
+
+
+def about_mode(title: str, body: str) -> None:
+    """Form look for the questions about the person, clearly apart from the
+    simulation: cool grey page, white card, dark banner."""
+    st.markdown(ABOUT_CSS, unsafe_allow_html=True)
+    html_block(f'<div class="fs-about-banner"><div class="ic">{USER_SVG}</div><div>'
+               f'<div class="t">{_h(title)}</div><div class="d">{_h(body)}</div></div></div>')
+
+
+TRANSITION_CSS = f"""
+<style>
+html, body, .stApp {{ background: #0B0F17 !important; }}
+[data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {{
+  background: transparent !important;
+}}
+.stApp::before {{
+  content: ""; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 30% 35%, rgba(51,70,211,0.55), transparent 70%),
+    radial-gradient(35% 30% at 70% 60%, rgba(120,92,255,0.35), transparent 70%),
+    radial-gradient(30% 30% at 55% 25%, rgba(0,190,255,0.18), transparent 70%);
+  filter: blur(30px); animation: fs-aurora 9s ease-in-out infinite alternate;
+}}
+@keyframes fs-aurora {{
+  0% {{ transform: translate3d(-3%, -2%, 0) scale(1); opacity: 0.85; }}
+  100% {{ transform: translate3d(3%, 2%, 0) scale(1.08); opacity: 1; }}
+}}
+[data-testid="stMain"] {{ position: relative; z-index: 1; }}
+.block-container {{ padding-top: 18vh !important; }}
+.fs-curtain {{ text-align: left; }}
+.fs-curtain .ey {{ color: #9FB0FF; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.18em;
+  text-transform: uppercase; opacity: 0; animation: fs-up 700ms 150ms ease-out forwards; }}
+.fs-curtain .ti {{ color: #FFFFFF; font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; line-height: 1.08;
+  letter-spacing: -0.035em; margin: 0.6rem 0 0.9rem 0; opacity: 0; animation: fs-up 900ms 450ms cubic-bezier(.2,.7,.2,1) forwards; }}
+.fs-curtain .bd {{ color: #C7CEE0; font-size: 1.08rem; line-height: 1.6; max-width: 30rem; opacity: 0;
+  animation: fs-up 800ms 900ms ease-out forwards; }}
+.fs-curtain .ln {{ height: 2px; width: 0; margin: 1.8rem 0 1.6rem 0; border-radius: 2px;
+  background: linear-gradient(90deg, #3346D3, #8C7BFF, #00BEFF); animation: fs-line 1200ms 1100ms ease-out forwards; }}
+@keyframes fs-up {{ from {{ opacity: 0; transform: translateY(14px); }} to {{ opacity: 1; transform: none; }} }}
+@keyframes fs-line {{ to {{ width: 100%; }} }}
+button[data-testid="stBaseButton-primary"] {{ background: #FFFFFF !important; border-color: #FFFFFF !important;
+  opacity: 0; animation: fs-up 700ms 1500ms ease-out forwards; }}
+button[data-testid="stBaseButton-primary"] * {{ color: #0B0F17 !important; }}
+button[data-testid="stBaseButton-primary"]:hover {{ background: #E8ECFF !important; }}
+@media (prefers-reduced-motion: reduce) {{
+  .stApp::before, .fs-curtain *, button[data-testid="stBaseButton-primary"] {{ animation: none !important; opacity: 1 !important; width: auto; }}
+  .fs-curtain .ln {{ width: 100%; }}
+}}
+</style>
+"""
+
+
+def transition(eyebrow: str, title: str, body: str) -> None:
+    """Full-screen curtain between the questions about the person and the
+    simulation: dark page, moving light, text that rises in."""
+    st.markdown(TRANSITION_CSS, unsafe_allow_html=True)
+    html_block(f'<div class="fs-curtain"><div class="ey">{_h(eyebrow)}</div>'
+               f'<div class="ti">{_h(title)}</div><div class="bd">{_h(body)}</div>'
+               f'<div class="ln"></div></div>')
