@@ -48,6 +48,13 @@ def build(track: int, seed: int) -> list[dict]:
         {"id": "starting_situation", "kind": "starting_situation",
          "section": startup},
     ]
+    # Opening decision (F1), the same position for everyone. It keeps its
+    # domain for scoring; "opening" marks the screen.
+    for node_id in content.OPENING:
+        spec = content.SCREENS[node_id]
+        screens.append({"id": node_id, "kind": spec["kind"], "node": node_id,
+                        "domain": "finance", "opening": True, "block_position": 0,
+                        "node_position": 0, "section": startup})
 
     for position, domain in enumerate(content.TRACKS[track], start=1):
         block = content.BLOCKS[domain]

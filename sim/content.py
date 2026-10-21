@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.11.1"
+APP_VERSION = "0.11.2"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -460,7 +460,7 @@ STARTING_SITUATION = {
                  "your decisions, and you see your current status at the start "
                  "and end of each area. Hover over or tap the (i) next to a label "
                  "to see what it means.",
-    "button": "Start the first area",
+    "button": "Continue",
 }
 
 # --------------------------------------------------------------------------
@@ -489,7 +489,7 @@ BLOCKS = {
         "title": "Finance",
         "intro": "{name} loses money every month until revenue covers the costs. "
                  "The next decisions are about financing.",
-        "sequence": ["F1", "F3", "F4"],
+        "sequence": ["F3", "F4"],     # F1 is the opening decision (see OPENING)
         "outcome_last": True,         # F4 is the outcome node, always last
         "units": [["F5", "F2"]],
     },
@@ -524,7 +524,13 @@ TRACKS = {
 }
 
 ATTENTION_CHECKS = ["AC1", "AC2"]      # into areas 2 and 3 of every track
-FINAL_ROUND = ["K1"]                    # after all four areas, same for everyone
+FINAL_ROUND = ["K1"]
+# Opening decision right after the starting situation, the same for everyone.
+# F1 needs the full runway (14 months) so all four options are feasible in
+# every track; in the Finance area it would come too late in Track 3.
+OPENING = ["F1"]
+OPENING_EYEBROW = "Your first decision"
+HUD_CAPTION_OPENING = "Your starting position"                    # after all four areas, same for everyone
 
 FINAL_INTRO = {
     "title": "One more decision",
