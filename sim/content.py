@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.11.2"
+APP_VERSION = "0.12.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -161,8 +161,9 @@ FINAL_REPORT = {
     "veil": "Final report", "veil_body": "How {name} has done",
     "eyebrow": "Final round complete", "title": "Final report",
     "body": "Some effects of your decisions take time to show: new customers, the "
-            "mood of the team and the signals from the market. This is where "
-            "{name} stands now that they have played out.",
+            "mood of the team, the signals from the market and the open decisions "
+            "of juries, panels and candidates. This is where {name} stands now that "
+            "they have played out.",
     "changes": "What your decisions led to",
 }
 NO_DIRECT_COST = "no direct cost"
@@ -536,6 +537,30 @@ FINAL_INTRO = {
     "title": "One more decision",
     "body": "Before you finish, one last opportunity comes up for {name}.",
 }
+
+# Open threads of the contests. While the session runs, the area report shows
+# only that a decision is pending. The outcome is drawn with the stated chance
+# (1 in 10, 1 in 8 with the upgrade) and shown in the final report after K1,
+# when every measured decision has been made, so it cannot change later answers.
+CONTEST_STORY = {
+    "T2": {"label": "Pitch contest", "pending": "the jury announces the winner later",
+           "won": "Lumora wins the pitch contest", "lost": "Another startup wins the pitch contest",
+           "effect": "cash"},
+    "F2": {"label": "Accelerator place", "pending": "the panel decides later",
+           "won": "Lumora gets the accelerator place", "lost": "The accelerator picks another startup",
+           "effect": "cash"},
+    "H2": {"label": "Head of Growth", "pending": "she decides in the coming weeks",
+           "won": "The Head of Growth chooses Lumora and joins the team",
+           "lost": "The Head of Growth chooses another startup", "effect": "team"},
+    "G2": {"label": "Customer tender", "pending": "the panel picks the winner later",
+           "won": "Lumora wins the customer contract", "lost": "The customer picks another proposal",
+           "effect": "cash"},
+    "K1": {"label": "Grant raffle", "pending": "the draw takes place later",
+           "won": "Lumora’s entry is drawn", "lost": "Another startup’s entry is drawn",
+           "effect": "cash"},
+}
+CONTEST_RESULTS_TITLE = "How the open decisions turned out"
+CONTEST_NOT_ENTERED = "not entered"
 
 # Removed with the review of 20 October: the contests are fictional, so no
 # results are promised anywhere.
