@@ -5,6 +5,20 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.10.0** applies the simulator review of 20 October 2026 (Amie):
+F4, H4 and G4 are always the last decision of their area; T3 comes before T1
+and H3 before H1; no outcome feedback before a final report after K1 (customers,
+revenue, morale and market confidence are held back, the morale and market
+tiles are hidden until then); G1 and G4 give every option the same effect; F1
+asks in remaining runway, offers only feasible options, charges no running
+costs twice and applies worse terms to a start with fewer than 6 months left
+in the final report; G3 shows 9, 16, 21 and asks for month 9; G1 and G3 take
+their reference values from the models in `models/`; K1 says "premium entry";
+no contest results are promised; "solo founder", "based in Europe", no month
+labels, one type scale, every decision screen fits a 1366 x 768 laptop, the
+invitations read as emails, and the selection color holds even without
+`.streamlit/config.toml`.
+
 **Version 0.9.1** uses three tracks instead of two. Building the product
 always comes first; the other three areas form a Latin square, so each of them
 appears once in position 2, 3 and 4. Allocation is balanced: at consent, a new
@@ -231,8 +245,8 @@ fielding, listed here so they do not get lost:
 7. **Validation block and market-entry game.** Still to be added.
 8. **Team diversity** is now captured in demographics as a potential
    moderator variable.
-9. **G3 reference distribution** is still a placeholder; needs interview or
-   pilot data.
+9. **G3 reference distribution** comes from a Bass model since 0.10.0
+   (`models/g3_model.py`), with prior variants B and C as robustness checks.
 10. **H1 ladder (0, 1, 2, 3)** is censored on the aggressive side. A fifth
     option (4 or 5 roles) would balance it.
 11. **F1 nine-month runway reference** is a convention; defend from
@@ -271,3 +285,10 @@ fielding, listed here so they do not get lost:
   research team with their code (deadline stated).
 - Scenario context popover ("About this scenario") on each measurement
   question, with sources, without disclosing the reference value.
+
+## Debriefing (review A7)
+
+The study is explained with the follow-up email a week after the session. That
+email must go to **every** participant in `followup.csv` (the data page offers
+the download), including those who do not answer the follow-up. The contests
+and the raffle are fictional; neither the app nor the email promises results.

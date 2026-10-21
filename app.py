@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.9.1"
+APP_RELEASE = "0.10.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -91,6 +91,14 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
         ss.solo = st.query_params.get("solo") == "1"
         ss.state = game.new_state(solo=ss.solo)
         ss.jumped = True
+        if target == "report_final":
+            for eff, lab in (({"customers": 45, "market_confidence": 1},
+                              "Launch budget: 40% first channel, 60% tests"),
+                             ({"customers": 15}, "After the first month: Run a four-week test"),
+                             ({"morale": -1}, "MVP development: Everything ourselves")):
+                ss.state = game.apply(ss.state, eff, label=lab)
+            ss.state = game.apply(ss.state, {"fundraise_left": 4, "f4_route": "safe",
+                                             "raise": 300_000, "ownership": -5})
         if target == "end":
             ss.journey = [
                 {"id": "T1", "domain": "team", "event": "MVP development",
@@ -160,14 +168,16 @@ def recalled(key: str, default=None):
 
 
 def apply_effects(effects: dict, label: str | None, note: str | None = None) -> None:
-    """Apply effects and record what changed. A `note` records a decision that
-    changes no number yet (for example a planned fundraising start)."""
+    """Apply effects and record what changed. Effects on customers, morale and
+    market confidence are held back until the final report (state.apply), so a
+    decision without a visible change is listed with a short note instead."""
     before = ss.state
-    ss.state = game.apply(ss.state, effects)
+    ss.state = game.apply(ss.state, effects, label=label)
     delta = game.diff(before, ss.state)
-    if label and (delta or note):
+    if label:
         ss.events.append({"domain": screen().get("domain"), "label": label,
-                          "delta": delta, "note": note})
+                          "delta": delta, "note": note or (None if delta else
+                                                           content.NO_DIRECT_COST)})
 
 
 def startup_name() -> str:
@@ -187,9 +197,15 @@ def month_label(domain: str | None) -> str:
 def panel() -> None:
     """The numbers panel above every simulation question."""
     sc = screen()
-    ui.hud(area_start(), caption=f"{month_label(sc.get('domain'))} · at the start of this area"
-           if sc.get("domain") in content.TRACKS[ss.track] else month_label(sc.get("domain")),
-           brand=startup_name())
+    ui.hud(area_start(), caption=content.HUD_CAPTION if sc.get("domain") in content.BLOCKS
+           else content.HUD_CAPTION_FINAL, brand=startup_name())
+
+
+def email(node_id: str, **extra) -> None:
+    """A decision that arrives as an email from an institution or a role (B6)."""
+    m = content.MESSAGES[node_id]
+    ui.message(m["from"], fill(m["subject"], **extra), fill(m["body"], **extra),
+               to=f"{startup_name()} team", signoff=content.EMAIL_SIGNOFF)
 
 
 def decision_eyebrow() -> None:
@@ -213,11 +229,17 @@ def note_decision(spec: dict, choice_label: str) -> None:
 
 
 def pick(spec: dict, key: str):
-    """The sole-founder version of a text (key + "_solo") if the participant runs
+    """The solo-founder version of a text (key + "_solo") if the participant runs
     the startup alone and one exists, otherwise the version with the co-founder."""
     if ss.get("solo") and f"{key}_solo" in spec:
         return spec[f"{key}_solo"]
     return spec.get(key)
+
+
+def runway_text(months: int) -> str:
+    if months < 1:
+        return "less than 1 month"
+    return "1 month" if months == 1 else f"{months} months"
 
 
 def fill(text: str, **extra) -> str:
@@ -225,7 +247,7 @@ def fill(text: str, **extra) -> str:
     area, so the text always matches the status strip."""
     s = area_start()
     values = {"name": startup_name(), "industry": ss.get("industry_label", "early-stage"),
-              "runway": s["runway"],
+              "runway": s["runway"], "runway_text": runway_text(s["runway"]),
               "launch_budget": game.money(game.launch_budget(s))}
     values.update(extra)
     return text.format(**values)
@@ -572,7 +594,6 @@ def render_setup(sc: dict) -> None:
 
 def render_starting_situation(sc: dict) -> None:
     frame()
-    ui.eyebrow(month_label(content.TRACKS[ss.track][0]))
     st.subheader(content.STARTING_SITUATION["title"])
     c = content.COMPANY
     product = ss.get("product") or content.PRODUCT_OTHER.format(label="its field")
@@ -598,7 +619,7 @@ def render_block_intro(sc: dict) -> None:
     if domain not in ss.block_start:
         ss.block_start[domain] = copy.deepcopy(ss.state)
     n = content.TRACKS[ss.track].index(domain) + 1
-    ui.eyebrow(f"{content.MONTH.format(n=n)} · Area {n} of 4")
+    ui.eyebrow(f"Area {n} of 4")
     st.subheader(block["title"])
     st.markdown(fill(pick(block, "intro")))
     st.markdown("**Where you start this area**")
@@ -627,7 +648,12 @@ def render_choice(sc: dict) -> None:
     ui.question(fill(pick(spec, "question")), fill(body) if body else None,
                 sources=spec.get("background"))
 
-    labels = [_option_label(o) for o in spec["options"]]
+    options = spec["options"]
+    runway_now = area_start()["runway"]
+    if spec.get("remaining_runway"):
+        # F1: only options below the current runway; "Right away" always.
+        options = [o for o in options if o["remaining"] is None or o["remaining"] < runway_now]
+    labels = [fill(_option_label(o)) for o in options]
     if spec.get("display") == "pills":
         choice = st.pills("Options", labels, label_visibility="collapsed",
                           key=f"choice_{node_id}")
@@ -638,22 +664,22 @@ def render_choice(sc: dict) -> None:
         if choice is None:
             st.warning("Please choose one of the options.")
             return
-        idx = labels.index(choice)
-        opt = spec["options"][idx]
-        log(option_key=opt["key"], option_index=idx)
-        note_decision(spec, pick(opt, "label"))
-        event = f'{spec["event"]}: {pick(opt, "label")}' if spec.get("event") else None
+        opt = options[labels.index(choice)]
+        idx = spec["options"].index(opt)          # stable index A=0 … D=3
+        chosen = fill(pick(opt, "label"))
         effects = dict(opt.get("effects", {}))
+        note = None
+        if spec.get("remaining_runway"):
+            left = runway_now if opt["remaining"] is None else opt["remaining"]
+            effects["fundraise_left"] = left
+            log(option_key=opt["key"], option_index=idx, numeric_value=float(left))
+            note = content.F1_NOTE
+        else:
+            log(option_key=opt["key"], option_index=idx)
+        note_decision(spec, chosen)
+        event = f'{spec["event"]}: {chosen}' if spec.get("event") else None
         if effects.get("spend_launch_budget") is True:
             effects["spend_launch_budget"] = game.launch_budget(area_start())
-        if "raise" in effects:
-            # The running costs until the round starts are paid first (F1).
-            months = ss.state.get("fundraise_delay", 0)
-            if months:
-                apply_effects({"cash": -game.delay_cost(ss.state)},
-                              f"Running costs until fundraising starts ({months} months)")
-                ss.state["fundraise_delay"] = 0
-        note = "planned" if "fundraise_delay" in effects else None
         apply_effects(effects, event, note=note)
         advance()
 
@@ -685,8 +711,7 @@ def render_contest(sc: dict) -> None:
     panel()
     decision_eyebrow()
     if spec.get("message"):
-        sender, subject = content.MESSAGES.get(node_id, ("", ""))
-        ui.message(sender, subject, fill(spec["message"], prize=money(params["prize"])))
+        email(node_id, prize=money(params["prize"]))
     ui.question(fill(spec["question"], prize=money(params["prize"])),
                 fill(spec["body"], prize=money(params["prize"]),
                      base_cost=money(params["base_cost"])),
@@ -697,7 +722,8 @@ def render_contest(sc: dict) -> None:
         labels.append(_option_label(opt, cost_override=cost if cost else None))
     choice = st.radio("Options", labels, index=None, label_visibility="collapsed",
                       key=f"contest_{node_id}")
-    st.caption(content.CONTEST_NOTE)
+    if content.CONTEST_NOTE:
+        st.caption(content.CONTEST_NOTE)
     if continue_button(f"contest_{node_id}_continue"):
         if choice is None:
             st.warning("Please choose one of the options.")
@@ -738,7 +764,7 @@ def render_interval(sc: dict) -> None:
         ui.bar_chart(series, money, "Monthly revenue so far", "In 12 months")
     elif spec.get("chart") == "customers":
         ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
-                     "New paying customers per month", "Total, months 4 to 9")
+                     "New paying customers per month", "Month 9")
     ui.question(fill(spec["question"], revenue_now=money(revenue_now)),
                 content.RANGE_INSTRUCTION, sources=spec.get("background"))
     ui.range_diagram("lower", "higher")
@@ -774,8 +800,7 @@ def render_rank(sc: dict) -> None:
     spec = content.SCREENS[node_id]
     panel()
     decision_eyebrow()
-    sender, subject = content.MESSAGES.get(node_id, ("", ""))
-    ui.message(sender, subject, fill(spec["question"]))
+    email(node_id)
     ui.question(fill(spec["body"]), sources=spec.get("background"))
     choice = st.pills("Rank", content.RANK_SCALE, label_visibility="collapsed",
                       key=f"rank_{node_id}")
@@ -829,18 +854,27 @@ def render_hire(sc: dict) -> None:
 def render_report(sc: dict) -> None:
     frame()
     domain = sc["domain"]
+    final = domain == "final"
     if domain not in ss.closed:
-        ss.state, events = game.end_of_area(ss.state, domain)
+        if final:
+            # Everything held back during the session (review A9), plus the
+            # terms of a late fundraising start (A3).
+            ss.block_start[domain] = copy.deepcopy(ss.state)
+            ss.state, events = game.settle(ss.state)
+        else:
+            ss.state, events = game.end_of_area(ss.state, domain)
         for ev in events:
             ss.events.append({"domain": domain, **ev})
         ss.closed.add(domain)
-    n = month_of(domain)
-    ui.month_end(content.MONTH_END["title"].format(n=n),
-                 fill(content.MONTH_END["body"]))
-    ui.eyebrow(f"{content.MONTH.format(n=n)} · Area {n} of 4 complete")
-    st.subheader("Where things stand")
-    ui.status_cards(ss.state, before=ss.block_start.get(domain), solo=ss.solo, animate=True)
-    st.markdown("**What changed in this area**")
+    r = content.FINAL_REPORT if final else content.AREA_REPORT
+    ui.month_end(r["veil"], fill(r["veil_body"]))
+    ui.eyebrow(r["eyebrow"].format(n=month_of(domain)))
+    st.subheader(r["title"])
+    if final:
+        st.markdown(fill(r["body"]))
+    ui.status_cards(ss.state, before=ss.block_start.get(domain), solo=ss.solo,
+                    animate=True, show_scales=final)
+    st.markdown(f"**{r['changes']}**")
     ui.changes([e for e in ss.events if e["domain"] == domain], solo=ss.solo)
     if continue_button(f"report_{domain}_continue"):
         log(option_key="seen")
@@ -880,14 +914,17 @@ def render_end(sc: dict) -> None:
         items = [(e["event"], e["choice"]) for e in ss.journey if e["domain"] == dom]
         if not items:
             continue
-        title = content.BLOCKS[dom]["title"] if dom in content.BLOCKS else content.SECTION_FINAL
-        months.append((month_label(dom), title, items))
+        if dom in content.BLOCKS:
+            head, title = f"Area {month_of(dom)} of 4", content.BLOCKS[dom]["title"]
+        else:
+            head, title = j["after_areas"], content.SECTION_FINAL
+        months.append((head, title, items))
     if months:
         st.subheader(fill(j["title"]))
         st.markdown(j["body"])
         ui.journey(months)
         st.markdown(f"**{fill(j['final'])}**")
-        ui.status_cards(ss.state, solo=ss.solo)
+        ui.status_cards(ss.state, solo=ss.solo, show_scales=True)
 
 
 def render_final_intro(sc: dict) -> None:
