@@ -10,6 +10,7 @@ Run with:  python -m tests.walkthrough
 
 from __future__ import annotations
 
+import json
 import random
 import sys
 from pathlib import Path
@@ -237,6 +238,27 @@ def main() -> int:
             "hires joined the team": r["final_state"]["pending_hires"] == 0,
             "raffle is a control, not overplacement": scored["K1"]["form"] == "control",
             "G4 answered": "G4" in scored,
+            # Review of 20 October 2026
+            "A1 F4, H4, G4 last in their area": all(
+                [row["node"] for row in nodes if row["domain"] == dom
+                 and not row["screen_id"].endswith("_opt")
+                 and not row["screen_id"].endswith("_pes")][-1] == last
+                for dom, last in (("finance", "F4"), ("hiring", "H4"), ("gtm", "G4"))),
+            "A4 T3 before T1, H3 before H1": all(
+                min(i for i, row in enumerate(nodes) if row["node"] == a)
+                < min(i for i, row in enumerate(nodes) if row["node"] == b)
+                for a, b in (("T3", "T1"), ("H3", "H1"))),
+            "A9 no outcome feedback before the final report": all(
+                json.loads(row["state_json"])["customers"] == 90
+                and json.loads(row["state_json"])["revenue"] == 8000
+                and json.loads(row["state_json"])["morale"] == 3
+                and json.loads(row["state_json"])["market_confidence"] == 3
+                for row in rows if row["state_json"] and row["screen_index"]
+                < next(x["screen_index"] for x in rows if x["screen_id"] == "report_final")),
+            "A5 revenue at F3 is 8,000": all(
+                json.loads(row["state_json"]).get("revenue_shown") == 8000
+                for row in nodes if row["node"] == "F3"),
+            "final report applies the held-back customers": r["final_state"]["customers"] > 90,
             "setup choice stored": any(row["screen_id"] == "setup" and row["option_key"]
                                        == ("solo" if r["solo"] else "team") for row in rows),
         }

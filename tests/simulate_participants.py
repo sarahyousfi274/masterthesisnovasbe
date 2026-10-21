@@ -59,15 +59,23 @@ def simulate(code: str, truth: dict, rng: random.Random) -> list[dict]:
         kind = spec.get("type")
 
         if kind == "ladder":
-            values = spec["option_values"]
+            # Only the options actually offered (F1 hides those at or above
+            # the runway); the spread of the full ladder sets the noise scale.
+            all_values = codebook.ladder_values(node_id, snap)
+            offered = [i for i, v in enumerate(all_values) if v is not None]
+            values = [all_values[i] for i in offered]
             reference = codebook.ladder_reference(node_id, snap)
-            spread = (max(values) - min(values)) or 1.0
+            spread = (max(values) - min(values)) or 3.0
             target = reference + spec["sign"] * (
                 truth["est"] + rng.gauss(0, NOISE)) * spread * 0.5
-            idx = _nearest_option(values, target)
-            rows.append(_row(code, node_id, sc, index, snap,
-                             option_key="ABCDEFG"[idx], option_index=idx))
-            effects = content.SCREENS[node_id]["options"][idx].get("effects", {})
+            idx = offered[_nearest_option(values, target)]
+            effects = dict(content.SCREENS[node_id]["options"][idx].get("effects", {}))
+            numeric = None
+            if "reference_rule" in spec:
+                numeric = float(snap["runway"] - all_values[idx])
+                effects["fundraise_left"] = numeric
+            rows.append(_row(code, node_id, sc, index, snap, option_key="ABCDEFG"[idx],
+                             option_index=idx, numeric_value=numeric))
             st = game.apply(st, effects)
 
         elif kind == "contest":
