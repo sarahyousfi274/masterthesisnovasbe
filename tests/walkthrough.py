@@ -264,6 +264,9 @@ def main() -> int:
                 json.loads(row["state_json"]).get("revenue_shown") == 8000
                 for row in nodes if row["node"] == "F3"),
             "final report applies the held-back customers": r["final_state"]["customers"] > 90,
+            "contest outcomes stored in the final report": any(
+                row["screen_id"] == "report_final" and (row["text_value"] or "").startswith("contests:")
+                for row in rows),
             "setup choice stored": any(row["screen_id"] == "setup" and row["option_key"]
                                        == ("solo" if r["solo"] else "team") for row in rows),
         }
