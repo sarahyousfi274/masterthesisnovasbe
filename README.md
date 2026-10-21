@@ -5,6 +5,12 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.11.2** makes F1 the opening decision right after the starting
+situation, the same position for everyone. The runway shown is always 14
+months, so all four options are feasible in every track (in the Finance area,
+Track 3 left a median of 2 months and only "Right away"). Finance now runs F3
+and F4 plus its contest pair.
+
 **Version 0.11.1**: the end-of-area curtain covers the whole screen again
 (the screen fade no longer uses a transform), the slider track is neutral
 instead of the theme color (red when `.streamlit/config.toml` is missing),

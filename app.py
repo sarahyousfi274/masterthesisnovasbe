@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.11.1"
+APP_RELEASE = "0.11.2"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -203,6 +203,9 @@ def hud_markup() -> str:
     sc = screen()
     if not sc.get("node"):
         return ""
+    if sc.get("opening"):
+        return ui.hud(ss.state, caption=content.HUD_CAPTION_OPENING, brand=startup_name(),
+                      render=False)
     return ui.hud(area_start(), caption=content.HUD_CAPTION if sc.get("domain") in content.BLOCKS
                   else content.HUD_CAPTION_FINAL, brand=startup_name(), render=False)
 
@@ -218,6 +221,9 @@ def decision_eyebrow() -> None:
     """'Finance · Decision 2 of 5' above each decision inside an area."""
     sc = screen()
     dom = sc.get("domain")
+    if sc.get("opening"):
+        ui.eyebrow(content.OPENING_EYEBROW)
+        return
     if dom not in content.BLOCKS:
         ui.eyebrow(content.SECTION_FINAL)
         return

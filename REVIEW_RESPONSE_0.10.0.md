@@ -106,3 +106,12 @@ almost no information, so F1 still measures different things by track. Options:
    investors at the start of Finance), so F1 starts from the same point in every track.
 3. Change the Latin square so that Finance is never last. This gives up full balance for
    Finance.
+
+## Update 0.11.2: F1 in Track 3 resolved (team decision of 21 October)
+
+F1 is now the opening decision right after the starting situation, at the same
+position for every participant. The runway shown is always 14 months. Path
+simulation (60,000 sessions): all four options feasible in 100 percent of
+sessions in every track, 0 of 80,000 comparisons where an option ends better
+off than the reference. In the synthetic-participant check F1 now spreads
+41 / 26 / 34 percent above, at and below the reference (before: 23 / 62 / 15).
