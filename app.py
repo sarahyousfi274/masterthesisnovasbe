@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.11.2"
+APP_RELEASE = "0.12.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -91,6 +91,12 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
         ss.solo = st.query_params.get("solo") == "1"
         ss.state = game.new_state(solo=ss.solo)
         ss.jumped = True
+        if target.startswith("report_"):
+            ss.contests = {"T2": "B", "F2": "C", "H2": "C", "G2": "B", "K1": "B"}
+            dom0 = target.split("_", 1)[1]
+            if dom0 in content.BLOCKS:
+                ss.events.append({"domain": dom0, "label": "Head of Growth", "delta": {},
+                                  "note": content.CONTEST_STORY["H2"]["pending"]})
         if target == "report_final":
             for eff, lab in (({"customers": 45, "market_confidence": 1},
                               "Launch budget: 40% first channel, 60% tests"),
@@ -761,6 +767,12 @@ def render_contest(sc: dict) -> None:
         cost = params["options"][key]["cost"]
         apply_effects(game.contest_effects(cost),
                       f'{spec["event"]}: {spec["options"][idx]["label"]}' if cost else None)
+        ss.contests = {**ss.get("contests", {}), node_id: key}
+        story = content.CONTEST_STORY.get(node_id)
+        if cost and story and sc.get("domain") in content.BLOCKS:
+            # An open thread in the area report, without any outcome.
+            ss.events.append({"domain": sc["domain"], "label": story["label"],
+                              "delta": {}, "note": story["pending"]})
         advance()
 
 
@@ -887,6 +899,7 @@ def render_report(sc: dict) -> None:
             # terms of a late fundraising start (A3).
             ss.block_start[domain] = copy.deepcopy(ss.state)
             ss.state, events = game.settle(ss.state)
+            resolve_contests()
         else:
             ss.state, events = game.end_of_area(ss.state, domain)
         for ev in events:
@@ -900,11 +913,48 @@ def render_report(sc: dict) -> None:
         st.markdown(fill(r["body"]))
     ui.status_cards(ss.state, before=ss.block_start.get(domain), solo=ss.solo,
                     animate=True, show_scales=final)
+    if final and ss.get("contest_results"):
+        st.markdown(f"**{content.CONTEST_RESULTS_TITLE}**")
+        ui.changes(ss.contest_results, solo=ss.solo)
     st.markdown(f"**{r['changes']}**")
     ui.changes([e for e in ss.events if e["domain"] == domain], solo=ss.solo)
     if continue_button(f"report_{domain}_continue"):
-        log(option_key="seen")
+        outcomes = "; ".join(f"{n}={o}" for n, o in ss.get("contest_outcomes", {}).items())
+        log(option_key="seen", text_value=f"contests: {outcomes}" if final else None)
         advance()
+
+
+def resolve_contests() -> None:
+    """Final report: draw every contest the participant entered, with the chance
+    stated on the screen, and apply the prize. Drawn once per session from the
+    session seed, so a reload shows the same outcome."""
+    rng = random.Random(ss.seed * 7 + 11)
+    ss.contest_results, ss.contest_outcomes = [], {}
+    order = [s["node"] for s in ss.screens if s.get("node") in content.CONTEST_STORY]
+    for node_id in order:
+        story = content.CONTEST_STORY[node_id]
+        key = ss.get("contests", {}).get(node_id)
+        draw = rng.random()                      # drawn for every contest, entered or not
+        if key is None:
+            continue
+        params = codebook.contest_params(node_id)
+        p = params["options"][key]["win_probability"]
+        if p == 0:
+            ss.contest_outcomes[node_id] = "not_entered"
+            continue
+        won = draw < p
+        ss.contest_outcomes[node_id] = "won" if won else "lost"
+        if won:
+            effect = ({"team_size": 1} if story["effect"] == "team"
+                      else {"cash": params["prize"]})
+            before = ss.state
+            ss.state = game.apply(ss.state, effect)
+            ss.contest_results.append({"domain": "final_results", "label": story["won"],
+                                       "delta": game.diff(before, ss.state), "note": None})
+        else:
+            ss.contest_results.append({"domain": "final_results", "label": story["lost"],
+                                       "delta": {}, "note": "no hire" if story["effect"] == "team"
+                                       else "no prize"})
 
 
 # ---------------------------------------------------------------------------

@@ -115,3 +115,10 @@ simulation (60,000 sessions): all four options feasible in 100 percent of
 sessions in every track, 0 of 80,000 comparisons where an option ends better
 off than the reference. In the synthetic-participant check F1 now spreads
 41 / 26 / 34 percent above, at and below the reference (before: 23 / 62 / 15).
+
+## Update 0.12.0: contest outcomes (team decision of 21 October)
+
+During the session the area report shows only that a contest decision is
+pending. Outcomes are drawn in the final report after K1, after every measured
+decision, with the stated chance, so they cannot feed back into later answers
+(A9). This resolves the story without promising real results (A7).
