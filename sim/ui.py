@@ -45,7 +45,7 @@ div[data-testid="stDecoration"], div[data-testid="stStatusWidget"] {{
   visibility: hidden; height: 0; position: fixed;
 }}
 h1, h2, h3, h4, p, li, label, span {{ color: {INK}; }}
-h1 {{ font-size: 2.1rem !important; font-weight: 700 !important; letter-spacing: -0.03em; }}
+h1 {{ font-size: 1.75rem !important; font-weight: 700 !important; letter-spacing: -0.03em; }}
 div[data-testid="stMarkdownContainer"] p {{ font-size: 1rem; line-height: 1.65; color: {INK_2}; }}
 div[data-testid="stMarkdownContainer"] strong {{ color: {INK}; }}
 a {{ color: {ACCENT} !important; }}
@@ -78,7 +78,7 @@ button[data-testid="stBaseButton-secondary"]:hover,
 button[data-testid="stPopoverButton"]:hover {{ border-color: {INK_2} !important; }}
 
 button[data-testid="stBaseButton-tertiary"] {{ padding: 0 !important; min-height: 0 !important; }}
-button[data-testid="stBaseButton-tertiary"] * {{ color: {MUTED} !important; font-size: 0.88rem !important; }}
+button[data-testid="stBaseButton-tertiary"] * {{ color: {MUTED} !important; font-size: 0.875rem !important; }}
 button[data-testid="stBaseButton-tertiary"]:hover * {{ color: {INK} !important; }}
 
 /* ---------- forms and inputs ---------- */
@@ -112,7 +112,7 @@ div[data-testid="stNumberInputContainer"] > div, div[data-testid="stTextInputRoo
 button[data-testid="stNumberInputStepUp"], button[data-testid="stNumberInputStepDown"] {{
   display: none !important;
 }}
-div[data-testid="stWidgetLabel"] p {{ font-weight: 500; color: {INK} !important; font-size: 0.95rem; }}
+div[data-testid="stWidgetLabel"] p {{ font-weight: 500; color: {INK} !important; font-size: 1rem; }}
 ul[role="listbox"], div[data-baseweb="popover"] li {{ background: {CARD} !important; color: {INK} !important; }}
 
 div[data-testid="InputInstructions"] {{ display: none !important; }}
@@ -183,12 +183,12 @@ div[data-testid="stAlert"] * {{ color: {INK} !important; }}
 
 /* ---------- popover ---------- */
 div[data-testid="stPopoverBody"] {{ background: {CARD} !important; border-radius: 12px; }}
-div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92rem; }}
+div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.875rem; }}
 
 /* ---------- custom components ---------- */
 .fs-steps {{ display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }}
 .fs-steps::-webkit-scrollbar {{ display: none; }}
-.fs-step {{ white-space: nowrap; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em;
+.fs-step {{ white-space: nowrap; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.01em;
   padding: 0.28rem 0.7rem; border-radius: 999px; color: #645E50; background: #EFEBE2;
   border: 1px solid #EFEBE2; }}
 .fs-step.done {{ color: {INK_2}; background: {CARD}; }}
@@ -197,17 +197,17 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-bar {{ height: 3px; background: {LINE}; border-radius: 3px; overflow: hidden; margin-bottom: 1.6rem; }}
 .fs-bar > div {{ height: 100%; background: {ACCENT}; border-radius: 3px; transition: width 300ms ease; }}
 
-.fs-eyebrow {{ font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+.fs-eyebrow {{ font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: {ACCENT}; margin-bottom: 0.35rem; }}
 .fs-eyebrow.muted {{ color: {MUTED}; }}
-.fs-q {{ font-size: 1.32rem; font-weight: 650; line-height: 1.4; letter-spacing: -0.015em;
+.fs-q {{ font-size: 1.25rem; font-weight: 650; line-height: 1.4; letter-spacing: -0.015em;
   color: {INK}; margin: 0 0 0.55rem 0; }}
 .fs-body {{ font-size: 1rem; line-height: 1.6; color: {INK_2}; margin: 0 0 1rem 0; }}
 .fs-body b {{ color: {INK}; font-weight: 600; }}
 .fs-note {{ display: inline-block; font-size: 0.8rem; color: {INK_2}; background: {CARD};
   border: 1px solid {LINE}; border-radius: 999px; padding: 0.2rem 0.7rem; margin-bottom: 0.9rem; }}
 
-.fs-hud {{ display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.82rem; color: {MUTED};
+.fs-hud {{ display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.8rem; color: {MUTED};
   background: {CARD}; border: 1px solid {LINE}; border-radius: 12px; padding: 0.55rem 0.9rem;
   margin-bottom: 1.3rem; }}
 .fs-hud b {{ color: {INK}; font-weight: 600; margin-left: 0.25rem; }}
@@ -217,59 +217,59 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 @media (max-width: 640px) {{ .fs-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
 .fs-card {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.8rem 0.9rem;
   box-shadow: 0 1px 2px rgba(14,26,43,0.04); }}
-.fs-card .lbl {{ font-size: 0.78rem; color: {MUTED}; display: flex; align-items: center; gap: 0.3rem; }}
-.fs-card .val {{ font-size: 1.22rem; font-weight: 650; color: {INK}; margin-top: 0.15rem; letter-spacing: -0.01em; line-height: 1.2; }}
-.fs-card .dl {{ display: inline-block; margin-top: 0.3rem; font-size: 0.74rem; font-weight: 500; color: {INK_2};
+.fs-card .lbl {{ font-size: 0.8rem; color: {MUTED}; display: flex; align-items: center; gap: 0.3rem; }}
+.fs-card .val {{ font-size: 1.25rem; font-weight: 650; color: {INK}; margin-top: 0.15rem; letter-spacing: -0.01em; line-height: 1.2; }}
+.fs-card .dl {{ display: inline-block; margin-top: 0.3rem; font-size: 0.8rem; font-weight: 500; color: {INK_2};
   background: {BG}; border: 1px solid {LINE}; border-radius: 999px; padding: 0.05rem 0.5rem; }}
 .fs-card .scale {{ display: flex; gap: 3px; margin-top: 0.45rem; }}
 .fs-card .scale span {{ flex: 1; height: 5px; border-radius: 3px; background: {LINE}; }}
 .fs-card .scale span.on {{ background: {ACCENT}; }}
-.fs-card .ends {{ display: flex; justify-content: space-between; font-size: 0.68rem; color: {MUTED}; margin-top: 0.2rem; }}
+.fs-card .ends {{ display: flex; justify-content: space-between; font-size: 0.8rem; color: {MUTED}; margin-top: 0.2rem; }}
 
 .fs-tip {{ position: relative; display: inline-flex; width: 15px; height: 15px; border-radius: 50%;
-  border: 1px solid {MUTED}; color: {MUTED}; font-size: 0.62rem; font-weight: 600; align-items: center;
+  border: 1px solid {MUTED}; color: {MUTED}; font-size: 0.8rem; font-weight: 600; align-items: center;
   justify-content: center; cursor: help; font-style: normal; }}
 .fs-tip:hover::after, .fs-tip:focus::after {{ content: attr(data-tip); position: absolute; left: -0.5rem; top: 1.4rem;
-  width: 15rem; z-index: 20; background: {INK}; color: #fff; font-size: 0.78rem; font-weight: 400; line-height: 1.45;
+  width: 15rem; z-index: 20; background: {INK}; color: #fff; font-size: 0.8rem; font-weight: 400; line-height: 1.45;
   padding: 0.55rem 0.7rem; border-radius: 8px; box-shadow: 0 6px 20px rgba(14,26,43,0.18); }}
 
 .fs-changes {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.4rem 0.9rem; margin-bottom: 1.3rem; }}
 .fs-changes .row {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1rem;
-  padding: 0.55rem 0; border-bottom: 1px solid {LINE}; font-size: 0.9rem; color: {INK_2}; }}
+  padding: 0.55rem 0; border-bottom: 1px solid {LINE}; font-size: 0.875rem; color: {INK_2}; }}
 .fs-changes .row:last-child {{ border-bottom: none; }}
 .fs-changes .row span:last-child {{ color: {INK}; font-weight: 500; text-align: right; }}
 
 .fs-points {{ display: grid; gap: 0.6rem; margin: 0.6rem 0 1.2rem 0; }}
 .fs-point {{ display: flex; gap: 0.8rem; background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.85rem 1rem; }}
 .fs-point .n {{ flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: {ACCENT_SOFT}; color: {ACCENT};
-  font-weight: 650; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }}
-.fs-point .t {{ font-weight: 600; color: {INK}; font-size: 0.95rem; }}
-.fs-point .d {{ color: {INK_2}; font-size: 0.9rem; line-height: 1.5; margin-top: 0.1rem; }}
+  font-weight: 650; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; }}
+.fs-point .t {{ font-weight: 600; color: {INK}; font-size: 1rem; }}
+.fs-point .d {{ color: {INK_2}; font-size: 0.875rem; line-height: 1.5; margin-top: 0.1rem; }}
 
 .fs-range {{ margin: 0.2rem 0 1.1rem 0; }}
 .fs-range .track {{ display: grid; grid-template-columns: 1fr 8fr 1fr; height: 30px; border-radius: 8px; overflow: hidden;
-  font-size: 0.72rem; font-weight: 500; }}
+  font-size: 0.8rem; font-weight: 500; }}
 .fs-range .track div {{ display: flex; align-items: center; justify-content: center; }}
 .fs-range .edge {{ background: {LINE}; color: {MUTED}; }}
 .fs-range .mid {{ background: {ACCENT_SOFT}; color: {ACCENT}; border-left: 2px solid {ACCENT}; border-right: 2px solid {ACCENT}; }}
-.fs-range .labels {{ display: grid; grid-template-columns: 1fr 1fr; font-size: 0.75rem; color: {MUTED}; margin-top: 0.3rem; }}
+.fs-range .labels {{ display: grid; grid-template-columns: 1fr 1fr; font-size: 0.8rem; color: {MUTED}; margin-top: 0.3rem; }}
 .fs-range .labels div:last-child {{ text-align: right; }}
 
 .fs-chart {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.9rem 0.9rem 0.5rem 0.9rem; margin-bottom: 1.1rem; }}
-.fs-chart .cap {{ font-size: 0.78rem; color: {MUTED}; margin-bottom: 0.3rem; }}
+.fs-chart .cap {{ font-size: 0.8rem; color: {MUTED}; margin-bottom: 0.3rem; }}
 
 .fs-facts {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 1.2rem 0 1.6rem 0; }}
 @media (max-width: 640px) {{ .fs-facts {{ grid-template-columns: 1fr; }} }}
 .fs-fact {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.85rem 1rem; }}
-.fs-fact .t {{ font-weight: 650; color: {INK}; font-size: 0.98rem; }}
-.fs-fact .d {{ color: {MUTED}; font-size: 0.85rem; margin-top: 0.15rem; }}
+.fs-fact .t {{ font-weight: 650; color: {INK}; font-size: 1rem; }}
+.fs-fact .d {{ color: {MUTED}; font-size: 0.875rem; margin-top: 0.15rem; }}
 .fs-terms {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.3rem 1.1rem; margin-bottom: 1.4rem; }}
 .fs-terms .row {{ padding: 0.8rem 0; border-bottom: 1px solid {LINE}; }}
 .fs-terms .row:last-child {{ border-bottom: none; }}
-.fs-terms .h {{ font-weight: 600; color: {INK}; font-size: 0.92rem; margin-bottom: 0.15rem; }}
-.fs-terms .b {{ color: {INK_2}; font-size: 0.92rem; line-height: 1.55; }}
-.fs-hud .cap {{ width: 100%; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
-.fs-scale-ends {{ display: flex; justify-content: space-between; gap: 1rem; font-size: 0.78rem;
+.fs-terms .h {{ font-weight: 600; color: {INK}; font-size: 0.875rem; margin-bottom: 0.15rem; }}
+.fs-terms .b {{ color: {INK_2}; font-size: 0.875rem; line-height: 1.55; }}
+.fs-hud .cap {{ width: 100%; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
+.fs-scale-ends {{ display: flex; justify-content: space-between; gap: 1rem; font-size: 0.8rem;
   color: {MUTED}; margin: -0.4rem 0 1.1rem 0; max-width: 34rem; }}
 .fs-changes .row span.note {{ color: {MUTED}; font-weight: 400; font-style: italic; }}
 .fs-src {{ position: relative; display: inline-flex; align-items: center; justify-content: center;
@@ -278,17 +278,17 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.92
 .fs-src:hover, .fs-src:focus {{ color: {ACCENT}; border-color: {ACCENT_LINE}; outline: none; }}
 .fs-src:hover::after, .fs-src:focus::after {{ content: attr(data-tip); position: absolute; left: 50%;
   transform: translateX(-50%); top: 2.1rem; width: max-content; max-width: 17rem; z-index: 30;
-  background: {INK}; color: #fff; font-size: 0.78rem; font-weight: 400; line-height: 1.45; letter-spacing: 0;
+  background: {INK}; color: #fff; font-size: 0.8rem; font-weight: 400; line-height: 1.45; letter-spacing: 0;
   padding: 0.55rem 0.75rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(14,26,43,0.2); white-space: normal; }}
 .fs-about-banner {{ display: flex; gap: 0.8rem; align-items: flex-start; background: #1E2A3B; color: #fff;
   border-radius: 14px; padding: 0.9rem 1.05rem; margin: 0 0 1.4rem 0; }}
 .fs-about-banner .ic {{ flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: rgba(255,255,255,0.12);
   display: flex; align-items: center; justify-content: center; }}
-.fs-about-banner .t {{ font-weight: 650; font-size: 0.95rem; color: #fff; }}
-.fs-about-banner .d {{ font-size: 0.86rem; color: #C9D2DE; margin-top: 0.1rem; line-height: 1.45; }}
+.fs-about-banner .t {{ font-weight: 650; font-size: 1rem; color: #fff; }}
+.fs-about-banner .d {{ font-size: 0.875rem; color: #C9D2DE; margin-top: 0.1rem; line-height: 1.45; }}
 .fs-echo {{ font-size: 0.8rem; color: {MUTED}; margin: -0.5rem 0 0.6rem 0; }}
 .fs-hero {{ padding: 0.4rem 0 0.2rem 0; }}
-.fs-hero .lead {{ font-size: 1.1rem; color: {INK_2}; margin-top: -0.3rem; }}
+.fs-hero .lead {{ font-size: 1rem; color: {INK_2}; margin-top: -0.3rem; }}
 
 /* ---------- simulation feel (0.9.0) ---------- */
 .stApp {{ font-variant-numeric: tabular-nums; }}
@@ -311,21 +311,21 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
   overflow: hidden; margin-bottom: 1.4rem; }}
 .fs-hud .hd {{ display: flex; justify-content: space-between; align-items: center; gap: 0.8rem;
   padding: 0.5rem 0.85rem; border-bottom: 1px solid {LINE}; background: #FBF9F4; }}
-.fs-hud .brand {{ display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 650; font-size: 0.85rem; color: {INK}; }}
-.fs-hud .cap {{ width: auto; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+.fs-hud .brand {{ display: inline-flex; align-items: center; gap: 0.45rem; font-weight: 650; font-size: 0.875rem; color: {INK}; }}
+.fs-hud .cap {{ width: auto; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
   color: {MUTED}; text-align: right; }}
 .fs-hud .cells {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(98px, 1fr)); gap: 1px; background: {LINE}; }}
 .fs-hud .cells div {{ background: {CARD}; padding: 0.5rem 0.85rem 0.55rem 0.85rem; }}
-.fs-hud small {{ display: block; font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
-.fs-hud b {{ margin: 0; font-size: 0.98rem; font-weight: 650; color: {INK}; letter-spacing: -0.01em; white-space: nowrap; }}
+.fs-hud small {{ display: block; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: {MUTED}; }}
+.fs-hud b {{ margin: 0; font-size: 1rem; font-weight: 650; color: {INK}; letter-spacing: -0.01em; white-space: nowrap; }}
 
 .fs-company {{ display: flex; gap: 1rem; align-items: flex-start; background: {CARD}; border: 1px solid {LINE};
   border-radius: 16px; padding: 1.1rem 1.15rem; margin: 0.3rem 0 1.2rem 0; box-shadow: 0 1px 2px rgba(14,26,43,0.04); }}
 .fs-company .nm {{ font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; color: {INK}; line-height: 1.2; }}
 .fs-company .mt {{ font-size: 0.8rem; color: {MUTED}; margin-top: 0.1rem; }}
-.fs-company .pd {{ font-size: 0.98rem; color: {INK_2}; line-height: 1.55; margin-top: 0.55rem; }}
+.fs-company .pd {{ font-size: 1rem; color: {INK_2}; line-height: 1.55; margin-top: 0.55rem; }}
 .fs-company .tags {{ display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }}
-.fs-company .tags span {{ font-size: 0.75rem; color: {INK_2}; background: #F1EDE4; border-radius: 999px; padding: 0.18rem 0.6rem; }}
+.fs-company .tags span {{ font-size: 0.8rem; color: {INK_2}; background: #F1EDE4; border-radius: 999px; padding: 0.18rem 0.6rem; }}
 
 .fs-msg {{ background: {CARD}; border: 1px solid {LINE}; border-left: 3px solid {ACCENT}; border-radius: 14px;
   padding: 0.85rem 1rem 0.95rem 1rem; margin: 0 0 1.1rem 0; box-shadow: 0 1px 2px rgba(14,26,43,0.04);
@@ -334,9 +334,9 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
 .fs-msg .hd {{ display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.55rem; }}
 .fs-msg .ic {{ flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: {ACCENT_SOFT}; color: {ACCENT};
   display: flex; align-items: center; justify-content: center; }}
-.fs-msg .from {{ font-size: 0.84rem; font-weight: 650; color: {INK}; line-height: 1.25; }}
+.fs-msg .from {{ font-size: 0.875rem; font-weight: 650; color: {INK}; line-height: 1.25; }}
 .fs-msg .sub {{ font-size: 0.8rem; color: {MUTED}; line-height: 1.25; }}
-.fs-msg .tag {{ margin-left: auto; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+.fs-msg .tag {{ margin-left: auto; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
   color: {ACCENT}; background: {ACCENT_SOFT}; border-radius: 999px; padding: 0.15rem 0.5rem; }}
 .fs-msg .tx {{ font-size: 1rem; line-height: 1.6; color: {INK_2}; }}
 
@@ -352,7 +352,7 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
 
 .fs-veil {{ position: fixed; inset: 0; z-index: 999990; background: #0B1424; display: flex; align-items: center;
   justify-content: center; pointer-events: none; animation: fs-veil 2100ms ease forwards; }}
-.fs-veil .t {{ color: #F7F5F0; font-size: clamp(1.9rem, 5.5vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em;
+.fs-veil .t {{ color: #F7F5F0; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em;
   animation: fs-up 700ms 100ms ease-out both; }}
 .fs-veil .b {{ color: #A9D1C8; font-size: 1rem; margin-top: 0.4rem; animation: fs-up 700ms 350ms ease-out both; }}
 .fs-veil .ln {{ height: 2px; width: 0; margin-top: 1.3rem; border-radius: 2px;
@@ -366,14 +366,100 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
 .fs-journey .m {{ position: relative; margin-bottom: 1.1rem; }}
 .fs-journey .m::before {{ content: ""; position: absolute; left: -1.22rem; top: 0.3rem; width: 0.7rem; height: 0.7rem;
   border-radius: 50%; background: {CARD}; border: 2px solid {ACCENT}; }}
-.fs-journey .mh {{ font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: {ACCENT}; }}
+.fs-journey .mh {{ font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: {ACCENT}; }}
 .fs-journey .mt {{ font-weight: 650; color: {INK}; font-size: 1rem; margin: 0.05rem 0 0.35rem 0; }}
-.fs-journey .it {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 0.8rem; font-size: 0.88rem;
+.fs-journey .it {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 0.8rem; font-size: 0.875rem;
   padding: 0.38rem 0; border-top: 1px solid {LINE}; color: {MUTED}; }}
 .fs-journey .it span:last-child {{ color: {INK}; font-weight: 500; }}
 @media (prefers-reduced-motion: reduce) {{
   div[class*="st-key-screen_"], .fs-msg, .odo .d > span, .fs-card.chg {{ animation: none !important; }}
   .fs-veil {{ display: none !important; }}
+}}
+
+/* ---------- type scale (review B4): 1.75 / 1.25 / 1 / 0.875, minimum 0.8 ---------- */
+.stApp h1, .stApp h2, .stApp h3 {{ font-size: 1.75rem !important; font-weight: 700 !important;
+  letter-spacing: -0.02em; line-height: 1.25 !important; padding: 0 0 0.4rem 0 !important; }}
+div[data-testid="stWidgetLabel"] p {{ font-size: 1rem !important; }}
+label[data-testid="stRadioOption"] p, div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stMarkdownContainer"] li, input, textarea {{ font-size: 1rem !important; }}
+div[data-testid="stCaptionContainer"], div[data-testid="stCaptionContainer"] p,
+div[data-testid="stAlert"] p {{ font-size: 0.875rem !important; }}
+button p {{ font-size: 1rem !important; }}
+
+/* ---------- selection color (review B7) ----------
+   The theme in .streamlit/config.toml sets it. If that file is missing on a
+   deployment, Streamlit falls back to red; this keeps the theme color anyway. */
+label[data-testid="stRadioOption"][data-selected="true"] > div > div:first-child {{
+  background-color: {ACCENT} !important; border-color: {ACCENT} !important; }}
+input[type="checkbox"]:checked + div, div[data-baseweb="checkbox"] [aria-checked="true"] {{
+  background-color: {ACCENT} !important; border-color: {ACCENT} !important; }}
+
+/* ---------- email (review B6) ---------- */
+.fs-msg .hd {{ align-items: flex-start; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid {LINE}; }}
+.fs-msg .meta {{ display: grid; gap: 0.1rem; font-size: 0.875rem; color: {INK_2}; min-width: 0; }}
+.fs-msg .meta .row {{ display: flex; gap: 0.5rem; }}
+.fs-msg .meta .row span {{ flex: none; width: 3.9rem; color: {MUTED}; }}
+.fs-msg .meta .row b {{ color: {INK}; font-weight: 600; }}
+.fs-msg .tx p {{ margin: 0 0 0.3rem 0; font-size: 1rem; line-height: 1.5; color: {INK_2}; }}
+.fs-msg .tx .gr {{ display: block; }}
+.fs-msg {{ padding: 0.7rem 0.95rem 0.6rem 0.95rem; margin-bottom: 0.7rem; }}
+.fs-msg .hd {{ margin-bottom: 0.4rem; padding-bottom: 0.4rem; }}
+.fs-msg .tx p.sg {{ margin: 0.2rem 0 0 0; color: {MUTED}; font-size: 0.875rem; }}
+
+/* ---------- bar chart (HTML, keeps the type scale) ---------- */
+.fs-chart .bars {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.5fr);
+  gap: 0.6rem; align-items: end; border-bottom: 0; }}
+.fs-chart .col {{ display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; }}
+.fs-chart .v {{ font-size: 0.875rem; font-weight: 650; color: {INK}; margin-bottom: 0.2rem; white-space: nowrap; }}
+.fs-chart .bar {{ width: 62%; border-radius: 6px 6px 0 0; background: #A9C7C0; display: flex;
+  justify-content: center; align-items: flex-start; }}
+.fs-chart .bar.now {{ background: {ACCENT}; }}
+.fs-chart .bar .chg {{ font-size: 0.8rem; font-weight: 600; color: #FFFFFF; padding-top: 0.15rem; }}
+.fs-chart .bar.q {{ width: 100%; height: 26px; border-radius: 8px; background: {ACCENT_SOFT};
+  border: 1.5px dashed {ACCENT}; color: {ACCENT}; font-weight: 700; align-items: center; font-size: 1rem; }}
+.fs-chart .x {{ font-size: 0.8rem; color: {MUTED}; margin-top: 0.25rem; white-space: nowrap; text-align: center;
+  border-top: 1px solid {LINE}; width: 100%; padding-top: 0.2rem; }}
+.fs-chart .fut .x {{ color: {ACCENT}; font-weight: 600; border-top-color: transparent; }}
+.fs-chart .bars:has(.col:nth-child(4)) {{ grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.5fr); }}
+.fs-chart .bars:not(:has(.col:nth-child(5))) {{ grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); }}
+@media (max-width: 640px) {{ .fs-chart .bars {{ gap: 0.3rem; }} .fs-chart .x {{ white-space: normal; }} }}
+
+/* ---------- laptop height (review B5): F3 fits 1366 x 768 without scrolling ---------- */
+.block-container {{ max-width: 50rem; padding-top: 0.6rem !important; }}
+.fs-steps {{ gap: 0.3rem; margin-bottom: 0.45rem; }}
+.fs-step {{ padding: 0.2rem 0.6rem; }}
+.fs-bar {{ margin-bottom: 0.9rem; }}
+.fs-q {{ margin-bottom: 0.4rem; }}
+.fs-body {{ margin-bottom: 0.7rem; }}
+.fs-hud {{ display: flex !important; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.6rem;
+  padding: 0.45rem 0.8rem !important; margin-bottom: 0.9rem; font-size: 0.875rem; color: {MUTED}; }}
+.fs-hud .cap {{ width: auto !important; text-align: left !important; font-size: 0.8rem; font-weight: 500;
+  letter-spacing: 0; text-transform: none; color: {MUTED}; margin-right: 0; }}
+.fs-hud .it {{ white-space: nowrap; }}
+label[data-testid="stRadioOption"] {{ padding: 0.68rem 1rem !important; }}
+div[role="radiogroup"] {{ gap: 0.4rem !important; }}
+.fs-card {{ padding: 0.6rem 0.85rem !important; }}
+.fs-grid {{ gap: 0.5rem !important; margin: 0.2rem 0 0.5rem 0 !important; }}
+.fs-grid.two {{ margin-bottom: 0.7rem !important; }}
+.fs-grid.four {{ grid-template-columns: repeat(4, minmax(0, 1fr)) !important; margin-bottom: 0.7rem !important; }}
+@media (max-width: 640px) {{ .fs-grid.four {{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }} }}
+.fs-company {{ padding: 0.8rem 1rem !important; margin: 0.1rem 0 0.7rem 0 !important; gap: 0.85rem !important; }}
+.fs-company .pd {{ margin-top: 0.3rem !important; }}
+.fs-company .tags {{ margin-top: 0.45rem !important; }}
+.fs-changes {{ margin-bottom: 0.8rem !important; padding: 0.2rem 0.9rem !important; }}
+.fs-changes .row {{ padding: 0.4rem 0 !important; }}
+.fs-hud .it b {{ font-size: 0.875rem; font-weight: 650; color: {INK}; margin-left: 0.3rem; }}
+.fs-chart {{ padding: 0.6rem 0.8rem 0.3rem 0.8rem; margin-bottom: 0.8rem; }}
+.fs-chart .cap {{ margin-bottom: 0.1rem; }}
+.fs-range {{ margin: 0 0 0.7rem 0; }}
+.fs-range .track {{ height: 26px; }}
+div[data-testid="stVerticalBlock"] {{ gap: 0.55rem; }}
+.fs-range .track {{ grid-template-columns: 1.7fr 6.6fr 1.7fr; }}
+.fs-q {{ line-height: 1.35; }}
+@media (max-width: 640px) {{
+  .fs-hud {{ gap: 0.1rem 0.8rem; }}
+  .fs-range .track {{ height: auto !important; min-height: 26px; grid-template-columns: 1.3fr 3fr 1.3fr !important; }}
+  .fs-range .track div {{ padding: 0.2rem 0.3rem; text-align: center; line-height: 1.25; }}
 }}
 </style>
 """
@@ -399,8 +485,16 @@ def steps(sections: list[str], current: str | None, progress: float) -> None:
     if not current:
         return
     idx = sections.index(current) if current in sections else -1
+    # Once the simulation runs, the finished sections before it collapse into
+    # one chip, so the bar fits one line on a laptop (review B5).
+    intro = [content.SECTION_ABOUT, content.SECTION_HOW, content.SECTION_STARTUP]
+    collapse = idx > max((sections.index(s) for s in intro if s in sections), default=-1)
     chips = []
+    if collapse:
+        chips.append(f'<div class="fs-step done">{_h(content.SECTION_INTRO_DONE)}</div>')
     for i, sec in enumerate(sections):
+        if collapse and sec in intro:
+            continue
         cls = "done" if i < idx else "now" if i == idx else ""
         chips.append(f'<div class="fs-step {cls}">{_h(sec)}</div>')
     pct = max(2, min(100, round(progress * 100)))
@@ -454,10 +548,15 @@ def points(items: list[tuple[str, str]]) -> None:
 # Situation
 # ---------------------------------------------------------------------------
 
-def _visible_fields(state: dict, solo: bool = False) -> list[tuple[str, str, str]]:
+def _visible_fields(state: dict, solo: bool = False,
+                    show_scales: bool = False) -> list[tuple[str, str, str]]:
+    """Morale and market confidence judge how well decisions worked, so they
+    are hidden during the session and shown in the final report (review A9)."""
     out = []
     for key, label, help_text in content.status_fields(solo):
         if key == "pending_hires" and not state.get("pending_hires"):
+            continue
+        if key in game.SCALE_KEYS and not show_scales:
             continue
         out.append((key, label, help_text))
     return out
@@ -486,11 +585,11 @@ def odometer(before: str, after: str) -> str:
 
 
 def status_cards(state: dict, before: dict | None = None, solo: bool = False,
-                 animate: bool = False) -> None:
+                 animate: bool = False, show_scales: bool = False) -> None:
     """Cards for the situation, with the change since `before` if given. With
     `animate`, changed numbers roll from the old to the new value."""
     cards, scales = [], []
-    for key, label, help_text in _visible_fields(state, solo):
+    for key, label, help_text in _visible_fields(state, solo, show_scales):
         value = game.format_value(key, state)
         value_html, delta, cls = _h(value), "", ""
         if before is not None:
@@ -509,8 +608,8 @@ def status_cards(state: dict, before: dict | None = None, solo: bool = False,
                 f'<i class="fs-tip" tabindex="0" data-tip="{_h(help_text)}">i</i></div>'
                 f'<div class="val">{value_html}</div>{delta}{extra}</div>')
         (scales if (extra or key in ("ownership", "pending_hires")) else cards).append(card)
-    html_block(f'<div class="fs-grid">{"".join(cards)}</div>'
-               f'<div class="fs-grid two">{"".join(scales)}</div>')
+    # One grid, four columns on a laptop (review B5), two on a phone.
+    html_block(f'<div class="fs-grid four">{"".join(cards + scales)}</div>')
 
 
 LOGO_SVG = ('<svg viewBox="0 0 32 32" width="{w}" height="{w}" aria-hidden="true">'
@@ -524,21 +623,21 @@ def logo(size: int = 20) -> str:
 
 
 def hud(state: dict, caption: str = "At the start of this area", brand: str = "") -> None:
-    """Compact panel of the key numbers on every simulation question. It shows
-    the situation at the start of the area and does not move with the answers
-    inside the area, so a single decision never gets visible feedback."""
+    """One compact line with the key numbers on every simulation question. It
+    shows the situation at the start of the area and does not move with the
+    answers inside the area, so a single decision never gets visible feedback.
+    (`brand` is kept for callers; the line has no room for the logo.)"""
+    # Customers are not in the line: they change only in the final report.
+    runway = state.get("runway", 0)
     items = [("Cash", game.format_value("cash", state)),
              ("Net burn", game.format_value("burn", state) + "/mo"),
-             ("Runway", game.format_value("runway", state)),
+             ("Runway", "8+ years" if runway >= 99 else f"{runway} mo"),
              ("Revenue", game.format_value("revenue", state) + "/mo"),
-             ("Team", game.format_value("team_size", state)),
-             ("Customers", game.format_value("customers", state))]
+             ("Team", str(state.get("team_size", 0)))]
     if state.get("pending_hires"):
         items.insert(5, ("Open roles", str(state["pending_hires"])))
-    cells = "".join(f'<div><small>{_h(k)}</small><b>{_h(v)}</b></div>' for k, v in items)
-    head = f'<span class="brand">{logo(18)}{_h(brand)}</span>' if brand else "<span></span>"
-    html_block(f'<div class="fs-hud"><div class="hd">{head}<span class="cap">{_h(caption)}</span></div>'
-               f'<div class="cells">{cells}</div></div>')
+    cells = "".join(f'<span class="it">{_h(k)}<b>{_h(v)}</b></span>' for k, v in items)
+    html_block(f'<div class="fs-hud"><span class="cap">{_h(caption)}</span>{cells}</div>')
 
 
 def changes(events: list[dict], solo: bool = False) -> None:
@@ -567,50 +666,30 @@ def changes(events: list[dict], solo: bool = False) -> None:
 def range_diagram(left: str, right: str) -> None:
     html_block(
         '<div class="fs-range"><div class="track">'
-        '<div class="edge">1 in 10</div>'
+        f'<div class="edge">1 in 10 {_h(left)}</div>'
         '<div class="mid">about 8 in 10 land between your two numbers</div>'
-        '<div class="edge">1 in 10</div></div>'
-        f'<div class="labels"><div>{_h(left)}</div><div>{_h(right)}</div></div></div>')
+        f'<div class="edge">1 in 10 {_h(right)}</div></div></div>')
 
 
 def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: str,
               future_label: str) -> None:
-    """Small SVG bar chart of a past series, with an empty 'future' slot."""
-    w, h, pad_b, pad_t = 600, 190, 34, 26
-    n = len(series)
-    slot = w / (n + 1.6)
-    bw = slot * 0.58
-    vmax = max(v for _, v, _ in series) * 1.15
-    parts = []
+    """Small bar chart of a past series, with an empty 'future' slot. Built from
+    HTML, not SVG, so its text keeps the type scale on every screen size."""
+    vmax = max(v for _, v, _ in series) * 1.08
+    cols = []
     for i, (lab, v, chg) in enumerate(series):
-        x = slot * i + (slot - bw) / 2 + 6
-        bh = (h - pad_b - pad_t) * v / vmax
-        y = h - pad_b - bh
-        fill = ACCENT if i == n - 1 else "#A9C7C0"
-        parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" rx="6" fill="{fill}"/>')
-        parts.append(f'<text x="{x + bw / 2:.1f}" y="{y - 7:.1f}" text-anchor="middle" font-size="13" '
-                     f'font-weight="600" fill="{INK}">{_h(unit_fmt(v))}</text>')
-        parts.append(f'<text x="{x + bw / 2:.1f}" y="{h - 12:.1f}" text-anchor="middle" font-size="11.5" '
-                     f'fill="{MUTED}">{_h(lab)}</text>')
-        if chg:
-            parts.append(f'<text x="{x + bw / 2:.1f}" y="{y + 17:.1f}" text-anchor="middle" font-size="11" '
-                         f'font-weight="600" fill="#FFFFFF">{_h(chg)}</text>')
+        h = max(8, round(64 * v / vmax))
+        cls = "bar now" if i == len(series) - 1 else "bar"
+        inner = f'<span class="chg">{_h(chg)}</span>' if chg else ""
+        cols.append(f'<div class="col"><div class="v">{_h(unit_fmt(v))}</div>'
+                    f'<div class="{cls}" style="height:{h}px">{inner}</div>'
+                    f'<div class="x">{_h(lab)}</div></div>')
     # The future slot is a small box on the baseline, so its height suggests no
     # magnitude.
-    fx = slot * n + 10
-    fw = w - fx - 4
-    fh = 34
-    parts.append(f'<line x1="6" y1="{h - pad_b:.1f}" x2="{w - 4}" y2="{h - pad_b:.1f}" '
-                 f'stroke="{LINE}" stroke-width="1"/>')
-    parts.append(f'<rect x="{fx:.1f}" y="{h - pad_b - fh:.1f}" width="{fw:.1f}" height="{fh}" rx="8" '
-                 f'fill="{ACCENT_SOFT}" stroke="{ACCENT}" stroke-dasharray="5 5"/>')
-    parts.append(f'<text x="{fx + fw / 2:.1f}" y="{h - pad_b - fh / 2 + 6:.1f}" text-anchor="middle" '
-                 f'font-size="18" font-weight="700" fill="{ACCENT}">?</text>')
-    parts.append(f'<text x="{fx + fw / 2:.1f}" y="{h - 12:.1f}" text-anchor="middle" font-size="11.5" '
-                 f'fill="{ACCENT}" font-weight="600">{_h(future_label)}</text>')
-    svg = (f'<svg viewBox="0 0 {w} {h}" width="100%" role="img" aria-label="{_h(caption)}" '
-           f'xmlns="http://www.w3.org/2000/svg">{"".join(parts)}</svg>')
-    html_block(f'<div class="fs-chart"><div class="cap">{_h(caption)}</div>{svg}</div>')
+    cols.append(f'<div class="col fut"><div class="v">&nbsp;</div><div class="bar q">?</div>'
+                f'<div class="x">{_h(future_label)}</div></div>')
+    html_block(f'<div class="fs-chart" role="img" aria-label="{_h(caption)}">'
+               f'<div class="cap">{_h(caption)}</div><div class="bars">{"".join(cols)}</div></div>')
 
 
 def facts(items: list[tuple[str, str]]) -> None:
@@ -679,11 +758,11 @@ html, body, .stApp {{ background: #0B1424 !important; }}
 [data-testid="stMain"] {{ position: relative; z-index: 1; }}
 .block-container {{ padding-top: 18vh !important; }}
 .fs-curtain {{ text-align: left; }}
-.fs-curtain .ey {{ color: #A9D1C8; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.18em;
+.fs-curtain .ey {{ color: #A9D1C8; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.18em;
   text-transform: uppercase; opacity: 0; animation: fs-up 700ms 150ms ease-out forwards; }}
-.fs-curtain .ti {{ color: #FFFFFF; font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; line-height: 1.08;
+.fs-curtain .ti {{ color: #FFFFFF; font-size: 1.75rem; font-weight: 700; line-height: 1.08;
   letter-spacing: -0.035em; margin: 0.6rem 0 0.9rem 0; opacity: 0; animation: fs-up 900ms 450ms cubic-bezier(.2,.7,.2,1) forwards; }}
-.fs-curtain .bd {{ color: #C9CFD9; font-size: 1.08rem; line-height: 1.6; max-width: 30rem; opacity: 0;
+.fs-curtain .bd {{ color: #C9CFD9; font-size: 1rem; line-height: 1.6; max-width: 30rem; opacity: 0;
   animation: fs-up 800ms 900ms ease-out forwards; }}
 .fs-curtain .ln {{ height: 2px; width: 0; margin: 1.8rem 0 1.6rem 0; border-radius: 2px;
   background: linear-gradient(90deg, #1F5F5B, #4E9A8F, #C9A46A); animation: fs-line 1200ms 1100ms ease-out forwards; }}
@@ -721,16 +800,23 @@ MAIL_SVG = ('<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke=
 
 def company_card(name: str, meta: str, product: str, tags: list[str]) -> None:
     chips = "".join(f"<span>{_h(t)}</span>" for t in tags)
-    html_block(f'<div class="fs-company">{logo(52)}<div><div class="nm">{_h(name)}</div>'
+    html_block(f'<div class="fs-company">{logo(44)}<div><div class="nm">{_h(name)}</div>'
                f'<div class="mt">{_h(meta)}</div><div class="pd">{_h(product)}</div>'
                f'<div class="tags">{chips}</div></div></div>')
 
 
-def message(sender: str, subject: str, text: str) -> None:
-    """A decision that arrives as a message from an institution or a role."""
-    html_block(f'<div class="fs-msg"><div class="hd"><span class="ic">{MAIL_SVG}</span><div>'
-               f'<div class="from">{_h(sender)}</div><div class="sub">{_h(subject)}</div></div>'
-               f'<span class="tag">New</span></div><div class="tx">{_h(text)}</div></div>')
+def message(sender: str, subject: str, text: str, to: str = "", signoff: str = "") -> None:
+    """A decision that arrives as an email: sender, recipient, subject, body."""
+    # `to` is accepted but not shown: one line less on a laptop screen (B5).
+    rows = (f'<div class="row"><span>From</span><b>{_h(sender)}</b></div>'
+            f'<div class="row"><span>Subject</span><b>{_h(subject)}</b></div>')
+    greeting, _, rest = text.partition(", ")
+    body = (f'<p><span class="gr">{_h(greeting)},</span> {_h(rest[:1].upper() + rest[1:])}</p>'
+            if rest else f'<p>{_h(text)}</p>')
+    sign = f'<p class="sg">{_h(signoff)}, {_h(sender)}</p>' if signoff else ""
+    html_block(f'<div class="fs-msg"><div class="hd"><span class="ic">{MAIL_SVG}</span>'
+               f'<div class="meta">{rows}</div><span class="tag">New</span></div>'
+               f'<div class="tx">{body}{sign}</div></div>')
 
 
 def month_end(title: str, body: str) -> None:

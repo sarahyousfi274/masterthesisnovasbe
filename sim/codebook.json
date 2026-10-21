@@ -1,6 +1,6 @@
 {
-  "codebook_version": "0.8.0",
-  "updated": "2026-10-20",
+  "codebook_version": "0.10.0",
+  "updated": "2026-10-21",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
   "contest_variant": "harmonised",
   "contest_rule": {
@@ -91,24 +91,25 @@
       "form": "overestimation",
       "domain": "finance",
       "type": "ladder",
-      "quantity": "months of delay before the raise starts",
+      "quantity": "months of delay before the raise starts = runway shown minus the runway left at the start (the stored numeric_value)",
       "option_values": [
-        0,
-        3,
+        null,
+        9,
         6,
-        9
+        3
       ],
       "reference_rule": "runway_at_node - reference_runway_remaining",
       "reference_runway_remaining": 9,
       "sign": 1,
       "provenance": "derived",
-      "basis": "The scored quantity is the runway left when the raise starts. An active seed process runs about two to three months, successful seed founders in the DocSend sample held about 40 investor meetings, and a first attempt that fails needs a second. Nine months of runway remaining is the reference; starting with less assumes a fast round. Since 0.7.0 the months until the chosen start are paid from cash when the round money arrives (F4), so the choice has a consequence. The reference is computed from the runway shown in the question (runway_shown in the snapshot), which is the runway at the start of the area.",
+      "basis": "The scored quantity is the runway left when the raise starts. An active seed process runs about two to three months, successful seed founders in the DocSend sample held about 40 investor meetings, and a first attempt that fails needs a second. Nine months of runway remaining is the reference; starting with less assumes a fast round. Since 0.10.0 the question is asked in remaining runway (right away, or when 9, 6 or 3 months are left), only options below the runway shown are offered, and no running costs are charged for the waiting time. A start with fewer than 6 months left closes on worse terms in the final report (a 15,000 euro bridge fee on the loan, 2 extra ownership points on the SAFE or priced round), so the reference is never worse off than any option. The reference is computed from the runway shown in the question (runway_shown in the snapshot).",
       "sources": [
         "Elad Gil: a round takes about two to three months; start a round with at least six months of cash",
         "DocSend seed report, 175 seed-stage startups: successful founders contacted 77 investors and held about 40 meetings",
         "Buehler, Griffin and Ross (1994)"
       ],
-      "open": "The nine-month reference is a convention, not a measured distribution. Either defend it from the interviews or report the score for both a six- and a nine-month reference."
+      "open": "The nine-month reference is a convention, not a measured distribution. Either defend it from the interviews or report the score for both a six- and a nine-month reference.",
+      "option_values_unit": "runway left at the start in months; null = right away, i.e. the runway shown. Options at or above the runway shown are not offered."
     },
     "F2": {
       "form": "overplacement",
@@ -278,16 +279,15 @@
         0.2
       ],
       "reference_value": 0.4,
-      "reference_value_alternative": 0.55,
       "sign": 1,
-      "provenance": "empirical",
-      "basis": "At Microsoft about one third of tested ideas prove effective, one third are neutral and one third are negative; at Google and Bing only 10 to 20 percent of experiments produce positive results. An untested first channel idea therefore has a base rate well below one half, so committing the whole budget to it assumes a hit rate far above the documented one. Chen, Elfenbein, Posen and Wang (2024) make the same argument for programs of experimentation.",
+      "provenance": "derived",
+      "basis": "Two-period launch model: each channel works with the base rate p; tests reveal working alternatives for the scale-up. With p = 0.3 (upper bound, Berman and Van den Bulte 2022) and p = 0.6 (Castellion and Markham 2013) the smallest test share that reaches the maximum expected customers is 40/60. Model and sensitivity grid in g1_model.py.",
       "sources": [
-        "Kohavi and Thomke (2017), The Surprising Power of Online Experiments, Harvard Business Review",
-        "Chen, Elfenbein, Posen and Wang (2024)",
-        "Kahneman and Lovallo (1993)"
+        "Berman and Van den Bulte (2022)",
+        "Castellion and Markham (2013)",
+        "Koning, Hasan and Chatterji (2022)"
       ],
-      "open": "reference_value 0.40 leans on the 10 to 20 percent figure; the alternative 0.55 leans on the one-third figure alone. Report the sensitivity."
+      "open": "Robustness check with 70/30 as the reference, which replaces the earlier alternative of 0.55. The alternative value 0.55 is no longer used."
     },
     "G2": {
       "form": "overplacement",
@@ -340,21 +340,22 @@
       "domain": "gtm",
       "type": "interval",
       "unit": "customers",
-      "quantity": "new paying customers from the pilot channel over the following six months, after 40, 65 and 90",
+      "quantity": "new paying customers from the new channel in month 9, after 9, 16 and 21",
       "reference_percentiles": {
-        "0.10": 300,
-        "0.25": 400,
-        "0.50": 540,
-        "0.75": 750,
-        "0.90": 1000
+        "0.10": 22,
+        "0.25": 34,
+        "0.50": 56,
+        "0.75": 91,
+        "0.90": 127
       },
-      "provenance": "placeholder",
-      "basis": "New-customer inflow from a pilot channel flattens rather than continuing to rise linearly. The median path holds roughly the last observed monthly level and then decays, giving about 540 over six months. Naive linear extrapolation of the series gives 1,065, which sits above the 90th percentile of the reference.",
+      "provenance": "derived",
+      "basis": "Discrete-time Bass model with broad monthly priors (p 0.001 to 0.05, q 0 to 0.5, M 100 to 3,000), conditioned on 9, 16 and 21 by Poisson likelihood. The median matches the straight-line value of 57. Model in g3_model.py.",
       "sources": [
-        "ChartMogul SaaS Growth Report 2023: growth rates decay with scale; the median early-stage company had flat year-on-year new business ARR",
-        "SaaS Capital (2025): median growth falls from 40 percent below 1M ARR to 20 percent above 20M ARR"
+        "Bass (1969)",
+        "Sultan, Farley and Lehmann (1990)",
+        "Van den Bulte and Stremersch (2004)"
       ],
-      "open": "Weakest of the eight. The decay shape is an assumption, not a measured distribution. Anchor it on the founder interviews or on the team's own pilot data before fielding."
+      "open": "Robustness check with prior variants B (narrower) and C (wider), see g3_variants.py."
     },
     "T5": {
       "form": "overplacement",
@@ -452,7 +453,8 @@
       "sources": [
         "Chen, Elfenbein, Posen and Wang (2024)",
         "Kirtley and O'Mahony (2023), What is a pivot?, Strategic Management Journal"
-      ]
+      ],
+      "note": "Since 0.10.0 all four options have the same effect (+15 customers, shown only in the final report), so the game does not reward one reaction over another."
     },
     "K1": {
       "form": "control",
@@ -479,7 +481,8 @@
       "sources": [
         "Camerer and Lovallo (1999), Overconfidence and excess entry",
         "Moore and Cain (2007), random-rank condition"
-      ]
+      ],
+      "note": "Option C is labeled 'Enter with a premium entry' (a second ballot would give 2 in 11, not 1 in 8)."
     }
   },
   "scoring": {
@@ -497,10 +500,10 @@
   "display_rules": {
     "status_strip": "The strip on decision screens shows the situation at the start of the area and does not move with decisions inside the area (team decision, 18 October). The current state before every answer is stored in state_json as the control variable.",
     "launch_budget": "G1 uses a quarter of the cash at the start of the area, so the number in the question matches the strip.",
-    "net_burn": "Costs 28,000, revenue 8,000 (90 customers at about 89 euros each), net burn 20,000, runway 14 months. Revenue follows customers.",
+    "net_burn": "Costs 28,000, revenue 8,000 (90 customers at about 89 euros each), net burn 20,000, runway 14 months. Revenue follows customers, but customer changes are held back until the final report (0.10.0), so revenue stays at 8,000 during the session and is 8,000 at F3 in every track.",
     "popover": "Removed in 0.8.0. The scientific background appears on hover over a link icon next to the question, author and year only. Assumptions a participant needs are written into the question text.",
     "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product.",
-    "presentation": "From 0.9.0 each area is shown as one month of Lumora (Month 1 to 4, the final round Month 5). The scenario text of the four rank items and of K1 is shown inside a message card from an institution or role (never a named or pictured person); wording unchanged except K1, where the raffle description moved into the message and the question reads Do you enter the raffle?. A company card states one generic product sentence per chosen industry. The end screen lists the participant's own decisions without any evaluation, after the suspicion question.",
+    "presentation": "From 0.10.0 no month labels are shown. The scenario text of the four rank items and of K1 is shown as an email from an institution or role (never a named or pictured person). Outcome feedback is held back until a final report after K1: customers, revenue, morale and market confidence change only there; during the session the area reports show only money spent or raised, ownership, monthly costs, people joining and one month of running costs. Order inside areas: T3 before T1, H3 before H1, G1 G3 G4; F4, H4 and G4 are always the last decision of their area. A company card states one generic product sentence per chosen industry. The end screen lists the participant's own decisions without any evaluation.",
     "startup": "Every participant runs the same fictional startup, Lumora. At setup the participant chooses to run it alone or with one co-founder (stored as sessions.solo and in the setup row); texts that mention the founder adapt to that choice. The team composition in the demographics describes the real company and is not used for this; the industry is chosen at setup (pre-selected from the participant's own industry) and used as a label only."
   },
   "shown_background": {

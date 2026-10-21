@@ -15,10 +15,20 @@ Fixed rules, applied at the end of each area (end_of_area)
   (−1, onboarding strain, as in the walkthrough).
 - If runway falls below SHORT_RUNWAY_MONTHS, the team feels it (morale −1).
 
+No outcome feedback before the end (review of 20 October, A9)
+- Customers, morale and market confidence say how well a choice worked.
+  Changes to them are held back in state["deferred"] and applied in one step
+  by settle(), in the final report after K1. During the session revenue stays
+  at its starting value, so net burn and runway change only through costs.
+- Money spent or raised, ownership given up, monthly costs and people joining
+  are known at the moment of the decision and are applied at once.
+
 Finance
-- F1 stores the months until fundraising starts. When the money from F4
-  arrives, the net burn for those months is paid first, so starting late has a
-  visible cost. When the round closes is never shown.
+- F1 stores the runway left when the round starts (fundraise_left). No running
+  costs are charged for the waiting time: each month's burn is already paid at
+  the end of each area. A start with fewer than 6 months left closes on worse
+  terms, applied in the final report: €15,000 bridge fee on the loan, or 2
+  extra ownership points on the SAFE or the priced round.
 
 Every change is returned as an event so the report can say where each number
 came from.
@@ -33,6 +43,11 @@ from . import content
 TRACKED = ("cash", "burn", "revenue", "customers", "team_size", "pending_hires",
            "ownership", "morale", "market_confidence")
 SCALE_KEYS = ("morale", "market_confidence")
+DEFERRED_KEYS = ("customers", "morale", "market_confidence")   # shown only at the end
+SET_KEYS = ("pending_hires", "fundraise_left", "f4_route")      # a plan, not an increment
+LATE_START_MONTHS = 6
+LATE_FEE_LOAN = 15_000
+LATE_OWNERSHIP = 2
 
 
 # ---------------------------------------------------------------------------
@@ -75,27 +90,28 @@ def launch_budget(state: dict) -> int:
 # Applying a decision
 # ---------------------------------------------------------------------------
 
-def apply(state: dict, effects: dict) -> dict:
-    """Return a new state with `effects` applied."""
+def apply(state: dict, effects: dict, label: str | None = None) -> dict:
+    """Return a new state with `effects` applied. Customer, morale and market
+    confidence effects are held back (see DEFERRED_KEYS) under `label`."""
     new = copy.deepcopy(state)
+    new.setdefault("deferred", [])
 
     spend = effects.get("spend_launch_budget")
     if spend:
         new["cash"] -= launch_budget(state) if spend is True else int(spend)
 
     if "raise" in effects:
-        # Running costs until the round starts are paid first (F1).
-        delay = new.get("fundraise_delay", 0)
-        new["cash"] -= delay * burn(new)
         new["cash"] += effects["raise"]
 
+    held = {k: v for k, v in effects.items() if k in DEFERRED_KEYS and v}
+    if held:
+        new["deferred"] = new["deferred"] + [{"label": label or "Other", "delta": held}]
+
     for key, delta in effects.items():
-        if key in ("spend_launch_budget", "raise"):
+        if key in ("spend_launch_budget", "raise") or key in DEFERRED_KEYS:
             continue
-        if key in SCALE_KEYS:
-            new[key] = max(1, min(5, new[key] + delta))
-        elif key in ("pending_hires", "fundraise_delay"):
-            new[key] = delta                       # a plan, not an increment
+        if key in SET_KEYS:
+            new[key] = delta
         elif key == "pending_hires_extra":
             new["pending_extra"] = new.get("pending_extra", 0) + delta
         elif key == "pending_cost_extra":
@@ -113,8 +129,9 @@ def apply(state: dict, effects: dict) -> dict:
 
 
 def delay_cost(state: dict) -> int:
-    """Net burn paid between F1 and the start of the round."""
-    return state.get("fundraise_delay", 0) * burn(state)
+    """No longer charged (review A3): each month's burn is paid at the end of
+    each area, so waiting costs nothing extra. Kept so older callers still work."""
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -137,26 +154,54 @@ def end_of_area(state: dict, domain: str) -> tuple[dict, list[dict]]:
             s["pending_hires"] = 0
             s["pending_extra"] = 0
             s["pending_cost"] = 0
-            if joining >= 4:
-                s["morale"] = max(1, s["morale"] - 1)
-            else:
-                s["morale"] = min(5, s["morale"] + 1)
             refresh(s)
             word = "person" if joining == 1 else "people"
-            events.append({"label": f"New team members start ({joining} {word})",
-                           "delta": diff(before, s)})
+            label = f"New team members start ({joining} {word})"
+            events.append({"label": label, "delta": diff(before, s)})
+            s.setdefault("deferred", []).append(
+                {"label": label, "delta": {"morale": -1 if joining >= 4 else 1}})
 
     before = copy.deepcopy(s)
     s["cash"] = max(0, s["cash"] - burn(s))
     refresh(s)
     events.append({"label": "One month of running costs", "delta": diff(before, s)})
 
-    if s["runway"] < content.SHORT_RUNWAY_MONTHS and s["morale"] > 1:
-        before = copy.deepcopy(s)
-        s["morale"] -= 1
-        events.append({"label": "Short runway weighs on morale",
-                       "delta": diff(before, s)})
+    if s["runway"] < content.SHORT_RUNWAY_MONTHS:
+        s.setdefault("deferred", []).append(
+            {"label": "Short runway weighs on morale", "delta": {"morale": -1}})
 
+    return refresh(s), events
+
+
+def settle(state: dict) -> tuple[dict, list[dict]]:
+    """Final report: apply everything held back during the session, plus the
+    terms of a late fundraising start. Returns the new state and its events."""
+    s = copy.deepcopy(state)
+    events: list[dict] = []
+    for entry in s.get("deferred", []):
+        before = copy.deepcopy(s)
+        for key, delta in entry["delta"].items():
+            if key in SCALE_KEYS:
+                s[key] = max(1, min(5, s[key] + delta))
+            else:
+                s[key] = max(0, s.get(key, 0) + delta)
+        refresh(s)
+        d = diff(before, s)
+        if d:
+            events.append({"label": entry["label"], "delta": d})
+    s["deferred"] = []
+
+    left, route = s.get("fundraise_left"), s.get("f4_route")
+    if left is not None and route and left < LATE_START_MONTHS:
+        before = copy.deepcopy(s)
+        if route == "loan":
+            s["cash"] = max(0, s["cash"] - LATE_FEE_LOAN)
+            label = "Late fundraising start: bridge fee on the loan"
+        else:
+            s["ownership"] = max(0, s["ownership"] - LATE_OWNERSHIP)
+            label = "Late fundraising start: the round closed on worse terms"
+        refresh(s)
+        events.append({"label": label, "delta": diff(before, s)})
     return refresh(s), events
 
 
@@ -184,7 +229,7 @@ def snapshot(state: dict) -> dict:
     return {k: state.get(k) for k in
             ("cash", "costs", "revenue", "burn", "runway", "team_size",
              "pending_hires", "ownership", "morale", "market_confidence",
-             "customers", "fundraise_delay")}
+             "customers", "fundraise_left")}
 
 
 # ---------------------------------------------------------------------------

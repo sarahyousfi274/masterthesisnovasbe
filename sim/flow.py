@@ -58,12 +58,14 @@ def build(track: int, seed: int) -> list[dict]:
         # Story order first; units (rank question + its contest) are inserted
         # as a pair at a random position.
         units: list[list[str]] = [[n] for n in block["sequence"]]
+        # With an outcome node, inserted units go before it, never after.
+        tail = 1 if block.get("outcome_last") else 0
         for unit in block.get("units", []):
-            units.insert(rng.randint(0, len(units)), list(unit))
+            units.insert(rng.randint(0, len(units) - tail), list(unit))
         # Attention checks go into areas 2 and 3, never as the first decision.
         if position in (2, 3):
             check = content.ATTENTION_CHECKS[position - 2]
-            units.insert(rng.randint(1, len(units)), [check])
+            units.insert(rng.randint(1, len(units) - tail), [check])
         nodes = [n for unit in units for n in unit]
 
         for order_in_block, node_id in enumerate(nodes, start=1):
@@ -84,6 +86,9 @@ def build(track: int, seed: int) -> list[dict]:
     for node_id in content.FINAL_ROUND:
         screens.append({"id": node_id, "kind": content.SCREENS[node_id]["kind"],
                         "node": node_id, "domain": "final", "section": final})
+    # Final report: every outcome that was held back during the session.
+    screens.append({"id": "report_final", "kind": "report", "domain": "final",
+                    "section": final})
     screens += [
         {"id": "suspicion", "kind": "suspicion", "section": wrap},
         {"id": "end", "kind": "end", "section": wrap},

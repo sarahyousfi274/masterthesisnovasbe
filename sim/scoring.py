@@ -102,20 +102,29 @@ def score_participant(responses: list[dict], seed: int | None = None) -> dict:
 def _score_ladder(node_id: str, row: dict) -> dict:
     spec = codebook.node(node_id)
     state = json.loads(row["state_json"]) if row["state_json"] else {}
-    chosen = codebook.ladder_option_value(node_id, row["option_index"])
+    all_values = codebook.ladder_values(node_id, state)
+    if "reference_rule" in spec and row.get("numeric_value") is not None:
+        # F1: the stored value is the runway left at the start of the raise.
+        runway = state.get("runway_shown", state.get("runway", 0))
+        chosen = float(runway - row["numeric_value"])
+    else:
+        chosen = all_values[row["option_index"]]
     reference = codebook.ladder_reference(node_id, state)
     raw = spec["sign"] * (chosen - reference)
 
-    # Ordinal distance, for reporting alongside the raw distance.
-    values = spec["option_values"]
+    # Ordinal distance on the options that were offered, for reporting
+    # alongside the raw distance.
+    values = [v for v in all_values if v is not None]
+    position = min(range(len(values)), key=lambda i: abs(values[i] - chosen))
     ref_index = _interpolated_index(values, reference)
-    step = spec["sign"] * (row["option_index"] - ref_index) * (
-        -1 if values[0] > values[-1] else 1)
+    step = spec["sign"] * (position - ref_index) * (
+        -1 if len(values) > 1 and values[0] > values[-1] else 1)
 
     return {
         "node": node_id, "form": "overestimation", "domain": spec["domain"],
         "chosen_option": row["option_key"], "chosen_value": chosen,
         "reference_value": reference, "raw_distance": raw, "step_distance": step,
+        "offered_values": values,
         "response_seconds": row["response_seconds"],
     }
 
@@ -303,12 +312,14 @@ def sample_summary(standardised: dict[str, dict]) -> dict:
             # A ladder censored on the aggressive side can show caution better
             # than it can show overestimation (Zorowitz and Niv 2023 on ceiling
             # and floor effects).
-            values = spec["option_values"]
-            ref = statistics.fmean(e["reference_value"] for e in entries)
-            row["options_above_reference"] = sum(
-                spec["sign"] * (v - ref) > 1e-9 for v in values)
-            row["options_below_reference"] = sum(
-                spec["sign"] * (v - ref) < -1e-9 for v in values)
+            # Mean over participants, since F1 offers a different ladder
+            # depending on the runway.
+            row["options_above_reference"] = round(statistics.fmean(
+                sum(spec["sign"] * (v - e["reference_value"]) > 1e-9
+                    for v in e["offered_values"]) for e in entries), 2)
+            row["options_below_reference"] = round(statistics.fmean(
+                sum(spec["sign"] * (v - e["reference_value"]) < -1e-9
+                    for v in e["offered_values"]) for e in entries), 2)
         elif spec.get("type") == "contest":
             row["entry_rate"] = statistics.fmean(e["entered"] for e in entries)
             row["upgrade_rate"] = statistics.fmean(e["ordinal"] == 2 for e in entries)

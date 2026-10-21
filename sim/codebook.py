@@ -152,3 +152,18 @@ def ladder_reference(node_id: str, state: dict | None = None) -> float:
 
 def ladder_option_value(node_id: str, option_index: int) -> float:
     return float(node(node_id)["option_values"][option_index])
+
+
+def ladder_values(node_id: str, state: dict | None = None) -> list[float | None]:
+    """The option ladder in the node's own unit. For F1 the options are runway
+    left at the start (null = right away); they are converted to months of
+    delay against the runway shown, and options that were not offered (at or
+    above that runway) are None."""
+    spec = node(node_id)
+    values = spec["option_values"]
+    if "reference_rule" not in spec:
+        return [float(v) for v in values]
+    state = state or {}
+    runway = state.get("runway_shown", state.get("runway", 0))
+    return [0.0 if v is None else (float(runway - v) if v < runway else None)
+            for v in values]

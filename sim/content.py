@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.9.1"
+APP_VERSION = "0.10.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -43,7 +43,9 @@ START_STATE = {
     "morale": 3,
     "market_confidence": 3,
     "ownership": 100,            # founders' combined share, in percent
-    "fundraise_delay": 0,        # months chosen in F1
+    "fundraise_left": None,      # runway left when the round starts (F1)
+    "f4_route": None,            # loan, safe or priced (F4)
+    "deferred": [],              # outcome effects held back until the final report
 }
 
 STATUS_FIELDS = [
@@ -69,7 +71,7 @@ STATUS_FIELDS = [
                                                "(very high). 3 is neutral."),
 ]
 
-# Labels that change for a sole founder.
+# Labels that change for a solo founder.
 STATUS_SOLO = {
     "team_size": ("Team", "People working in the startup, you included."),
     "ownership": ("Your ownership", "Share of the company you hold."),
@@ -79,7 +81,7 @@ STATUS_SOLO = {
 
 
 def status_fields(solo: bool) -> list[tuple[str, str, str]]:
-    """STATUS_FIELDS with the sole-founder labels where they apply."""
+    """STATUS_FIELDS with the solo-founder labels where they apply."""
     if not solo:
         return STATUS_FIELDS
     return [(k, *STATUS_SOLO[k]) if k in STATUS_SOLO else (k, lab, h)
@@ -139,30 +141,66 @@ INDUSTRY_PRODUCTS = {
 PRODUCT_OTHER = "a new product in {label} for its first customers"
 
 COMPANY = {
-    "founded": "Founded last year · Lisbon",
+    "founded": "Founded last year · based in Europe",
     "product": "{name} builds {product}.",
     "run_solo": "Run by you",
     "run_team": "Run by you and your co-founder",
 }
 
-# Simulated time: each area is one month of Lumora's life.
-MONTH = "Month {n}"
-MONTH_END = {"title": "End of month {n}", "body": "Closing the books for {name}"}
-
-# Decisions that arrive as a message. The sender is an institution or a role,
-# never a named or pictured person, so no persona colors the answer.
-MESSAGES = {
-    "T5": ("Your mentor", "Invitation to a pitch contest"),
-    "F5": ("Accelerator program", "You are on the shortlist"),
-    "H5": ("Recruiting update", "A Head of Growth is choosing"),
-    "G5": ("Procurement, potential customer", "Call for proposals"),
-    "K1": ("Founders’ network", "Grant raffle"),
+# Labels of the reports and the numbers panel (no month labels, review B3).
+HUD_CAPTION = "At the start of this area"
+HUD_CAPTION_FINAL = "At the start of this round"
+AREA_REPORT = {
+    "veil": "End of this area", "veil_body": "Closing the books for {name}",
+    "eyebrow": "Area {n} of 4 complete", "title": "Where things stand",
+    "changes": "What changed in this area",
 }
+# Outcomes held back during the session (customers, revenue, morale, market
+# confidence) are shown here, after K1 (review A9).
+FINAL_REPORT = {
+    "veil": "Final report", "veil_body": "How {name} has done",
+    "eyebrow": "Final round complete", "title": "Final report",
+    "body": "Some effects of your decisions take time to show: new customers, the "
+            "mood of the team and the signals from the market. This is where "
+            "{name} stands now that they have played out.",
+    "changes": "What your decisions led to",
+}
+NO_DIRECT_COST = "no direct cost"
+F1_NOTE = "planned"
+
+# Decisions that arrive as an email. The sender is an institution or a role,
+# never a named or pictured person, so no persona colors the answer (B6).
+MESSAGES = {
+    "T5": {"from": "Mentor", "subject": "Pitch contest: I put {name} forward",
+           "body": "Hi {name} team, I have put {name} forward for a pitch contest. "
+                   "Ten startups are invited, and an independent jury will rank all "
+                   "ten plans."},
+    "F5": {"from": "Accelerator program", "subject": "{name} is on our shortlist",
+           "body": "Hi {name} team, {name} is one of 10 startups on our shortlist "
+                   "for a single place in our program. An independent panel will "
+                   "pick one of the ten."},
+    "H5": {"from": "Recruiting partner",
+           "subject": "Head of Growth decides between 10 offers",
+           "body": "Hi {name} team, a quick update from our search. The experienced "
+                   "Head of Growth we spoke about has offers from 10 startups, "
+                   "{name} among them, and will choose one of them in the coming "
+                   "weeks."},
+    "G5": {"from": "Procurement, potential customer", "subject": "Call for proposals",
+           "body": "Hi {name} team, we are putting a contract out to tender. Ten "
+                   "startups, {name} among them, are invited to submit a proposal, "
+                   "and an independent panel will pick the best one."},
+    "K1": {"from": "Founders’ network", "subject": "Grant raffle among 10 startups",
+           "body": "Hi {name} team, we are raffling a grant of {prize} among 10 "
+                   "startups. The winner is drawn by lot, so the quality of the "
+                   "startups plays no role."},
+}
+EMAIL_SIGNOFF = "Best regards"
 
 JOURNEY = {
     "title": "Your time at {name}",
-    "body": "The decisions you made, month by month. How the contests turned out "
-            "is announced after the study.",
+    # The sentence about the follow-up (review A7) is in END, on the same page.
+    "body": "The decisions you made, area by area.",
+    "after_areas": "After the four areas",
     "final": "Where {name} stands now",
 }
 
@@ -186,6 +224,7 @@ SECTION_ABOUT = "About you"
 SECTION_HOW = "How it works"
 SECTION_STARTUP = "Your startup"
 SECTION_FINAL = "Final round"
+SECTION_INTRO_DONE = "Introduction"     # the three sections before the simulation, once done
 SECTION_WRAP = "Wrap-up"
 
 # --------------------------------------------------------------------------
@@ -342,8 +381,9 @@ WARMUP_INTRO = {
          "About 20 decisions in four areas: building the product, finance, team "
          "and go-to-market."),
         ("Your numbers travel with you",
-         "Cash, runway, team and customers change with your choices. You see "
-         "your current status at the start and end of each area."),
+         "Cash, runway and team change with your choices. You see your current "
+         "status at the start and end of each area. Some effects take longer to "
+         "show and appear in a final report."),
         ("Two kinds of questions",
          "Most ask you to pick an option. Some ask for a low and a high "
          "estimate, so that your answer is a range."),
@@ -378,7 +418,7 @@ SETUP = {
     "body": "{name} is a young startup with its first paying customers. Before "
             "you take over, decide how you run it and which industry it is in.",
     "team_label": "Do you run {name} on your own or with a co-founder?",
-    "team_options": [("solo", "On my own, as the sole founder"),
+    "team_options": [("solo", "On my own, as the solo founder"),
                      ("team", "Together with a co-founder")],
     "team_help": "Cash, costs and customers at the start are the same either way.",
     "industry_label": "Which industry is {name} in?",
@@ -412,7 +452,9 @@ STARTING_SITUATION = {
 # "sequence" nodes keep their order because each builds on the one before.
 # "units" are groups that stay together (the rank question comes right before
 # its contest) and are inserted at a random position. The two attention checks
-# are placed by flow.py into the second and third area of the track.
+# are placed by flow.py into the second and third area of the track. With
+# "outcome_last", the last node of the sequence (F4, H4, G4) is the outcome the
+# earlier answers should predict, so nothing is inserted after it.
 
 BLOCKS = {
     "team": {
@@ -423,7 +465,7 @@ BLOCKS = {
         "intro_solo": "You have decided to build a first version of {name}, the "
                       "minimum viable product (MVP). The next decisions are "
                       "about how you get it done.",
-        "sequence": ["T1", "T3"],
+        "sequence": ["T3", "T1"],     # T3 first: T1 names weeks of founder time
         "units": [["T5", "T2"]],
     },
     "finance": {
@@ -431,6 +473,7 @@ BLOCKS = {
         "intro": "{name} loses money every month until revenue covers the costs. "
                  "The next decisions are about financing.",
         "sequence": ["F1", "F3", "F4"],
+        "outcome_last": True,         # F4 is the outcome node, always last
         "units": [["F5", "F2"]],
     },
     "hiring": {
@@ -439,14 +482,16 @@ BLOCKS = {
                  "next decisions are about who joins and when.",
         "intro_solo": "The work is outgrowing what you can do alone. The next "
                       "decisions are about who joins and when.",
-        "sequence": ["H1", "H3", "H4"],
+        "sequence": ["H3", "H1", "H4"],   # H3 first: H1 frames "3 months"
+        "outcome_last": True,
         "units": [["H5", "H2"]],
     },
     "gtm": {
         "title": "Go-to-market",
         "intro": "{name} is ready enough to sell. The next decisions are about "
                  "how you reach customers.",
-        "sequence": ["G1", "G4", "G3"],
+        "sequence": ["G1", "G3", "G4"],
+        "outcome_last": True,
         "units": [["G5", "G2"]],
     },
 }
@@ -469,7 +514,9 @@ FINAL_INTRO = {
     "body": "Before you finish, one last opportunity comes up for {name}.",
 }
 
-CONTEST_NOTE = "Results are announced after the study."
+# Removed with the review of 20 October: the contests are fictional, so no
+# results are promised anywhere.
+CONTEST_NOTE = ""
 
 # Scientific background, shown on hover over the link icon, author and year only.
 BG_CONTEST = ["Camerer & Lovallo (1999)", "Cain, Moore & Haran (2015)"]
@@ -558,21 +605,26 @@ SCREENS = {
     # ----------------------------------------------------------------- Finance
     "F1": {
         "kind": "choice",
-        "question": "{name} has {runway} months of runway. When do you and your "
-                    "co-founder start fundraising?",
-        "question_solo": "{name} has {runway} months of runway. When do you start "
-                         "fundraising?",
-        "body": "Starting means preparing the deck and contacting investors. "
-                "Until then, {name} keeps paying its running costs from the "
-                "cash it has.",
+        "question": "When do you and your co-founder start fundraising?",
+        "question_solo": "When do you start fundraising?",
+        "body": "{name} has {runway_text} of runway. Starting means preparing the "
+                "deck and contacting investors. Until then, {name} keeps paying its "
+                "running costs from the cash it has.",
         "background": ["Buehler, Griffin & Ross (1994)", "Kahneman & Lovallo (1993)"],
         "event": "Fundraising starts",
+        # Asked in remaining runway. Only options below the current runway are
+        # shown; "Right away" always. The runway left at the start is stored as
+        # numeric_value and scored against 9 months (codebook reference_rule).
+        "remaining_runway": True,
         "options": [
-            {"key": "A", "label": "Right away", "effects": {"fundraise_delay": 0}},
-            {"key": "B", "label": "In 3 months", "effects": {"fundraise_delay": 3}},
-            {"key": "C", "label": "In 6 months", "effects": {"fundraise_delay": 6}},
-            {"key": "D", "label": "In 9 months",
-             "effects": {"fundraise_delay": 9, "market_confidence": -1}},
+            {"key": "A", "label": "Right away, with {runway_text} left",
+             "remaining": None, "effects": {}},
+            {"key": "B", "label": "When 9 months of runway are left",
+             "remaining": 9, "effects": {}},
+            {"key": "C", "label": "When 6 months are left",
+             "remaining": 6, "effects": {}},
+            {"key": "D", "label": "When 3 months are left",
+             "remaining": 3, "effects": {"market_confidence": -1}},
         ],
     },
 
@@ -627,16 +679,16 @@ SCREENS = {
         "options": [
             {"key": "A", "label": "Bank loan over 24 months at 9 percent",
              "extra": "about €13,700 per month in repayments, no equity given up",
-             "effects": {"raise": 300_000, "costs": 13_700}},
+             "effects": {"raise": 300_000, "costs": 13_700, "f4_route": "loan"}},
             {"key": "B", "label": "SAFE (simple agreement for future equity) with "
                                   "a €6 million valuation cap",
              "extra": "up to 5% of the company, final stake set in the next round",
-             "effects": {"raise": 300_000, "ownership": -5}},
+             "effects": {"raise": 300_000, "ownership": -5, "f4_route": "safe"}},
             {"key": "C", "label": "Priced round: 5% of the company for €300,000",
              "extra": "the investor joins as a board observer, about €15,000 in "
                       "legal costs",
              "effects": {"raise": 285_000, "ownership": -5,
-                         "market_confidence": 1}},
+                         "market_confidence": 1, "f4_route": "priced"}},
         ],
     },
 
@@ -749,15 +801,15 @@ SCREENS = {
         "event": "Launch budget",
         "options": [
             {"key": "A", "label": "100% first channel, no tests",
-             "effects": {"spend_launch_budget": True, "customers": 40,
+             "effects": {"spend_launch_budget": True, "customers": 45,
                          "market_confidence": -1}},
             {"key": "B", "label": "70% first channel, 30% tests",
-             "effects": {"spend_launch_budget": True, "customers": 50}},
+             "effects": {"spend_launch_budget": True, "customers": 45}},
             {"key": "C", "label": "40% first channel, 60% tests",
              "effects": {"spend_launch_budget": True, "customers": 45,
                          "market_confidence": 1}},
             {"key": "D", "label": "20% first channel, 80% tests",
-             "effects": {"spend_launch_budget": True, "customers": 30,
+             "effects": {"spend_launch_budget": True, "customers": 45,
                          "market_confidence": 1}},
         ],
     },
@@ -791,15 +843,15 @@ SCREENS = {
     "G3": {
         "kind": "interval",
         "chart": "customers",
-        "question": "A new paid sales channel brought {name} 40, 65 and 90 new "
-                    "paying customers in its first three months. How many new customers "
-                    "will it bring in the following six months, in total?",
+        "question": "A new paid sales channel brought {name} 9, 16 and 21 new "
+                    "paying customers in its first three months. How many new "
+                    "paying customers will it bring in month 9?",
         "background": ["O’Connor & Lawrence (1989)", "Soll & Klayman (2004)"],
         "unit": "customers",
         "optimistic_is_high": True,
-        "low_help": "Only 1 in 10 comparable channels would bring fewer.",
-        "high_help": "Only 1 in 10 comparable channels would bring more.",
-        "min_value": 0, "max_value": 100_000, "step": 10,
+        "low_help": "Only 1 in 10 comparable channels would bring fewer in month 9.",
+        "high_help": "Only 1 in 10 comparable channels would bring more in month 9.",
+        "min_value": 0, "max_value": 100_000, "step": 1,
     },
 
     "G4": {
@@ -812,22 +864,20 @@ SCREENS = {
         "event": "After the first month",
         "options": [
             {"key": "A", "label": "Stay the course: the first channel needs more time",
-             "effects": {"customers": 10}},
+             "effects": {"customers": 15}},
             {"key": "B", "label": "Sharpen the first channel with new messaging, same "
                                   "budget",
              "effects": {"customers": 15}},
             {"key": "C", "label": "Run a four-week test comparing both channels",
-             "effects": {"customers": 15, "market_confidence": 1}},
+             "effects": {"customers": 15}},
             {"key": "D", "label": "Move most of the budget to the new channel now",
-             "effects": {"customers": 20, "morale": -1}},
+             "effects": {"customers": 15}},
         ],
     },
     # -------------------------------------------------------------- Final round
     "K1": {
         "kind": "contest",
-        "message": "A founders’ network raffles a grant of {prize} among 10 "
-                   "startups. The winner is drawn by lot. The quality of the "
-                   "startups plays no role.",
+        "message": True,                 # text in MESSAGES["K1"]
         "question": "Do you enter the raffle?",
         "body": "Entering costs {base_cost}. Every entry has a 1 in 10 chance of "
                 "winning.",
@@ -836,7 +886,7 @@ SCREENS = {
         "options": [
             {"key": "A", "label": "Do not enter"},
             {"key": "B", "label": "Enter the raffle"},
-            {"key": "C", "label": "Enter with an extra ballot",
+            {"key": "C", "label": "Enter with a premium entry",
              "extra": "raises the chance to 1 in 8"},
         ],
     },
@@ -882,8 +932,8 @@ RANK_ENDS = ("1 = best of the 10", "10 = last of the 10")
 # the question and the status strip always agree (the reference scales with it).
 CHART_REVENUE = [("3 months ago", 6_070, None), ("2 months ago", 6_620, "+9%"),
                  ("Last month", 7_550, "+14%"), ("This month", 8_000, "+6%")]
-CHART_CUSTOMERS = [("Month 1", 40, None), ("Month 2", 65, None),
-                   ("Month 3", 90, None)]
+CHART_CUSTOMERS = [("Month 1", 9, None), ("Month 2", 16, None),
+                   ("Month 3", 21, None)]
 
 # --------------------------------------------------------------------------
 # Wrap-up
@@ -902,8 +952,8 @@ END = {
     "body": "That is everything for today. Thank you for your time, and for "
             "taking the decisions as seriously as you did.\n\n"
             "**A week from now** we will email you a short follow-up of about 5 "
-            "minutes. Once the study is complete, we will also let you know how "
-            "the contests turned out.",
+            "minutes. With the follow-up we will also explain what the study was "
+            "about.",
 }
 
 THANK_YOU_NOT_FOUNDER = (
