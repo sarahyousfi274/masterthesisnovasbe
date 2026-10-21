@@ -577,7 +577,7 @@ div[data-testid="stSlider"] div[data-rac]:has(> div > input[type="range"]) {{
   background: {GREEN} !important; border: 3px solid #FFFFFF !important;
   box-shadow: 0 0 0 1px {GREEN}, 0 2px 8px rgba(18,53,40,0.25) !important; cursor: grab; }}
 div[data-testid="stSliderTickBar"] {{ display: none !important; }}
-.fs-ticks {{ position: relative; height: 1.2rem; margin: -0.35rem 0.4rem 0.4rem 0.4rem; }}
+.fs-ticks {{ position: relative; height: 1.2rem; margin: -0.35rem 0.4rem 0.9rem 0.4rem; }}
 .fs-ticks span {{ position: absolute; top: 0; transform: translateX(-50%); font-size: 0.8rem;
   color: {MUTED}; white-space: nowrap; }}
 .fs-ticks span:first-child {{ transform: none; }}
@@ -612,6 +612,29 @@ div[data-testid="stButtonGroup"] > div > button {{ flex: 1 1 0 !important; min-w
 .fs-terms .b {{ font-size: 1rem !important; }}
 
 .stApp h1, .stApp h2, .stApp h3 {{ padding-top: 0.6rem !important; }}
+
+/* ---------- 0.11.1 ---------- */
+/* Screen fade with opacity only: a transform would trap the full-screen
+   curtains (position: fixed) inside the centre column. */
+div[class*="st-key-screen_"] {{ animation: fs-fade 650ms ease-out both !important; transform: none !important; }}
+@keyframes fs-fade {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
+.fs-veil {{ position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; }}
+
+/* Slider track: Streamlit paints the filled part inline in the theme color,
+   which is red when the theme file is missing. A neutral track instead. */
+div[data-testid="stSlider"] div[style*="touch-action"] > div:first-child:empty,
+div[data-testid="stSlider"] div[style*="linear-gradient"] {{ background-image: none !important;
+  background-color: {LINE} !important; height: 6px !important; border-radius: 3px !important; }}
+
+/* Pills: fill the row but never cut a label. */
+div[data-testid="stButtonGroup"] > div > button {{ flex: 1 1 auto !important; min-width: max-content !important; }}
+div[data-testid="stButtonGroup"] > div > button p,
+div[data-testid="stButtonGroup"] > div > button div {{ overflow: visible !important; text-overflow: clip !important;
+  white-space: nowrap !important; max-width: none !important; }}
+div[data-testid="stButtonGroup"] > div > button:hover {{ border-color: {ACCENT} !important; }}
+div[data-testid="stButtonGroup"] > div > button:hover * {{ color: {INK} !important; }}
+div[data-testid="stButtonGroup"] > div > button[aria-checked="true"]:hover *,
+div[data-testid="stButtonGroup"] > div > button[aria-pressed="true"]:hover * {{ color: #FFFFFF !important; }}
 </style>
 """
 
