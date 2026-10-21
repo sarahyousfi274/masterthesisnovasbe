@@ -5,6 +5,16 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.11.0** applies the team feedback of 21 October: dark green and
+beige only (no blue anywhere), a dark green top panel with the sections, a
+progress bar with a gradient and the numbers line, one font everywhere,
+"This section is about you." in About you, sliders without a preselected
+answer for experience, risk attitude and earlier startups, answer rows that
+span the full width, more vertical space (decision screens still fit a
+1366 x 768 laptop), "Your startup: Lumora", the email icon rings like a push
+notification, longer and smoother transitions, a closing screen after the
+thank-you page and the team's text on the welcome page.
+
 **Version 0.10.0** applies the simulator review of 20 October 2026 (Amie):
 F4, H4 and G4 are always the last decision of their area; T3 comes before T1
 and H3 before H1; no outcome feedback before a final report after K1 (customers,

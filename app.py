@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.10.0"
+APP_RELEASE = "0.11.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -195,17 +195,23 @@ def month_label(domain: str | None) -> str:
 
 
 def panel() -> None:
-    """The numbers panel above every simulation question."""
+    """The numbers line now sits inside the top panel, drawn by frame()."""
+    return None
+
+
+def hud_markup() -> str:
     sc = screen()
-    ui.hud(area_start(), caption=content.HUD_CAPTION if sc.get("domain") in content.BLOCKS
-           else content.HUD_CAPTION_FINAL, brand=startup_name())
+    if not sc.get("node"):
+        return ""
+    return ui.hud(area_start(), caption=content.HUD_CAPTION if sc.get("domain") in content.BLOCKS
+                  else content.HUD_CAPTION_FINAL, brand=startup_name(), render=False)
 
 
 def email(node_id: str, **extra) -> None:
     """A decision that arrives as an email from an institution or a role (B6)."""
     m = content.MESSAGES[node_id]
     ui.message(m["from"], fill(m["subject"], **extra), fill(m["body"], **extra),
-               to=f"{startup_name()} team", signoff=content.EMAIL_SIGNOFF)
+               to=f"{startup_name()} team")   # no sign-off line: keeps decisions on one laptop screen
 
 
 def decision_eyebrow() -> None:
@@ -264,7 +270,8 @@ def money(v: float) -> str:
 def frame() -> None:
     """Section bar, progress and, where allowed, the Back button."""
     sc = screen()
-    ui.steps(ss.sections, sc.get("section"), ss.index / (len(ss.screens) - 1))
+    ui.steps(ss.sections, sc.get("section"), ss.index / (len(ss.screens) - 1),
+             hud_html=hud_markup())
     if flow.back_allowed(ss.screens, ss.index):
         if st.button("← Back", key=f"back_{sc['id']}", type="tertiary"):
             go_back()
@@ -366,7 +373,8 @@ def _profile_widget(field: dict):
     if kind == "number":
         value = st.number_input(label, min_value=field["min"], max_value=field["max"],
                                 step=1, value=saved, key=wkey,
-                                placeholder=f"{field['min']} or more" if field["min"]
+                                placeholder=f"{field['min']} or older" if field["key"] == "age"
+                                else f"{field['min']} or more" if field["min"]
                                 else "Type a number")
     elif kind == "select":
         opts = field["options"]
@@ -374,6 +382,8 @@ def _profile_widget(field: dict):
                              placeholder="Select", key=wkey)
     elif kind == "pills":
         value = st.pills(label, field["options"], default=saved, key=wkey)
+    elif kind == "slider":
+        value = slider(label, field["options"], wkey, saved)
     elif kind == "multi":
         value = st.pills(label, field["options"], selection_mode="multi",
                          default=saved or [], key=wkey)
@@ -386,6 +396,18 @@ def _profile_widget(field: dict):
                               key=f"{wkey}_other", label_visibility="collapsed",
                               placeholder=f"{content.OTHER_LABEL}: {label.split(' (')[0].lower()}")
     return value, other
+
+
+def slider(label: str, options: list[str], key: str, saved=None,
+           collapsed: bool = False):
+    """A slider without a preselected answer: it starts on an empty position
+    and returns None until the handle has been moved."""
+    opts = [content.SLIDER_EMPTY] + list(options)
+    value = st.select_slider(label, options=opts,
+                             value=saved if saved in options else content.SLIDER_EMPTY,
+                             key=key, label_visibility="collapsed" if collapsed else "visible")
+    ui.slider_ticks(opts)
+    return None if value == content.SLIDER_EMPTY else value
 
 
 def render_profile(sc: dict) -> None:
@@ -440,13 +462,12 @@ def render_experience(sc: dict) -> None:
     values = {}
     with st.form("experience_form", border=False):
         for field in content.EXPERIENCE_FIELDS:
-            values[field["key"]] = st.pills(
-                field["label"], field["options"],
-                default=recalled(field["key"]), key=f"exp_{field['key']}")
+            values[field["key"]] = slider(field["label"], field["options"],
+                                          f"exp_{field['key']}", recalled(field["key"]))
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
         if any(v is None for v in values.values()):
-            st.warning("Please answer each of the four questions.")
+            st.warning("Please move each of the four handles to your answer.")
             return
         remember(**values)
         log(text_value="; ".join(f"{k}={v}" for k, v in values.items()))
@@ -462,15 +483,14 @@ def render_risk(sc: dict) -> None:
     with st.form("risk_form", border=False):
         for item in content.RISK_ITEMS:
             st.markdown(f"**{item['label']}**")
-            values[item["key"]] = st.pills(
-                item["label"], scale, default=recalled(item["key"]),
-                label_visibility="collapsed", key=f"risk_{item['key']}")
+            values[item["key"]] = slider(item["label"], scale, f"risk_{item['key']}",
+                                         recalled(item["key"]), collapsed=True)
             ui.html_block(f'<div class="fs-scale-ends"><span>0 = {item["low"]}</span>'
                           f'<span>10 = {item["high"]}</span></div>')
         submitted = st.form_submit_button("Continue", type="primary")
     if submitted:
         if any(v is None for v in values.values()):
-            st.warning("Please answer each of the three questions.")
+            st.warning("Please move each of the three handles to your answer.")
             return
         remember(**values)
         log(text_value="; ".join(f"{k}={v}" for k, v in values.items()))
@@ -925,6 +945,14 @@ def render_end(sc: dict) -> None:
         ui.journey(months)
         st.markdown(f"**{fill(j['final'])}**")
         ui.status_cards(ss.state, solo=ss.solo, show_scales=True)
+    if continue_button("end_continue", content.CLOSE["button"]):
+        advance()
+
+
+def render_closed(sc: dict) -> None:
+    ui.steps(ss.sections, sc.get("section"), 1.0)
+    st.title(content.CLOSE["title"])
+    st.markdown(content.CLOSE["body"])
 
 
 def render_final_intro(sc: dict) -> None:
@@ -947,7 +975,7 @@ RENDERERS = {
     "interval": render_interval, "rank": render_rank, "hire": render_hire,
     "report": render_report,
     "transition": render_transition, "final_intro": render_final_intro,
-    "suspicion": render_suspicion, "end": render_end,
+    "suspicion": render_suspicion, "end": render_end, "closed": render_closed,
 }
 
 # ---------------------------------------------------------------------------
