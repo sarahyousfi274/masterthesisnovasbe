@@ -16,15 +16,17 @@ import streamlit as st
 
 from . import content, state as game
 
-INK = "#0E1A2B"
-INK_2 = "#3F4654"
-MUTED = "#76705F"
-LINE = "#E3DDD0"
-BG = "#F7F5F0"
+INK = "#14231C"
+INK_2 = "#3B4740"
+MUTED = "#6A6556"
+LINE = "#E2DACB"
+BG = "#F4EFE6"
 CARD = "#FFFDF8"
-ACCENT = "#1F5F5B"
-ACCENT_SOFT = "#EAF2EF"
-ACCENT_LINE = "#A9C9C1"
+ACCENT = "#2D6A4F"
+GREEN = "#123528"          # dark green: top panel, buttons, curtains
+GREEN_2 = "#1B4636"
+ACCENT_SOFT = "#E5EFE8"
+ACCENT_LINE = "#A8CBB6"
 
 CSS = f"""
 <style>
@@ -53,7 +55,7 @@ a {{ color: {ACCENT} !important; }}
 /* ---------- buttons ---------- */
 button[data-testid="stBaseButton-primary"],
 button[data-testid="stBaseButton-primaryFormSubmit"] {{
-  background: {INK} !important; border: 1px solid {INK} !important;
+  background: {GREEN} !important; border: 1px solid {GREEN} !important;
   border-radius: 999px !important; padding: 0.6rem 1.6rem !important;
   min-height: 2.75rem; transition: transform 80ms ease, background 120ms ease;
 }}
@@ -62,7 +64,7 @@ button[data-testid="stBaseButton-primaryFormSubmit"] * {{
   color: #FFFFFF !important; font-weight: 600 !important;
 }}
 button[data-testid="stBaseButton-primary"]:hover,
-button[data-testid="stBaseButton-primaryFormSubmit"]:hover {{ background: #1C2C44 !important; }}
+button[data-testid="stBaseButton-primaryFormSubmit"]:hover {{ background: #1B4636 !important; }}
 button[data-testid="stBaseButton-primary"]:active,
 button[data-testid="stBaseButton-primaryFormSubmit"]:active {{ transform: scale(0.98); }}
 button[data-testid="stBaseButton-secondary"],
@@ -130,7 +132,7 @@ label[data-testid="stRadioOption"] {{
   display: flex; align-items: center; width: 100%; box-sizing: border-box;
   padding: 0.85rem 1rem; margin: 0; border-radius: 12px;
   border: 1px solid {LINE} !important; background: {CARD} !important;
-  box-shadow: 0 1px 2px rgba(14,26,43,0.04);
+  box-shadow: 0 1px 2px rgba(18,53,40,0.04);
   transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }}
 label[data-testid="stRadioOption"] * {{ color: {INK} !important; }}
@@ -193,7 +195,7 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.87
   border: 1px solid #EFEBE2; }}
 .fs-step.done {{ color: {INK_2}; background: {CARD}; }}
 .fs-step.done::before {{ content: "✓ "; color: {ACCENT}; }}
-.fs-step.now {{ color: #FFFFFF; background: {INK}; border-color: {INK}; }}
+.fs-step.now {{ color: #FFFFFF; background: {GREEN}; border-color: {GREEN}; }}
 .fs-bar {{ height: 3px; background: {LINE}; border-radius: 3px; overflow: hidden; margin-bottom: 1.6rem; }}
 .fs-bar > div {{ height: 100%; background: {ACCENT}; border-radius: 3px; transition: width 300ms ease; }}
 
@@ -216,7 +218,7 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.87
 .fs-grid.two {{ grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 1.2rem 0; }}
 @media (max-width: 640px) {{ .fs-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
 .fs-card {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.8rem 0.9rem;
-  box-shadow: 0 1px 2px rgba(14,26,43,0.04); }}
+  box-shadow: 0 1px 2px rgba(18,53,40,0.04); }}
 .fs-card .lbl {{ font-size: 0.8rem; color: {MUTED}; display: flex; align-items: center; gap: 0.3rem; }}
 .fs-card .val {{ font-size: 1.25rem; font-weight: 650; color: {INK}; margin-top: 0.15rem; letter-spacing: -0.01em; line-height: 1.2; }}
 .fs-card .dl {{ display: inline-block; margin-top: 0.3rem; font-size: 0.8rem; font-weight: 500; color: {INK_2};
@@ -230,8 +232,8 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.87
   border: 1px solid {MUTED}; color: {MUTED}; font-size: 0.8rem; font-weight: 600; align-items: center;
   justify-content: center; cursor: help; font-style: normal; }}
 .fs-tip:hover::after, .fs-tip:focus::after {{ content: attr(data-tip); position: absolute; left: -0.5rem; top: 1.4rem;
-  width: 15rem; z-index: 20; background: {INK}; color: #fff; font-size: 0.8rem; font-weight: 400; line-height: 1.45;
-  padding: 0.55rem 0.7rem; border-radius: 8px; box-shadow: 0 6px 20px rgba(14,26,43,0.18); }}
+  width: 15rem; z-index: 20; background: {GREEN}; color: #fff; font-size: 0.8rem; font-weight: 400; line-height: 1.45;
+  padding: 0.55rem 0.7rem; border-radius: 8px; box-shadow: 0 6px 20px rgba(18,53,40,0.18); }}
 
 .fs-changes {{ background: {CARD}; border: 1px solid {LINE}; border-radius: 14px; padding: 0.4rem 0.9rem; margin-bottom: 1.3rem; }}
 .fs-changes .row {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1rem;
@@ -278,14 +280,14 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.87
 .fs-src:hover, .fs-src:focus {{ color: {ACCENT}; border-color: {ACCENT_LINE}; outline: none; }}
 .fs-src:hover::after, .fs-src:focus::after {{ content: attr(data-tip); position: absolute; left: 50%;
   transform: translateX(-50%); top: 2.1rem; width: max-content; max-width: 17rem; z-index: 30;
-  background: {INK}; color: #fff; font-size: 0.8rem; font-weight: 400; line-height: 1.45; letter-spacing: 0;
-  padding: 0.55rem 0.75rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(14,26,43,0.2); white-space: normal; }}
-.fs-about-banner {{ display: flex; gap: 0.8rem; align-items: flex-start; background: #1E2A3B; color: #fff;
+  background: {GREEN}; color: #fff; font-size: 0.8rem; font-weight: 400; line-height: 1.45; letter-spacing: 0;
+  padding: 0.55rem 0.75rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(18,53,40,0.2); white-space: normal; }}
+.fs-about-banner {{ display: flex; gap: 0.8rem; align-items: flex-start; background: #123528; color: #fff;
   border-radius: 14px; padding: 0.9rem 1.05rem; margin: 0 0 1.4rem 0; }}
 .fs-about-banner .ic {{ flex: none; width: 2rem; height: 2rem; border-radius: 50%; background: rgba(255,255,255,0.12);
   display: flex; align-items: center; justify-content: center; }}
 .fs-about-banner .t {{ font-weight: 650; font-size: 1rem; color: #fff; }}
-.fs-about-banner .d {{ font-size: 0.875rem; color: #C9D2DE; margin-top: 0.1rem; line-height: 1.45; }}
+.fs-about-banner .d {{ font-size: 0.875rem; color: #C6DACE; margin-top: 0.1rem; line-height: 1.45; }}
 .fs-echo {{ font-size: 0.8rem; color: {MUTED}; margin: -0.5rem 0 0.6rem 0; }}
 .fs-hero {{ padding: 0.4rem 0 0.2rem 0; }}
 .fs-hero .lead {{ font-size: 1rem; color: {INK_2}; margin-top: -0.3rem; }}
@@ -299,7 +301,7 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
   div[data-testid="stElementContainer"]:has(> div > button[data-testid="stBaseButton-primary"]),
   div[data-testid="stElementContainer"]:has(button[data-testid="stBaseButton-primary"]) {{
     position: sticky; bottom: 0; z-index: 20; padding: 1.1rem 0 0.9rem 0; width: 100% !important;
-    background: linear-gradient(to bottom, rgba(247,245,240,0), {BG} 38%);
+    background: linear-gradient(to bottom, rgba(244,239,230,0), {BG} 38%);
   }}
   div[data-testid="stElementContainer"]:has(button[data-testid="stBaseButton-primary"]) div[data-testid="stButton"],
   button[data-testid="stBaseButton-primary"] {{ width: 100% !important; }}
@@ -320,7 +322,7 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
 .fs-hud b {{ margin: 0; font-size: 1rem; font-weight: 650; color: {INK}; letter-spacing: -0.01em; white-space: nowrap; }}
 
 .fs-company {{ display: flex; gap: 1rem; align-items: flex-start; background: {CARD}; border: 1px solid {LINE};
-  border-radius: 16px; padding: 1.1rem 1.15rem; margin: 0.3rem 0 1.2rem 0; box-shadow: 0 1px 2px rgba(14,26,43,0.04); }}
+  border-radius: 16px; padding: 1.1rem 1.15rem; margin: 0.3rem 0 1.2rem 0; box-shadow: 0 1px 2px rgba(18,53,40,0.04); }}
 .fs-company .nm {{ font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; color: {INK}; line-height: 1.2; }}
 .fs-company .mt {{ font-size: 0.8rem; color: {MUTED}; margin-top: 0.1rem; }}
 .fs-company .pd {{ font-size: 1rem; color: {INK_2}; line-height: 1.55; margin-top: 0.55rem; }}
@@ -328,7 +330,7 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
 .fs-company .tags span {{ font-size: 0.8rem; color: {INK_2}; background: #F1EDE4; border-radius: 999px; padding: 0.18rem 0.6rem; }}
 
 .fs-msg {{ background: {CARD}; border: 1px solid {LINE}; border-left: 3px solid {ACCENT}; border-radius: 14px;
-  padding: 0.85rem 1rem 0.95rem 1rem; margin: 0 0 1.1rem 0; box-shadow: 0 1px 2px rgba(14,26,43,0.04);
+  padding: 0.85rem 1rem 0.95rem 1rem; margin: 0 0 1.1rem 0; box-shadow: 0 1px 2px rgba(18,53,40,0.04);
   animation: fs-msg 520ms 120ms cubic-bezier(.2,.7,.2,1) both; }}
 @keyframes fs-msg {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: none; }} }}
 .fs-msg .hd {{ display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.55rem; }}
@@ -343,20 +345,20 @@ div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1);
 .odo {{ display: inline-flex; align-items: flex-start; white-space: pre; line-height: 1.2em; height: 1.2em; vertical-align: top; }}
 .odo .s, .odo .d {{ display: inline-block; height: 1.2em; line-height: 1.2em; }}
 .odo .d {{ overflow: hidden; }}
-.odo .d > span {{ display: flex; flex-direction: column; transform: translateY(var(--to));
-  animation: fs-roll 1300ms 1500ms cubic-bezier(.2,.75,.25,1) backwards; }}
+.odo .d > span {{ display: flex; flex-direction: column;
+  animation-duration: 1600ms; animation-delay: 3200ms; animation-timing-function: cubic-bezier(.2,.75,.25,1);
+  animation-fill-mode: backwards; }}
 .odo .d i {{ font-style: normal; height: 1.2em; line-height: 1.2em; text-align: center; }}
-@keyframes fs-roll {{ from {{ transform: translateY(var(--from)); }} to {{ transform: translateY(var(--to)); }} }}
 .fs-card.chg {{ animation: fs-glow 1600ms 1500ms ease-out backwards; }}
-@keyframes fs-glow {{ 0% {{ box-shadow: 0 0 0 0 rgba(31,95,91,0.0); }} 30% {{ box-shadow: 0 0 0 3px rgba(31,95,91,0.18); }} 100% {{ box-shadow: 0 1px 2px rgba(14,26,43,0.04); }} }}
+@keyframes fs-glow {{ 0% {{ box-shadow: 0 0 0 0 rgba(45,106,79,0.0); }} 30% {{ box-shadow: 0 0 0 3px rgba(45,106,79,0.18); }} 100% {{ box-shadow: 0 1px 2px rgba(18,53,40,0.04); }} }}
 
-.fs-veil {{ position: fixed; inset: 0; z-index: 999990; background: #0B1424; display: flex; align-items: center;
+.fs-veil {{ position: fixed; inset: 0; z-index: 999990; background: #0C261D; display: flex; align-items: center;
   justify-content: center; pointer-events: none; animation: fs-veil 2100ms ease forwards; }}
 .fs-veil .t {{ color: #F7F5F0; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em;
   animation: fs-up 700ms 100ms ease-out both; }}
-.fs-veil .b {{ color: #A9D1C8; font-size: 1rem; margin-top: 0.4rem; animation: fs-up 700ms 350ms ease-out both; }}
+.fs-veil .b {{ color: #A7D7B8; font-size: 1rem; margin-top: 0.4rem; animation: fs-up 700ms 350ms ease-out both; }}
 .fs-veil .ln {{ height: 2px; width: 0; margin-top: 1.3rem; border-radius: 2px;
-  background: linear-gradient(90deg, #1F5F5B, #4E9A8F, #C9A46A); animation: fs-line 1000ms 450ms ease-out forwards; }}
+  background: linear-gradient(90deg, #2D6A4F, #52B788, #B7E4C7); animation: fs-line 1000ms 450ms ease-out forwards; }}
 @keyframes fs-veil {{ 0%, 62% {{ opacity: 1; visibility: visible; }} 100% {{ opacity: 0; visibility: hidden; }} }}
 @keyframes fs-up {{ from {{ opacity: 0; transform: translateY(12px); }} to {{ opacity: 1; transform: none; }} }}
 @keyframes fs-line {{ to {{ width: 100%; }} }}
@@ -411,7 +413,7 @@ input[type="checkbox"]:checked + div, div[data-baseweb="checkbox"] [aria-checked
   gap: 0.6rem; align-items: end; border-bottom: 0; }}
 .fs-chart .col {{ display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; }}
 .fs-chart .v {{ font-size: 0.875rem; font-weight: 650; color: {INK}; margin-bottom: 0.2rem; white-space: nowrap; }}
-.fs-chart .bar {{ width: 62%; border-radius: 6px 6px 0 0; background: #A9C7C0; display: flex;
+.fs-chart .bar {{ width: 62%; border-radius: 6px 6px 0 0; background: #A8CBB6; display: flex;
   justify-content: center; align-items: flex-start; }}
 .fs-chart .bar.now {{ background: {ACCENT}; }}
 .fs-chart .bar .chg {{ font-size: 0.8rem; font-weight: 600; color: #FFFFFF; padding-top: 0.15rem; }}
@@ -461,12 +463,162 @@ div[data-testid="stVerticalBlock"] {{ gap: 0.55rem; }}
   .fs-range .track {{ height: auto !important; min-height: 26px; grid-template-columns: 1.3fr 3fr 1.3fr !important; }}
   .fs-range .track div {{ padding: 0.2rem 0.3rem; text-align: center; line-height: 1.25; }}
 }}
+
+/* =====================================================================
+   0.11.0 · green cockpit (team feedback of 21 October)
+   ===================================================================== */
+
+/* One font everywhere, numbers included. */
+.stApp *:not([data-testid="stIconMaterial"]):not(svg):not(path),
+div[data-baseweb="popover"] *, div[data-baseweb="tooltip"] *, div[role="listbox"] * {{
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-variant-numeric: tabular-nums;
+}}
+
+/* Top panel: dark green, sections, gradient progress, numbers line. */
+.fs-top {{ background: {GREEN}; border-radius: 18px; padding: 0.95rem 1.1rem 1rem 1.1rem;
+  margin: 0 0 1.5rem 0; box-shadow: 0 10px 30px rgba(18,53,40,0.16); }}
+.fs-top .fs-steps {{ margin-bottom: 0.75rem; }}
+.fs-top .fs-step {{ background: rgba(255,255,255,0.07) !important; border-color: transparent !important;
+  color: #A9C2B5 !important; }}
+.fs-top .fs-step.done {{ background: rgba(255,255,255,0.12) !important; color: #E9F1EC !important; }}
+.fs-top .fs-step.done::before {{ color: #95D5B2 !important; }}
+.fs-top .fs-step.now {{ background: {BG} !important; color: {GREEN} !important; font-weight: 600; }}
+.fs-top .fs-bar {{ background: rgba(255,255,255,0.14) !important; height: 4px; margin-bottom: 0 !important; }}
+.fs-top .fs-bar > div {{ background: linear-gradient(90deg, #52B788 0%, #95D5B2 55%, #D8F3DC 100%) !important;
+  transition: width 700ms cubic-bezier(.2,.7,.2,1); }}
+.fs-top .fs-hud {{ background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.10) !important;
+  margin: 1.1rem 0 0 0 !important; padding: 0.55rem 0.85rem !important; border-radius: 12px; }}
+.fs-top .fs-hud .cap {{ color: #95D5B2 !important; }}
+.fs-top .fs-hud .it {{ color: #B8CCC1; }}
+.fs-top .fs-hud .it b {{ color: #FFFFFF !important; }}
+
+/* About you: the panel sits inside the white card. */
+.fs-about-banner {{ background: {ACCENT_SOFT} !important; border: 1px solid {ACCENT_LINE}; }}
+.fs-about-banner .t {{ color: {GREEN} !important; }}
+.fs-about-banner .d {{ color: {INK_2} !important; }}
+.fs-about-banner .ic {{ background: {GREEN} !important; }}
+
+/* More air, evenly spread (team feedback); decisions still fit a laptop. */
+.block-container {{ padding-top: 1.3rem !important; }}
+div[data-testid="stVerticalBlock"] {{ gap: 0.8rem !important; }}
+.fs-q {{ margin-bottom: 0.55rem !important; }}
+.fs-body {{ margin-bottom: 0.9rem !important; }}
+div[role="radiogroup"] {{ gap: 0.55rem !important; }}
+label[data-testid="stRadioOption"] {{ padding: 0.75rem 1.05rem !important; }}
+.fs-msg {{ margin-bottom: 1rem !important; }}
+.fs-eyebrow {{ margin-bottom: 0.45rem; }}
+.stApp h1, .stApp h2, .stApp h3 {{ padding-bottom: 0.5rem !important; }}
+
+/* Every answer row spans the full width, so no option looks shorter. */
+div[data-testid="stButtonGroup"], div[data-testid="stButtonGroup"] > div {{ width: 100% !important; }}
+div[data-testid="stButtonGroup"] div:has(> button[data-testid^="stBaseButton-pills"]) {{
+  display: flex !important; flex-wrap: wrap; gap: 0.5rem; width: 100% !important; }}
+div[data-testid="stButtonGroup"] button[data-testid^="stBaseButton-pills"] {{ flex: 1 1 0 !important;
+  min-width: 3rem; justify-content: center; }}
+.fs-scale-ends {{ max-width: none !important; margin-top: 0.15rem !important; }}
+
+/* Sliders (About you): green handle and track, labels in the type scale. */
+div[data-testid="stSlider"] {{ padding: 0 0.4rem; }}
+div[data-testid="stSlider"] div[role="slider"] {{ background-color: {GREEN} !important;
+  border: 3px solid #FFFFFF !important; box-shadow: 0 0 0 1px {GREEN}, 0 2px 8px rgba(18,53,40,0.25) !important;
+  width: 1.35rem !important; height: 1.35rem !important; }}
+div[data-testid="stSlider"] div[data-testid="stSliderThumbValue"],
+div[data-testid="stSlider"] div[data-testid="stSliderThumbValue"] * {{ color: {GREEN} !important;
+  font-weight: 650 !important; font-size: 0.875rem !important; }}
+div[data-testid="stSliderTickBar"] * {{ color: {MUTED} !important; font-size: 0.8rem !important; }}
+
+/* The email arrives like a push notification. */
+.fs-msg {{ animation: fs-arrive 900ms 250ms cubic-bezier(.2,.8,.2,1) both !important; }}
+@keyframes fs-arrive {{ 0% {{ opacity: 0; transform: translateY(-18px) scale(0.98); }}
+  60% {{ opacity: 1; transform: translateY(3px) scale(1); }} 100% {{ opacity: 1; transform: none; }} }}
+.fs-msg .ic {{ position: relative; background: {GREEN} !important; color: #FFFFFF !important;
+  animation: fs-ring 1100ms 900ms ease-in-out 2 both; transform-origin: 50% 15%; }}
+.fs-msg .ic::after {{ content: ""; position: absolute; top: -2px; right: -2px; width: 0.6rem; height: 0.6rem;
+  border-radius: 50%; background: #52B788; border: 2px solid {CARD}; }}
+.fs-msg .ic::before {{ content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #52B788;
+  animation: fs-ping 1600ms 900ms ease-out 3 both; }}
+@keyframes fs-ring {{ 0%, 100% {{ transform: rotate(0); }} 15% {{ transform: rotate(-16deg); }}
+  30% {{ transform: rotate(13deg); }} 45% {{ transform: rotate(-9deg); }} 60% {{ transform: rotate(6deg); }}
+  75% {{ transform: rotate(-3deg); }} }}
+@keyframes fs-ping {{ 0% {{ transform: scale(1); opacity: 0.8; }} 100% {{ transform: scale(1.9); opacity: 0; }} }}
+.fs-msg .tag {{ animation: fs-pulse 1600ms 900ms ease-in-out 3; }}
+@keyframes fs-pulse {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: 0.45; }} }}
+
+/* Longer, smoother transitions. */
+div[class*="st-key-screen_"] {{ animation: fs-in 650ms cubic-bezier(.2,.7,.2,1) both !important; }}
+@keyframes fs-in {{ from {{ opacity: 0; transform: translateY(10px); }} to {{ opacity: 1; transform: none; }} }}
+.fs-veil {{ background: {GREEN} !important; animation: fs-veil2 3600ms cubic-bezier(.4,0,.2,1) forwards !important; }}
+@keyframes fs-veil2 {{ 0%, 68% {{ opacity: 1; visibility: visible; }} 100% {{ opacity: 0; visibility: hidden; }} }}
+.fs-veil .t {{ animation: fs-up 1000ms 150ms cubic-bezier(.2,.7,.2,1) both !important; }}
+.fs-veil .b {{ color: #A7D7B8 !important; animation: fs-up 1000ms 550ms cubic-bezier(.2,.7,.2,1) both !important; }}
+.fs-veil .ln {{ background: linear-gradient(90deg, #52B788, #95D5B2, #D8F3DC) !important;
+  animation: fs-line 1500ms 700ms ease-out forwards !important; }}
+.fs-card.chg {{ animation: fs-glow 1800ms 3100ms ease-out backwards !important; }}
+
+@media (prefers-reduced-motion: reduce) {{
+  .fs-msg, .fs-msg .ic, .fs-msg .ic::before, .fs-msg .tag, div[class*="st-key-screen_"], .fs-card.chg {{
+    animation: none !important; }}
+}}
+@media (max-width: 640px) {{
+  .fs-top {{ padding: 0.8rem 0.85rem 0.85rem 0.85rem; border-radius: 14px; margin-bottom: 1.1rem; }}
+}}
+
+/* ---------- 0.11.0 fit and slider details ---------- */
+.block-container {{ max-width: 52rem !important; padding-top: 1rem !important; }}
+.fs-top {{ padding: 0.85rem 1rem 0.9rem 1rem !important; margin-bottom: 1.3rem !important; }}
+.fs-top .fs-steps {{ gap: 0.28rem !important; margin-bottom: 0.65rem !important; }}
+.fs-top .fs-step {{ padding: 0.2rem 0.6rem !important; }}
+.fs-top .fs-hud {{ margin-top: 0.9rem !important; gap: 0.15rem 0.7rem !important; }}
+.fs-q .nw {{ white-space: nowrap; }}
+
+div[data-testid="stSlider"] div[data-rac]:has(> div > input[type="range"]) {{
+  width: 1.3rem !important; height: 1.3rem !important; border-radius: 50% !important;
+  background: {GREEN} !important; border: 3px solid #FFFFFF !important;
+  box-shadow: 0 0 0 1px {GREEN}, 0 2px 8px rgba(18,53,40,0.25) !important; cursor: grab; }}
+div[data-testid="stSliderTickBar"] {{ display: none !important; }}
+.fs-ticks {{ position: relative; height: 1.2rem; margin: -0.35rem 0.4rem 0.4rem 0.4rem; }}
+.fs-ticks span {{ position: absolute; top: 0; transform: translateX(-50%); font-size: 0.8rem;
+  color: {MUTED}; white-space: nowrap; }}
+.fs-ticks span:first-child {{ transform: none; }}
+.fs-ticks span:last-child {{ transform: translateX(-100%); }}
+
+/* ---------- 0.11.0 laptop fit ---------- */
+@media (min-width: 900px) {{
+  .fs-top .fs-hud {{ flex-wrap: nowrap !important; justify-content: space-between; gap: 0.5rem !important; }}
+}}
+div[data-testid="stVerticalBlock"] {{ gap: 0.68rem !important; }}
+div[role="radiogroup"] {{ gap: 0.48rem !important; }}
+label[data-testid="stRadioOption"] {{ padding: 0.66rem 1.05rem !important; }}
+.fs-top {{ margin-bottom: 1.15rem !important; }}
+.fs-msg {{ padding: 0.65rem 0.95rem 0.55rem 0.95rem !important; margin-bottom: 0.85rem !important; }}
+.fs-msg .tx p {{ line-height: 1.45 !important; margin-bottom: 0.25rem !important; }}
+.fs-chart {{ padding: 0.55rem 0.8rem 0.35rem 0.8rem !important; }}
+
+.block-container {{ padding-top: 0.75rem !important; }}
+.fs-top {{ padding: 0.75rem 1rem 0.8rem 1rem !important; margin-bottom: 1rem !important; }}
+.fs-top .fs-hud {{ margin-top: 0.8rem !important; padding: 0.45rem 0.85rem !important; }}
+
+/* Pills (rank 1 to 10, H1 roles, funding): the row fills the full width. */
+div[data-testid="stElementContainer"]:has(> div[data-testid="stButtonGroup"]),
+div[data-testid="stButtonGroup"] {{ width: 100% !important; }}
+div[data-testid="stButtonGroup"] > div[role="radiogroup"],
+div[data-testid="stButtonGroup"] > div[role="group"] {{ display: flex !important; flex-direction: row !important;
+  flex-wrap: wrap !important; width: 100% !important; max-width: none !important; gap: 0.5rem !important; }}
+div[data-testid="stButtonGroup"] > div > button {{ flex: 1 1 0 !important; min-width: 2.75rem !important;
+  justify-content: center !important; }}
+
+.fs-terms .h {{ font-size: 1rem !important; }}
+.fs-terms .b {{ font-size: 1rem !important; }}
+
+.stApp h1, .stApp h2, .stApp h3 {{ padding-top: 0.6rem !important; }}
 </style>
 """
 
 
 def inject_css() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
+    st.markdown(f"<style>{_ROLL_KEYFRAMES}</style>", unsafe_allow_html=True)
 
 
 def _h(text: str) -> str:
@@ -481,7 +633,11 @@ def html_block(markup: str) -> None:
 # Section bar
 # ---------------------------------------------------------------------------
 
-def steps(sections: list[str], current: str | None, progress: float) -> None:
+def steps(sections: list[str], current: str | None, progress: float,
+          hud_html: str = "") -> None:
+    """The dark green top panel: sections, progress with a gradient and, on
+    decision screens, the numbers line (`hud_html`). Below it the beige work
+    surface holds the question."""
     if not current:
         return
     idx = sections.index(current) if current in sections else -1
@@ -498,8 +654,8 @@ def steps(sections: list[str], current: str | None, progress: float) -> None:
         cls = "done" if i < idx else "now" if i == idx else ""
         chips.append(f'<div class="fs-step {cls}">{_h(sec)}</div>')
     pct = max(2, min(100, round(progress * 100)))
-    html_block(f'<div class="fs-steps">{"".join(chips)}</div>'
-               f'<div class="fs-bar"><div style="width:{pct}%"></div></div>')
+    html_block(f'<div class="fs-top"><div class="fs-steps">{"".join(chips)}</div>'
+               f'<div class="fs-bar"><div style="width:{pct}%"></div></div>{hud_html}</div>')
 
 
 # ---------------------------------------------------------------------------
@@ -525,7 +681,11 @@ def question(text: str, body: str | None = None, sources: list[str] | None = Non
         tip = "Scientific background: " + "; ".join(sources)
         icon = (f' <span class="fs-src" tabindex="0" role="note" aria-label="{_h(tip)}" '
                 f'data-tip="{_h(tip)}">{LINK_SVG}</span>')
-    out = f'<div class="fs-q">{_h(text)}{icon}</div>'
+    if icon and " " in text:
+        head, last = text.rsplit(" ", 1)
+        out = f'<div class="fs-q">{_h(head)} <span class="nw">{_h(last)}{icon}</span></div>'
+    else:
+        out = f'<div class="fs-q">{_h(text)}{icon}</div>'
     if body:
         safe = _h(body).replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
         out += f'<div class="fs-body">{safe}</div>'
@@ -562,6 +722,10 @@ def _visible_fields(state: dict, solo: bool = False,
     return out
 
 
+_ROLL_KEYFRAMES = "".join(
+    f"@keyframes fs-r-{f}-{t} {{ from {{ transform: translateY({-f * 1.2:.1f}em); }} "
+    f"to {{ transform: translateY({-t * 1.2:.1f}em); }} }}\n"
+    for f in range(11) for t in range(10))
 _ROLL_CELLS = "".join(f"<i>{d}</i>" for d in "0123456789") + "<i>&nbsp;</i>"
 
 
@@ -577,8 +741,8 @@ def odometer(before: str, after: str) -> str:
         started = True
         if ca.isdigit() and (cb.isdigit() or cb == " ") and cb != ca:
             fi = 10 if cb == " " else int(cb)
-            out.append(f'<span class="d" style="--from:{-fi * 1.2:.1f}em;--to:{-int(ca) * 1.2:.1f}em">'
-                       f'<span>{_ROLL_CELLS}</span></span>')
+            out.append(f'<span class="d"><span style="transform:translateY({-int(ca) * 1.2:.1f}em);'
+                       f'animation-name:fs-r-{fi}-{ca}">{_ROLL_CELLS}</span></span>')
         else:
             out.append(f'<span class="s">{_h(ca)}</span>')
     return f'<span class="odo" aria-label="{_h(after)}">{"".join(out)}</span>'
@@ -613,7 +777,7 @@ def status_cards(state: dict, before: dict | None = None, solo: bool = False,
 
 
 LOGO_SVG = ('<svg viewBox="0 0 32 32" width="{w}" height="{w}" aria-hidden="true">'
-            '<rect width="32" height="32" rx="8" fill="#0E1A2B"/>'
+            '<rect width="32" height="32" rx="8" fill="#123528"/>'
             '<path d="M8 21a8 8 0 0 1 16 0z" fill="#C9A46A"/>'
             '<rect x="6" y="22.6" width="20" height="1.8" rx="0.9" fill="#F7F5F0"/></svg>')
 
@@ -622,7 +786,8 @@ def logo(size: int = 20) -> str:
     return LOGO_SVG.replace("{w}", str(size))
 
 
-def hud(state: dict, caption: str = "At the start of this area", brand: str = "") -> None:
+def hud(state: dict, caption: str = "At the start of this area", brand: str = "",
+        render: bool = True) -> str:
     """One compact line with the key numbers on every simulation question. It
     shows the situation at the start of the area and does not move with the
     answers inside the area, so a single decision never gets visible feedback.
@@ -637,7 +802,10 @@ def hud(state: dict, caption: str = "At the start of this area", brand: str = ""
     if state.get("pending_hires"):
         items.insert(5, ("Open roles", str(state["pending_hires"])))
     cells = "".join(f'<span class="it">{_h(k)}<b>{_h(v)}</b></span>' for k, v in items)
-    html_block(f'<div class="fs-hud"><span class="cap">{_h(caption)}</span>{cells}</div>')
+    markup = f'<div class="fs-hud"><span class="cap">{_h(caption)}</span>{cells}</div>'
+    if render:
+        html_block(markup)
+    return markup
 
 
 def changes(events: list[dict], solo: bool = False) -> None:
@@ -678,7 +846,7 @@ def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: st
     vmax = max(v for _, v, _ in series) * 1.08
     cols = []
     for i, (lab, v, chg) in enumerate(series):
-        h = max(8, round(64 * v / vmax))
+        h = max(8, round(52 * v / vmax))
         cls = "bar now" if i == len(series) - 1 else "bar"
         inner = f'<span class="chg">{_h(chg)}</span>' if chg else ""
         cols.append(f'<div class="col"><div class="v">{_h(unit_fmt(v))}</div>'
@@ -700,7 +868,8 @@ def facts(items: list[tuple[str, str]]) -> None:
 
 def terms(items: list[tuple[str, str]]) -> None:
     rows = "".join(f'<div class="row"><div class="h">{_h(t)}</div>'
-                   f'<div class="b">{_h(b)}</div></div>' for t, b in items)
+                   f'<div class="b">{_h(b).replace(chr(10), "<br>")}</div></div>'
+                   for t, b in items)
     html_block(f'<div class="fs-terms">{rows}</div>')
 
 
@@ -711,16 +880,14 @@ def terms(items: list[tuple[str, str]]) -> None:
 ABOUT_CSS = f"""
 <style>
 html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {{
-  background: #E9EDF2 !important;
+  background: #EAE3D5 !important;
 }}
 .block-container {{
-  background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 22px;
+  background: #FFFDF8; border: 1px solid #DDD4C3; border-radius: 22px;
   box-shadow: 0 10px 40px rgba(30,42,59,0.08);
   margin-top: 1.6rem; padding: 1.8rem 2rem 2.4rem 2rem !important;
 }}
 @media (max-width: 640px) {{ .block-container {{ border-radius: 0; margin-top: 0; padding: 1.2rem 1rem 2rem 1rem !important; }} }}
-.fs-step.now {{ background: #1E2A3B; border-color: #1E2A3B; }}
-.fs-bar > div {{ background: #1E2A3B; }}
 </style>
 """
 
@@ -739,16 +906,16 @@ def about_mode(title: str, body: str) -> None:
 
 TRANSITION_CSS = f"""
 <style>
-html, body, .stApp {{ background: #0B1424 !important; }}
+html, body, .stApp {{ background: #0C261D !important; }}
 [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {{
   background: transparent !important;
 }}
 .stApp::before {{
   content: ""; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(40% 35% at 30% 35%, rgba(31,95,91,0.60), transparent 70%),
-    radial-gradient(35% 30% at 70% 60%, rgba(176,141,87,0.32), transparent 70%),
-    radial-gradient(30% 30% at 55% 25%, rgba(70,120,170,0.22), transparent 70%);
+    radial-gradient(40% 35% at 30% 35%, rgba(45,106,79,0.60), transparent 70%),
+    radial-gradient(35% 30% at 70% 60%, rgba(201,164,106,0.30), transparent 70%),
+    radial-gradient(30% 30% at 55% 25%, rgba(149,213,178,0.20), transparent 70%);
   filter: blur(30px); animation: fs-aurora 9s ease-in-out infinite alternate;
 }}
 @keyframes fs-aurora {{
@@ -758,19 +925,19 @@ html, body, .stApp {{ background: #0B1424 !important; }}
 [data-testid="stMain"] {{ position: relative; z-index: 1; }}
 .block-container {{ padding-top: 18vh !important; }}
 .fs-curtain {{ text-align: left; }}
-.fs-curtain .ey {{ color: #A9D1C8; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.18em;
-  text-transform: uppercase; opacity: 0; animation: fs-up 700ms 150ms ease-out forwards; }}
+.fs-curtain .ey {{ color: #A7D7B8; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.18em;
+  text-transform: uppercase; opacity: 0; animation: fs-up 900ms 300ms cubic-bezier(.2,.7,.2,1) forwards; }}
 .fs-curtain .ti {{ color: #FFFFFF; font-size: 1.75rem; font-weight: 700; line-height: 1.08;
-  letter-spacing: -0.035em; margin: 0.6rem 0 0.9rem 0; opacity: 0; animation: fs-up 900ms 450ms cubic-bezier(.2,.7,.2,1) forwards; }}
-.fs-curtain .bd {{ color: #C9CFD9; font-size: 1rem; line-height: 1.6; max-width: 30rem; opacity: 0;
-  animation: fs-up 800ms 900ms ease-out forwards; }}
+  letter-spacing: -0.035em; margin: 0.6rem 0 0.9rem 0; opacity: 0; animation: fs-up 1400ms 700ms cubic-bezier(.2,.7,.2,1) forwards; }}
+.fs-curtain .bd {{ color: #CFE0D6; font-size: 1rem; line-height: 1.6; max-width: 30rem; opacity: 0;
+  animation: fs-up 1300ms 1400ms cubic-bezier(.2,.7,.2,1) forwards; }}
 .fs-curtain .ln {{ height: 2px; width: 0; margin: 1.8rem 0 1.6rem 0; border-radius: 2px;
-  background: linear-gradient(90deg, #1F5F5B, #4E9A8F, #C9A46A); animation: fs-line 1200ms 1100ms ease-out forwards; }}
+  background: linear-gradient(90deg, #2D6A4F, #52B788, #B7E4C7); animation: fs-line 1700ms 1700ms cubic-bezier(.4,0,.2,1) forwards; }}
 @keyframes fs-up {{ from {{ opacity: 0; transform: translateY(14px); }} to {{ opacity: 1; transform: none; }} }}
 @keyframes fs-line {{ to {{ width: 100%; }} }}
 button[data-testid="stBaseButton-primary"] {{ background: #F7F5F0 !important; border-color: #F7F5F0 !important;
-  opacity: 0; animation: fs-up 700ms 1500ms ease-out forwards; }}
-button[data-testid="stBaseButton-primary"] * {{ color: #0B1424 !important; }}
+  opacity: 0; animation: fs-up 1000ms 2600ms cubic-bezier(.2,.7,.2,1) forwards; }}
+button[data-testid="stBaseButton-primary"] * {{ color: #0C261D !important; }}
 button[data-testid="stBaseButton-primary"]:hover {{ background: #F1ECE0 !important; }}
 @media (prefers-reduced-motion: reduce) {{
   .stApp::before, .fs-curtain *, button[data-testid="stBaseButton-primary"] {{ animation: none !important; opacity: 1 !important; width: auto; }}
@@ -835,3 +1002,11 @@ def journey(months: list[tuple[str, str, list[tuple[str, str]]]]) -> None:
         out.append(f'<div class="m"><div class="mh">{_h(head)}</div>'
                    f'<div class="mt">{_h(title)}</div>{rows}</div>')
     html_block(f'<div class="fs-journey">{"".join(out)}</div>')
+
+
+def slider_ticks(options: list[str]) -> None:
+    """All values of a slider under its track, at the positions of the steps."""
+    n = len(options) - 1
+    spans = "".join(f'<span style="left:{100 * i / n:.3f}%">{_h(o)}</span>'
+                    for i, o in enumerate(options))
+    html_block(f'<div class="fs-ticks" aria-hidden="true">{spans}</div>')

@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.10.0"
+APP_VERSION = "0.11.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -236,21 +236,33 @@ CONSENT = {
     "lead": "A simulation study for founders, run by master’s students at Nova "
             "School of Business and Economics.",
     "facts": [
-        ("About 20 minutes", "One sitting, on any device"),
+        ("About 20 minutes", "Please complete it in one sitting, on any device"),
         ("A fictional startup", "No right or wrong answers"),
         ("A 5-minute follow-up", "By email, a week from now"),
     ],
+    # Text of the team, 21 October 2026. Lines in a body are separated by "\n".
     "sections": [
+        ("Who we are",
+         "We are Eléonore Konsbruck, Amie Weidemann and Sarah Yousfi, master’s "
+         "students at Nova SBE. This study is part of our master’s thesis on how "
+         "founders make decisions, supervised by Professor João Castro."),
         ("What you will do",
          "You run a fictional startup and make the decisions its founders face. "
          "Nothing you enter is checked against your real company."),
         ("Taking part is voluntary",
          f"You can have your data removed within {WITHDRAWAL_WEEKS} weeks by "
-         f"writing to {CONTACT_EMAIL}. No reason is needed."),
+         f"writing to {CONTACT_EMAIL}. You do not need to give a reason. We will "
+         "then delete your answers and your email address."),
         ("Your data",
-         "Your email address is stored separately from your answers. The answers "
-         "are analyzed only in aggregate, used only for this research project and "
-         "never shared outside the research team."),
+         "Your email address is stored separately from your answers. Your answers "
+         "are analyzed only in aggregate and used only for this research project. "
+         "All data stays within our research team and is never shared with anyone "
+         "outside it."),
+        ("Questions?",
+         f"Write to {CONTACT_EMAIL} or contact one of us directly:\n"
+         "Eléonore Konsbruck · 66998@novasbe.pt\n"
+         "Amie Weidemann · 67899@novasbe.pt\n"
+         "Sarah Yousfi · 70987@novasbe.pt"),
         ("Ethics",
          "This study follows the research ethics guidelines of Nova School of "
          "Business and Economics."),
@@ -281,10 +293,14 @@ EMAIL = {
 # About you (not part of the simulation)
 # --------------------------------------------------------------------------
 
-ABOUT_NOTE = "About you · not part of the simulation"
-ABOUT_BANNER = ("A few questions about you and your company. The simulation "
-                "starts after this part.")
+ABOUT_NOTE = "This section is about you."
+ABOUT_BANNER = ("A few questions about you and your company. The simulation will "
+                "start soon.")
 OTHER_LABEL = "Please specify"
+# Sliders in "About you" start on this empty position, so nothing is
+# preselected; the answer counts only once the handle has been moved.
+SLIDER_EMPTY = "–"
+SLIDER_HINT = "Drag the handle to your answer."
 
 PROFILE = {
     "question": "About you and your company",
@@ -309,7 +325,7 @@ PROFILE_FIELDS = [
     {"key": "industry_real", "label": "Industry of your company", "kind": "select",
      "options": INDUSTRIES},
     {"key": "previous_startups", "label": "Companies you founded before this one",
-     "kind": "pills", "options": ["0", "1", "2", "3 or more"]},
+     "kind": "slider", "options": ["0", "1", "2", "3 or more"]},
     {"key": "years_founder",
      "label": "Years of experience as a founder (0 if this is your first year)",
      "kind": "number", "min": 0, "max": 60, "col": 0},
@@ -333,7 +349,8 @@ PROFILE_FIELDS = [
 
 EXPERIENCE = {
     "question": "How often have you done this before?",
-    "body": "Count everything across your career, not only your current company.",
+    "body": "Count everything across your career, not only your current company. "
+            "Drag each handle to your answer.",
 }
 EXPERIENCE_FIELDS = [
     {"key": "exp_financing",
@@ -352,8 +369,8 @@ EXPERIENCE_FIELDS = [
 # Item 3: ambiguity attitude, own short wording (see codebook).
 RISK = {
     "question": "How you decide",
-    "body": "Three questions about your general attitude. Pick a point on each "
-            "scale.",
+    "body": "Three questions about your general attitude. Drag each handle to a "
+            "point on the scale.",
 }
 RISK_ITEMS = [
     {"key": "risk_general",
@@ -414,7 +431,7 @@ RANGE_INSTRUCTION = ("Give a low and a high estimate, so that you are 80% sure "
 # --------------------------------------------------------------------------
 
 SETUP = {
-    "question": "Meet {name}",
+    "question": "Your startup: {name}",
     "body": "{name} is a young startup with its first paying customers. Before "
             "you take over, decide how you run it and which industry it is in.",
     "team_label": "Do you run {name} on your own or with a co-founder?",
@@ -960,5 +977,11 @@ THANK_YOU_NOT_FOUNDER = (
     "Thank you for your interest. This study is open to founders and "
     "co-founders only, so the session ends here. Nothing has been stored."
 )
+
+CLOSE = {
+    "button": "Continue",
+    "title": "You can close this page now.",
+    "body": "Your answers have been saved. Thank you again for taking part.",
+}
 
 DECLINED = "No problem. Nothing has been stored. You can close this page."

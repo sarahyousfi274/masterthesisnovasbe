@@ -92,6 +92,7 @@ def build(track: int, seed: int) -> list[dict]:
     screens += [
         {"id": "suspicion", "kind": "suspicion", "section": wrap},
         {"id": "end", "kind": "end", "section": wrap},
+        {"id": "closed", "kind": "closed", "section": wrap},
     ]
     return screens
 

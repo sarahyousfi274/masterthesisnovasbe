@@ -246,7 +246,7 @@ def format_value(key: str, state: dict) -> str:
     if key in ("cash", "burn", "revenue"):
         return money(v)
     if key == "runway":
-        return "8+ years" if v >= 99 else f"{v} months"
+        return "8+ years" if v >= 99 else ("1 month" if v == 1 else f"{v} months")
     if key == "team_size":
         return f"{v} " + ("person" if v == 1 else "people")
     if key == "pending_hires":
