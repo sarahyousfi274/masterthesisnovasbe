@@ -5,6 +5,11 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.11.1**: the end-of-area curtain covers the whole screen again
+(the screen fade no longer uses a transform), the slider track is neutral
+instead of the theme color (red when `.streamlit/config.toml` is missing),
+and pill options are never cut off.
+
 **Version 0.11.0** applies the team feedback of 21 October: dark green and
 beige only (no blue anywhere), a dark green top panel with the sections, a
 progress bar with a gradient and the numbers line, one font everywhere,
