@@ -60,6 +60,8 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
                     at.selectbox(key=w).select(f["options"][1])
             elif f["kind"] == "pills":
                 at.pills(key=w).set_value(f["options"][1])
+            elif f["kind"] == "slider":
+                at.select_slider(key=w).set_value(f["options"][1])
             elif f["kind"] == "multi":
                 at.pills(key=w).set_value([f["options"][1], "Other"])
         at.run()   # the "Other" text fields appear
@@ -68,11 +70,11 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         at.button(key="profile_continue").click()
     elif kind == "experience":
         for f in content.EXPERIENCE_FIELDS:
-            at.pills(key=f"exp_{f['key']}").set_value(f["options"][2])
+            at.select_slider(key=f"exp_{f['key']}").set_value(f["options"][2])
         submit(at)
     elif kind == "risk":
         for item in content.RISK_ITEMS:
-            at.pills(key=f"risk_{item['key']}").set_value(str(rng.randint(0, 10)))
+            at.select_slider(key=f"risk_{item['key']}").set_value(str(rng.randint(0, 10)))
         submit(at)
     elif kind == "warmup_intro":
         at.button(key="warmup_continue").click()
@@ -141,6 +143,9 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         at.text_area[0].set_value("Something about how founders plan.")
         submit(at)
     elif kind == "end":
+        at.button(key="end_continue").click()
+        at.run()
+        assert at.session_state.screens[at.session_state.index]["kind"] == "closed"
         return "end"
     else:
         raise AssertionError(f"no driver for screen kind {kind!r}")
