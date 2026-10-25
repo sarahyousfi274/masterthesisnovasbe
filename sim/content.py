@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.14.1"
+APP_VERSION = "0.14.2"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -1013,6 +1013,10 @@ RANK_ENDS = ("1 = best of the 10", "10 = last of the 10")
 CHART_REVENUE = [("3 months before", 7_320, None), ("2 months before", 7_470, "+2%"),
                  ("1 month before", 7_770, "+4%"), ("When you took over", 8_000, "+3%")]
 CHART_REVENUE_CAPTION = "Monthly revenue in the months before you took over"
+# Shorter axis labels for phones up to 480 px wide (0.14.2).
+CHART_SHORT_LABELS = {"3 months before": "3 mo before", "2 months before": "2 mo before",
+                      "1 month before": "1 mo before", "When you took over": "At takeover",
+                      "In 12 months": "In 12 mo"}
 CHART_CUSTOMERS = [("Month 1", 9, None), ("Month 2", 16, None),
                    ("Month 3", 21, None)]
 
@@ -1064,6 +1068,17 @@ RESUME_OFFER = {
     "continue": "Continue where I stopped",
     "restart": "Start again",
     "gone": "The earlier session can no longer be continued. Please start again.",
+}
+
+# 0.14.2: a resume link opened again after a longer break.
+RESUME_CHECK = {
+    "title": "Welcome back",
+    "body": "To continue where you stopped, please enter the email address you gave "
+            "at the start. This keeps your answers safe if the link was passed on.",
+    "continue": "Continue where I stopped",
+    "restart": "Start a new session instead",
+    "wrong": "This email address does not match this session. Please check it, or "
+             "start a new session.",
 }
 
 DECLINED = "No problem. Nothing has been stored. You can close this page."

@@ -494,6 +494,14 @@ def open_progress_for_email(email: str, exclude: str | None = None):
     return None
 
 
+def email_for_code(code: str) -> str | None:
+    """The follow-up address of a session, to confirm a resume link (0.14.2)."""
+    flush()
+    with connect() as conn:
+        rows = _fetch(conn, "SELECT email FROM followup WHERE code = ?", (code,))
+    return rows[0]["email"] if rows else None
+
+
 def code_for_email(email: str) -> str | None:
     """Session id stored with an email address, for a withdrawal by mail."""
     flush()

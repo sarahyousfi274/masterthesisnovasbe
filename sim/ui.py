@@ -692,6 +692,49 @@ div[class*="st-key-screen_"]:has(.fs-chart) .fs-q {{ margin-bottom: 0.4rem !impo
 }}
 .fs-fullval {{ display: none; font-size: 0.875rem; color: {INK_2}; margin-top: -0.3rem; }}
 @media (max-width: 640px) {{ .fs-fullval {{ display: block; }} }}
+/* 0.14.2: phones. The top panel shows only the current section (with its
+   position), so the question starts higher; larger tap targets. */
+.fs-step .pos {{ display: none; }}
+@media (max-width: 640px) {{
+  .fs-top .fs-step:not(.now) {{ display: none !important; }}
+  .fs-top .fs-step .pos {{ display: inline; font-weight: 500; opacity: 0.75; }}
+  .fs-top {{ padding: 0.75rem 0.85rem 0.8rem 0.85rem !important; margin-bottom: 1rem !important; }}
+  .fs-top .fs-steps {{ margin-bottom: 0.55rem !important; }}
+  .fs-top .fs-hud {{ margin-top: 0.65rem !important; }}
+  button[data-testid="stBaseButton-tertiary"] {{ min-height: 40px !important; padding: 0.35rem 0.4rem 0.35rem 0 !important; }}
+  div[role="slider"] {{ width: 24px !important; height: 24px !important; }}
+}}
+.fs-chart .x .sm {{ display: none; }}
+@media (max-width: 480px) {{
+  .fs-chart .x .lg {{ display: none; }}
+  .fs-chart .x .sm {{ display: inline; }}
+  .fs-chart .x {{ word-break: normal !important; overflow-wrap: normal !important; hyphens: none; }}
+  .fs-chart .x:not(:has(.sm)) {{ white-space: nowrap !important; }}
+  .fs-chart .bars {{ gap: 0.2rem !important; }}
+  .fs-chart .v {{ font-size: 0.8rem !important; }}
+  .fs-chart .chg {{ font-size: 0.8rem !important; }}
+  .fs-msg .ic {{ display: none !important; }}
+  .fs-msg .meta .row span {{ width: 3.6rem !important; }}
+}}
+/* 0.14.2 phone check -------------------------------------------------- */
+@media (max-width: 640px) {{
+  /* The background note under the link icon spans the question instead of
+     running off the right edge when the icon sits near it. */
+  .fs-q {{ position: relative; }}
+  .fs-q .nw, .fs-q .fs-src {{ position: static !important; }}
+  .fs-src:hover::after, .fs-src:focus::after {{ left: 0 !important; right: 0 !important;
+    top: calc(100% + 0.4rem) !important; transform: none !important; width: auto !important;
+    max-width: none !important; }}
+}}
+@media (max-width: 480px) {{
+  /* Report change lines: what changed goes under the decision, not beside it. */
+  .fs-changes .row {{ grid-template-columns: minmax(0, 1fr) !important; gap: 0.15rem !important; }}
+  .fs-changes .row span:last-child {{ text-align: left !important; }}
+}}
+@media (pointer: coarse) {{
+  /* Fingers need bigger targets than a mouse: answer pills at least 40 px. */
+  div[data-testid="stButtonGroup"] button {{ min-height: 40px !important; }}
+}}
 </style>
 """
 
@@ -732,7 +775,13 @@ def steps(sections: list[str], current: str | None, progress: float,
         if collapse and sec in intro:
             continue
         cls = "done" if i < idx else "now" if i == idx else ""
-        chips.append(f'<div class="fs-step {cls}">{_h(sec)}</div>')
+        chips.append(f'<div class="fs-step {cls}">{_h(sec)}'
+                     f'{{POS}}</div>' if cls == "now" else
+                     f'<div class="fs-step {cls}">{_h(sec)}</div>')
+    # Phones show only the current section, with its position (0.14.2).
+    pos = next((i for i, c in enumerate(chips) if "{POS}" in c), 0) + 1
+    chips = [c.replace("{POS}", f'<span class="pos"> · {pos} of {len(chips)}</span>')
+             for c in chips]
     pct = max(2, min(100, round(progress * 100)))
     html_block(f'<div class="fs-top"><div class="fs-steps">{"".join(chips)}</div>'
                f'<div class="fs-bar"><div style="width:{pct}%"></div></div>{hud_html}</div>')
@@ -919,6 +968,14 @@ def range_diagram(left: str, right: str) -> None:
         f'<div class="edge">1 in 10 {_h(right)}</div></div></div>')
 
 
+def _xlab(label: str) -> str:
+    """Axis label with a shorter form for phones (0.14.2)."""
+    short = content.CHART_SHORT_LABELS.get(label)
+    if not short:
+        return _h(label)
+    return f'<span class="lg">{_h(label)}</span><span class="sm">{_h(short)}</span>'
+
+
 def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: str,
               future_label: str, gap: bool = False) -> None:
     """Small bar chart of a past series, with an empty 'future' slot. Built from
@@ -931,14 +988,14 @@ def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: st
         inner = f'<span class="chg">{_h(chg)}</span>' if chg else ""
         cols.append(f'<div class="col"><div class="v">{_h(unit_fmt(v))}</div>'
                     f'<div class="{cls}" style="height:{h}px">{inner}</div>'
-                    f'<div class="x">{_h(lab)}</div></div>')
+                    f'<div class="x">{_xlab(lab)}</div></div>')
     # The future slot is a small box on the baseline, so its height suggests no
     # magnitude.
     if gap:      # months between the series and the future slot (G3: months 4 to 8)
         cols.append('<div class="col gapcol"><div class="v">&nbsp;</div><div class="dots">…</div>'
                     '<div class="x">&nbsp;</div></div>')
     cols.append(f'<div class="col fut"><div class="v">&nbsp;</div><div class="bar q">?</div>'
-                f'<div class="x">{_h(future_label)}</div></div>')
+                f'<div class="x">{_xlab(future_label)}</div></div>')
     html_block(f'<div class="fs-chart" role="img" aria-label="{_h(caption)}">'
                f'<div class="cap">{_h(caption)}</div><div class="bars{" gap" if gap else ""}">'
                f'{"".join(cols)}</div></div>')
