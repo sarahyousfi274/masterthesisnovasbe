@@ -4,385 +4,333 @@ A 20-minute simulation study for founders by master's students at Nova SBE.
 
 <!-- The first paragraph above is what link previews show (Streamlit Community
 Cloud takes the description from this README). Keep it neutral: it must not
-name the purpose of the study. -->
+name the purpose of the study. Everything below is for the research team and
+the examiners only. This repository must stay private (see "Confidentiality"). -->
 
-## About this repository
+| | |
+|---|---|
+| **Release** | 0.14.2 (codebook 0.14.0), 25 October 2026 |
+| **Live app** | https://decisions-in-founding.streamlit.app |
+| **Stack** | Python 3.10+ (tested with 3.13), Streamlit 1.65.0 (pinned), Postgres (Neon, Frankfurt) or SQLite |
+| **Institution** | Nova School of Business and Economics, Lisbon |
+| **Supervisor** | Prof. João Castro |
+| **Authors** | Eléonore Konsbruck, Amie Weidemann, Sarah Yousfi |
+| **Contact** | decisions-in-founding@outlook.com |
 
-The research instrument of our work project at Nova SBE (Chapter 5). It runs a
-session of about 20 minutes: four domain blocks of four decisions each, a short
-post-game question, and an end screen. The follow-up a week later explains the
-study.
+---
 
-**Version 0.14.2**: a resume link opened after more than 30 minutes asks for
-the email address first, so a forwarded link cannot open someone else's session;
-phone fixes (background note, report lines, bigger answer pills on touch screens).
+## Contents
 
-**Version 0.14.1**: without `.streamlit/config.toml` the app now still looks
-right in dark mode (empty radio dots, light dropdown lists).
+1. [Purpose](#1-purpose)
+2. [Study design](#2-study-design)
+3. [Measurement and scoring](#3-measurement-and-scoring)
+4. [Data, privacy and confidentiality](#4-data-privacy-and-confidentiality)
+5. [Repository structure](#5-repository-structure)
+6. [Running the app locally](#6-running-the-app-locally)
+7. [Deployment](#7-deployment)
+8. [Fieldwork operations](#8-fieldwork-operations)
+9. [Quality assurance](#9-quality-assurance)
+10. [Known limitations](#10-known-limitations)
+11. [Version history](#11-version-history)
+12. [Authors, citation and licence](#12-authors-citation-and-licence)
 
-**Version 0.14.0** applies the simulator check of round 4 (details in
-`REVIEW_RESPONSE_ROUND4_0.14.0.md`). A session can be resumed after a reload, a
-locked phone, a laptop asleep or a redeploy: the progress is saved under a random
-token in the URL (`?r=…`), and a participant who comes back through the plain
-link and enters the same email is offered "Continue where I stopped". A dropped
-connection is kept for an hour (`disconnectedSessionTTL = 3600`). Text fixes: F1
-listed once in the final report, "Planned hires" instead of "Open roles", an
-uneven F3 series (+2, +4, +3 %), the same follow-up wording everywhere, a digital
-product named before the industry is chosen, contact emails kept in one piece,
-a Head of Product instead of a Head of Growth (H5/H2), and normal figures in
-running text.
+---
 
-**Version 0.13.3**: the end of the Team area pays the month before the new
-people start; H4 and the report make clear that the Head of Sales comes on top
-of the planned hires; F3 opens with "Investors will ask … for a revenue
-forecast"; the starting situation explains the free trial behind the steady
-revenue; the net burn help names what the costs cover.
+## 1 Purpose
 
-**Version 0.13.2**: the story explains the paying customers at the start: they
-use a pilot the team still runs largely by hand, and the MVP turns it into a
-first real product (setup text and Building the product intro).
+The app is the research instrument of our work project on **founder
+overconfidence and startup performance** (Chapter 5 of the thesis). Founders
+run a fictional startup, Lumora, through its first months and take 22
+decisions. Each measured decision is scored against a hidden reference value
+for one of the three forms of overconfidence distinguished by Moore and Healy
+(2008):
 
-**Version 0.13.1**: "About you" has its own colors (stone grey page, white
-card, charcoal panel, terracotta accent), clearly apart from the green and
-beige simulation; the email text says there is exactly one follow-up email; a
-completed run with the same email ends on a thank-you screen; the industry of
-Lumora has no preselection (the field shows a dash).
+| Form | What it captures | Item type |
+|---|---|---|
+| **Overestimation** | planning that is more aggressive than the reference (time, money, hires) | ladder of options |
+| **Overplacement** | believing one's own startup is better than the others | rank belief and contest entry |
+| **Overprecision** | ranges that are too narrow for the uncertainty involved | 80 % interval (low and high estimate) |
 
-**Version 0.13.0** applies the simulator check of round 3 (details in
-`REVIEW_RESPONSE_ROUND3_0.13.0.md`): F1 counted apart from Finance, ranges with
-low = high refused, G4 persistence coding, a Finance bridge to 6 months of runway,
-H1 as a plan, T1 founder time aligned with T3, a flatter F3 chart, H2 paid in cash,
-digital product sentences, one complete run per email, H4 option C resolved, and
-layout fixes for laptop and phone. It keeps the speed fix of 0.12.1.
+Participants are never told what is measured. The word "overconfidence" does
+not appear anywhere in the app; the study is explained in the single follow-up
+email a week after the session (cover story, requirement R5).
 
-**Version 0.12.1** makes each page move on at once with Postgres: connections
-are reused instead of opened for every write, and writes run in one background
-thread in order, with five retries. Reads (data page, deletion) wait for the
-queue first. Failed writes, if any, are listed on the data page.
+## 2 Study design
 
-**Version 0.12.0** closes the open threads of the contests: the area report
-notes that a decision is pending (for example "Head of Growth: she decides in
-the coming weeks"), and the final report after K1 draws every entered contest
-with its stated chance and shows how it turned out. A win adds the prize. The
-outcomes are stored with the final report.
+### 2.1 Session flow
 
-**Version 0.11.2** makes F1 the opening decision right after the starting
-situation, the same position for everyone. The runway shown is always 14
-months, so all four options are feasible in every track (in the Finance area,
-Track 3 left a median of 2 months and only "Right away"). Finance now runs F3
-and F4 plus its contest pair.
+About 20 minutes, 47 screens, the same in every track.
 
-**Version 0.11.1**: the end-of-area curtain covers the whole screen again
-(the screen fade no longer uses a transform), the slider track is neutral
-instead of the theme color (red when `.streamlit/config.toml` is missing),
-and pill options are never cut off.
+| Section | Screens |
+|---|---|
+| Welcome | information, consent |
+| About you | founder filter, email, profile, experience, risk attitude (SOEP items, Dohmen et al. 2011) |
+| How it works | overview, one example choice and one example range (not scored) |
+| Your startup | solo founder or co-founders, industry, starting situation |
+| First decision | F1: when fundraising starts (same position for everyone) |
+| Four areas | per area: intro with the numbers, 4 to 6 decisions, end-of-area report |
+| Final round | K1 (raffle), final report that settles all held-back effects and contests |
+| Wrap-up | suspicion check ("What do you think this study was about?"), thank you, close |
 
-**Version 0.11.0** applies the team feedback of 21 October: dark green and
-beige only (no blue anywhere), a dark green top panel with the sections, a
-progress bar with a gradient and the numbers line, one font everywhere,
-"This section is about you." in About you, sliders without a preselected
-answer for experience, risk attitude and earlier startups, answer rows that
-span the full width, more vertical space (decision screens still fit a
-1366 x 768 laptop), "Your startup: Lumora", the email icon rings like a push
-notification, longer and smoother transitions, a closing screen after the
-thank-you page and the team's text on the welcome page.
+The "About you" section has its own colour scheme (stone grey and terracotta),
+clearly apart from the green simulation, as required by the supervisor.
 
-**Version 0.10.0** applies the simulator review of 20 October 2026 (Amie):
-F4, H4 and G4 are always the last decision of their area; T3 comes before T1
-and H3 before H1; no outcome feedback before a final report after K1 (customers,
-revenue, morale and market confidence are held back, the morale and market
-tiles are hidden until then); G1 and G4 give every option the same effect; F1
-asks in remaining runway, offers only feasible options, charges no running
-costs twice and applies worse terms to a start with fewer than 6 months left
-in the final report; G3 shows 9, 16, 21 and asks for month 9; G1 and G3 take
-their reference values from the models in `models/`; K1 says "premium entry";
-no contest results are promised; "solo founder", "based in Europe", no month
-labels, one type scale, every decision screen fits a 1366 x 768 laptop, the
-invitations read as emails, and the selection color holds even without
-`.streamlit/config.toml`.
+### 2.2 Areas and tracks
 
-**Version 0.9.1** uses three tracks instead of two. Building the product
-always comes first; the other three areas form a Latin square, so each of them
-appears once in position 2, 3 and 4. Allocation is balanced: at consent, a new
-participant gets the track with the fewest completed plus currently running
-sessions (ties at random). The data page shows completed sessions per track.
+"Building the product" always comes first. The other three areas form a Latin
+square, so each appears once in position 2, 3 and 4:
 
-**Version 0.9.0** gives the simulation its own look and feel: a warm
-"boardroom" palette (paper white, navy, deep teal), Lumora as a company with a
-logo and a one-line product per industry, simulated time (each area is one
-month), a numbers panel on every question, contest invitations as messages,
-a short "End of month" curtain with rolling numbers in each monthly report, a
-timeline of the participant's decisions on the end screen, a sticky Continue
-button on phones, a fade between screens and a favicon (`assets/favicon.png`).
-No measured question, option or reference value changed.
+| Track | Area 1 | Area 2 | Area 3 | Area 4 |
+|---|---|---|---|---|
+| 1 | Building the product | Finance | Team | Go-to-market |
+| 2 | Building the product | Go-to-market | Finance | Team |
+| 3 | Building the product | Team | Go-to-market | Finance |
 
-**Version 0.8.1** brings back the choice at setup: participants run Lumora
-on their own or with one co-founder. Every text that mentions the founder
-adapts ("you" or "you and your co-founder"), as do the status labels. The
-team composition in the demographics describes the real company only.
+**Balanced allocation:** at consent, a new participant gets the track with the
+fewest completed plus currently running sessions (running = started in the last
+45 minutes); ties are broken at random. Withdrawn sessions and non-founders do
+not count.
 
-**Version 0.8.0** shows the scientific background per question on hover over a
-link icon (author and year only), removes the scenario dropdown, gives "About you"
-its own form look, adds an animated transition into the simulation, lets every
-participant run the same startup (Lumora), adds G4 (reaction to the first month)
-and K1 (a raffle as random-outcome control) and sets the study contact address.
-The session has 22 decisions (20 measured, 2 attention checks).
+### 2.3 Decisions
 
-**Version 0.7.0** adds four rank-belief items (one per area, asked before each
-contest), states the 1-in-10 base rate in every contest, removes every benchmark
-from the scenario popovers (fictional + author and year only), switches all range
-questions to Low/High at 80%, adds net burn with a revenue tile, an ownership
-tile, hires joining at the end of the Team area, a full morale and market
-confidence rule set, consequences for fundraising timing, a randomized candidate
-order in H4, attention checks in areas 2 and 3, and the SOEP risk items. The
-session has 20 decisions (18 measured, 2 attention checks).
+| Area | Overestimation | Overprecision | Overplacement (rank, contest) | Outcome node |
+|---|---|---|---|---|
+| Building the product | T1 share built in-house | T3 weeks to MVP | T5, T2 pitch contest | |
+| Finance | F1 start of fundraising (opening) | F3 revenue in 12 months | F5, F2 accelerator | F4 route to €300,000 |
+| Team | H1 planned hires | H3 weeks to a signed contract | H5, H2 Head of Product | H4 Head of Sales |
+| Go-to-market | G1 launch budget split | G3 new customers in month 9 | G5, G2 customer tender | G4 reaction to a weak first month |
+| Final round | | | K1 raffle (control) | |
 
-**Version 0.6.0** applies the notes of 18 October (V3): Streamlit pinned to
-1.65.0 so the cloud runs the exact tested version, accent color indigo instead
-of red for every selection, light mode enforced, Back only once per area (from
-the first decision to the area's starting situation), the status strip fixed at
-each area's starting numbers, a new welcome page, a general screening question,
-timestamps per screen (entered_at, answered_at) and total duration per session,
-and a full copy edit in American English ("startup").
+Plus two attention checks (AC1, AC2), placed in areas 2 and 3 of each track.
 
-**Version 0.5.0** applies the team notes of 18 October: a new light-only design
-system (`sim/ui.py`), a section bar at the top, the email address instead of a
-pseudonym code, the questions about the person first, a logical order inside
-each area, one screen per range question, status cards that explain every
-change, and attention checks written into the question text.
+- **Order inside an area:** nodes that build on each other keep their order
+  (T3 → T1, H3 → H1, G1 → G3); each rank question comes right before its
+  contest; the outcome nodes F4, H4 and G4 are always last in their area.
+- **Contests:** ten entrants, an independent jury, a 1 in 10 chance for an
+  average entrant, an upgrade to 1 in 8. Entry costs `prize / 10 + 2,000` and
+  the upgrade `prize / 8 + 4,500`, so every entry has an expected value of
+  −€2,000 and every upgrade −€4,500.
+- **K1** has the same numbers but is decided by lot. Entry there reflects risk
+  attitude only, which separates it from the overplacement component of the
+  skill contests (Camerer and Lovallo 1999).
+- **Outcome nodes** (F4, H4, G4) are not overconfidence scores. They are
+  coded decisions used as dependent variables.
 
-**Before inviting anyone:** set `CONTACT_EMAIL` at the top of `sim/content.py`
-to the team's study address, and make sure `.streamlit/config.toml` is in the
-repository at exactly that path.
+### 2.4 How the story reacts
 
-## Running it
+- Cash, costs, runway and team change at once; each area is one month of
+  running costs, paid at the end of the area.
+- Customers, revenue, morale and market confidence are **held back** until the
+  final report, so no participant gets outcome feedback during the measured
+  decisions.
+- Contest results are drawn in the final report with the stated chance, from
+  the session seed (a reload shows the same result).
+- If the runway is below 6 months when Finance starts (only possible in Track
+  3), existing investors bridge Lumora to 6 months, so the financing
+  decisions start from the same position.
+- All texts adapt to solo founders and co-founder teams.
+
+## 3 Measurement and scoring
+
+All reference values live in `sim/codebook.json`. Each node carries its
+reference, `provenance` (empirical or derived), `basis`, `sources` and, where
+relevant, `open` points. The written justification is the project document
+*Codebook Reference Values*. G1 and G3 are model-based (`models/`).
+
+| Form | Score |
+|---|---|
+| Overestimation | signed distance of the chosen option from the reference, in the node's own unit, positive = more aggressive, z-standardised across the sample |
+| Overplacement | 5.5 minus the stated rank (rank questions); entry into a contest with a negative expected value, plus the size of the stake |
+| Overprecision | width of the stated range over the width of the reference range (below 1 = too narrow), plus the expected coverage of the reference distribution |
+
+`sim/scoring.py` scores one participant from the stored rows
+(`score_participant`) and is used by the data page for group-level results.
+Each stored row carries a snapshot of the situation at that moment
+(`state_json`, including the numbers shown) as a control variable.
+
+## 4 Data, privacy and confidentiality
+
+### 4.1 What is stored
+
+| Table | Content | In the analysis export |
+|---|---|---|
+| `sessions` | one row per participant: pseudonym code, track, seed, solo or team, industry, consent, founder filter, start and end time, duration, app and codebook version, withdrawn flag | yes |
+| `responses` | one row per screen: answer, response time, timestamps, situation snapshot | yes |
+| `followup` | email address, linked only by the pseudonym code | no (separate download) |
+| `progress` | where a running session stands, so it can be resumed; never the email | no |
+
+Rows with `screen_id = "resume"` in `responses` mark a resumed session
+(seconds since the last save, screen index, number of resumes). They carry no
+node and are not scored; report the share of resumed sessions as a
+data-quality note.
+
+### 4.2 Privacy
+
+- The email address is stored only in `followup` and never in the answers.
+- Answers are analysed in aggregate only.
+- Resuming uses a random token in the URL (`?r=…`), never the code or email.
+  After a break of more than 30 minutes the app asks for the email address
+  before it continues, so a forwarded link cannot open someone else's session.
+- One complete run per email address; a second attempt ends on a thank-you
+  screen and nothing of it is kept.
+- Withdrawal within 4 weeks by email: the data page deletes every session
+  linked to that address, including its progress and contact.
+
+### 4.3 Confidentiality
+
+**The repository must stay private.** `sim/codebook.json` holds every reference
+value and the full measurement logic, and this README names the purpose of the
+study. On Streamlit Community Cloud, apps from a public repository show a
+GitHub and a Fork button that cannot be hidden. The app itself is set to public
+in the Streamlit sharing settings, independently of the repository.
+
+## 5 Repository structure
+
+```
+app.py                     screens, routing and resume; nothing is scored here
+requirements.txt           pinned dependencies (Streamlit 1.65.0, psycopg 3)
+sim/
+  content.py               every text a participant sees, tracks, effects, charts
+  codebook.json            hidden reference values with provenance and sources
+  codebook.py              access to the codebook, quantiles, coverage
+  state.py                 the company: cash, burn, runway, team, held-back effects
+  flow.py                  screen order per track, randomisation, allocation
+  scoring.py               scores per form and per domain
+  storage.py               SQLite or Postgres, background writes, resume, export
+  admin.py                 data page at ?view=admin
+  ui.py                    design system (CSS) and screen components
+models/                    G1 launch model and G3 Bass model with variants
+tests/                     end-to-end walkthrough and simulated participants
+assets/favicon.png         browser tab icon
+.streamlit/config.toml     theme and server settings (session kept for 1 hour)
+.streamlit/secrets.toml.example   template for DATABASE_URL and ADMIN_PASSWORD
+.github/workflows/keep-awake.yml  opens the app every 6 hours so it never sleeps
+DEPLOY.md                  hosting options and setup in detail
+CHANGELOG.md               version history
+REVIEW_RESPONSE_*.md       responses to the review rounds
+```
+
+The split is deliberate: `content.py` is the story participants experience;
+`codebook.json` holds the reference values they never see. The story reacts
+only to the effect table in `content.py`, never to a measurement result.
+
+## 6 Running the app locally
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-The app opens at `http://localhost:8501`. Data goes to `data/sessions.db`.
+The app opens at `http://localhost:8501` and writes to `data/sessions.db`
+(SQLite). For the data page, copy `.streamlit/secrets.toml.example` to
+`.streamlit/secrets.toml`, set `ADMIN_PASSWORD` and open `?view=admin`.
 
-For putting it online, see **DEPLOY.md**. The short version: a hosted
-Streamlit app has no permanent disk, so set `DATABASE_URL` to a Postgres
-database before collecting real data, or it will be lost on the next restart.
-
-## The data page
-
-`?view=admin`, for example `http://localhost:8501/?view=admin`. It shows how
-many sessions have been started and completed, offers one CSV download per
-table, computes the group level results so far, and deletes a participant by
-pseudonym code for a withdrawal by mail.
-
-It needs `ADMIN_PASSWORD` in `.streamlit/secrets.toml` (copy
-`secrets.toml.example`). Without a password the page refuses to open, so a
-deployed app is never accidentally public. Participants never see a link to it.
-
-Since 0.14.0 a fourth table, `progress`, holds where each running session
-stands (the screen, the situation and the answers, never the email), so that
-it can be resumed. It is not part of the analysis: the CSV downloads leave it
-out, and deleting a participant or withdrawing by email removes it too. Each
-resume writes one row with `screen_id = "resume"` into `responses`
-(`numeric_value` = seconds since the last save, `text_value` = the screen index,
-`option_index` = how many resumes so far). Leave these rows out of the scoring;
-they are a data-quality marker.
-
-From a script instead:
-
-```python
-from sim import storage
-storage.export_csv("export")   # sessions.csv, responses.csv
-storage.delete("ABC-1234")     # a withdrawal by mail
-```
-
-## Tests
-
-```bash
-python -m tests.simulate_participants   # does the scoring recover known biases?
-python -m tests.walkthrough             # does a whole session run and store correctly?
-```
-
-`simulate_participants` is evaluation episode 1 from Section 4.3: 300
-synthetic participants with known bias parameters, scored by the real scoring
-module. It reports how well each form score recovers the parameter that
-produced it and whether the three form scores stay independent. Current
-result: r = 0.93 / 0.84 / 0.83 with cross correlations below 0.09.
-
-`walkthrough` drives the real app through all three tracks with Streamlit's
-AppTest harness and checks that every screen is stored, timed and carries a
-snapshot of the situation. Since 0.14.0 it also interrupts six sessions at a random screen, restores
-them from the saved progress and checks that the stored answers are identical to
-an uninterrupted run; it checks the resume offer at the email step and that the
-link of a completed session shows the closing page.
-
-## Layout
-
-```
-app.py                      screens and routing, nothing scored
-DEPLOY.md                   putting it online, and what that costs you
-sim/content.py              every word a participant sees, plus the effect table
-sim/codebook.json           the hidden reference values, with provenance and sources
-sim/codebook.py             access to them, quantile and coverage functions
-sim/state.py                the situation: cash, burn, runway, team, morale, customers
-sim/flow.py                 tracks, randomisation inside a block, pseudonym codes
-sim/storage.py              SQLite locally, Postgres when DATABASE_URL is set
-sim/admin.py                the data page at ?view=admin
-sim/scoring.py              scoring per form and per domain
-tests/                      the two checks above
-```
-
-**`sim/codebook.json` is why the repository has to stay private.** It holds
-every reference value and the whole measurement logic. A participant who could
-read it would know what is being measured and what counts as an aggressive
-answer, which is exactly what R5 keeps from them.
-
-The split matters for the design: `content.py` is the story, which
-participants experience, and `codebook.json` holds the reference values,
-which they never see. The story reacts only to the effect table in
-`content.py`, never to a measurement result.
-
-## Flow (0.5.0)
-
-```
-welcome and consent
-About you        founder filter → email → profile → experience → risk attitude
-How it works     overview → example choice → example range (not part of the study)
-Your startup     Lumora: on your own or with a co-founder, industry → starting situation
-4 areas          intro with status → 4 decisions → status with "what changed"
-Wrap-up          "what do you think this study was about?" → thank you
-```
-
-Inside an area, nodes that build on each other keep their order (F1 → F3 → F4,
-H1 → H3 → H4, T1 → T3, G1 → G3); the others, including the attention checks,
-are inserted at random positions. Back is offered in "About you" and on any
-screen that follows an information-only screen. Range questions show the best
-and worst case on one screen, in random order, and are stored as the two rows
-`<node>_opt` and `<node>_pes` that the scoring expects.
-
-The email address is stored only in the `followup` table with the internal
-session id. It never appears in `responses`. The full debrief goes out with the
-follow-up email.
-
-For a local design review, `FS_DEV=1 streamlit run app.py` and open
+For design reviews, `FS_DEV=1 streamlit run app.py` and open
 `?jump=<screen id>`, for example `?jump=F3`. Without that environment variable
 the parameter does nothing.
 
-## Changing the reference values
+## 7 Deployment
 
-Everything scored sits in `sim/codebook.json`. Each node carries a `provenance`
-tag:
+The study runs on **Streamlit Community Cloud** with a **Neon Postgres**
+database in Frankfurt. Full instructions and alternatives are in `DEPLOY.md`.
 
-- `empirical` — a published figure is used directly (F3, H1, H3, G1)
-- `derived` — computed from published figures plus a stated assumption (T1,
-  T3, F1, and the four contests)
-- `placeholder` — needs the team's own interview or pilot data before fielding
-  (G3)
+| Setting | Where | Value |
+|---|---|---|
+| Main file | Streamlit app settings | `app.py` |
+| `DATABASE_URL` | Streamlit secrets | Neon connection string (without it, data is lost on restart) |
+| `ADMIN_PASSWORD` | Streamlit secrets | long passphrase for the data page |
+| Sharing | Streamlit app settings | "This app is public and searchable" |
+| Theme, session TTL | `.streamlit/config.toml` | must be at exactly this path |
+| Keep awake | `.github/workflows/keep-awake.yml` | runs every 6 hours |
 
-Every entry also carries `basis`, `sources` and, where something is still
-open, an `open` field. Changing a number means editing this file; nothing
-else needs touching.
+`app.py` and the files in `sim/` must come from the same release; a mixed
+upload stops with a "Version mismatch" message instead of failing halfway
+through a session. Upload hidden folders (`.streamlit`, `.github`) through
+"Add file → Create new file" on GitHub, because a Mac drops them in uploads.
 
-## The contests
+## 8 Fieldwork operations
 
-`contest_variant` at the top of the codebook switches between two sets of
-numbers.
+**Before the link goes out**
 
-`harmonised` (default) applies one rule to all four contests: ten
-competitors, a one in ten chance, an upgrade to one in eight, entry costing
-`prize / 10 + 2000` and the upgrade `prize / 8 + 4500`. Every contest then
-has an expected value of −2,000 euros for entry and −4,500 for the upgrade,
-so entry rates are comparable across domains.
+1. Repository private, app public; check in a private browser window.
+2. Delete all test sessions on the data page ("Sessions started" = 0).
+3. Run the keep-awake workflow once under "Actions" (green check).
+4. Send the plain link, without `?r=…`.
 
-`walkthrough` restores the numbers from the draft of 5 October.
+**While participants are active**
 
-## Scoring
+- **No commits to GitHub.** Every commit restarts the app; running sessions
+  can resume, but they are interrupted.
+- Download the CSV files from the data page once a day as a backup.
+- Withdrawals: delete by email address on the data page.
 
-| Form | Score |
+**After the session window**
+
+- Send the follow-up email with the debrief to **every** address in
+  `followup.csv`, including participants who do not answer the questionnaire.
+  The contests and the raffle are fictional; neither the app nor the email
+  promises results.
+
+## 9 Quality assurance
+
+```bash
+python -m tests.walkthrough             # full sessions through the real app
+python -m tests.simulate_participants   # does the scoring recover known biases?
+```
+
+| Check | Result (0.14.2) |
 |---|---|
-| Overestimation | signed distance of the chosen option from the reference value, in the node's own unit, positive meaning more aggressive, then z-standardised across the sample |
-| Overplacement | entry into a contest with a negative expected value, plus the size of the stake |
-| Overprecision | width of the stated range over the width of the reference range, below 1 meaning too narrow, plus the coverage of the reference distribution |
+| Walkthrough, all three tracks, solo and co-founder | end to end ok, 22 scored nodes per session, email never in the answers |
+| Resume after an interruption (6 sessions, random screen) | stored answers identical to an uninterrupted run |
+| Resume via email, forwarded link, completed link | all pass |
+| Simulated participants (n = 300) | parameter recovery r = 0.92 / 0.95 / 0.89; cross-correlations below 0.07 |
+| Browser run (laptop 1366 × 768, phones 320 to 375 px, dark mode) | all 47 screens, no horizontal scrolling, no text below 12.5 px |
+| Live run on the public link | complete session, reload, completed link and second-run block confirmed |
 
-For overprecision the module reports both the binary hit against one drawn
-value and `expected_coverage`, the share of the reference distribution
-falling inside the stated range. The second is the expectation of the first
-without the noise of a single draw, so with one decision per cell it is the
-more efficient statistic for the analysis (Section 4.3 on reliability).
+The instrument went through four review rounds by the team (see the
+`REVIEW_RESPONSE_*.md` files).
 
-## Open points for the team
+## 10 Known limitations
 
-The 18 October review raised several points that need a team decision before
-fielding, listed here so they do not get lost:
+- **One item per form per area.** Domain-level scores rest on few decisions;
+  the overall form scores are more reliable than the domain scores.
+- **Overplacement and risk.** Contest entry also reflects risk attitude. The
+  rank questions and the K1 control are designed to separate the two, but the
+  separation is statistical, not experimental.
+- **Overprecision noise.** With one interval per node, the hit against a single
+  drawn value is noisy; the analysis uses expected coverage instead.
+- **Range format.** Low and high estimate are asked on one screen. Soll and
+  Klayman (2004) found higher hit rates when the two points are asked on
+  separate screens; the choice is named in Chapter 5.
+- **Reference conventions.** The nine-month buffer in F1 and the G1 test share
+  rest on stated assumptions; the codebook lists the robustness checks.
+- **Industry is a label.** The product is digital in every industry; the
+  reference values assume a digital product.
 
-1. **Contest design.** All four contests use the same 10-competitor rank
-   format. Overplacement cannot be cleanly separated from risk tolerance,
-   because entering the contest also carries risk. A paired version with a
-   random-outcome control (Camerer and Lovallo 1999) plus a rank question
-   ("which of the 10 do you expect to finish?") would separate the two.
-2. **H2 ("senior developer").** Winning depends on the candidate's choice,
-   not on the founder's own ability, so this is not a pure overplacement
-   item. Either replace with a contest where ability matters, or keep it and
-   score it separately.
-3. **Overprecision noise.** With one draw per interval, the hit rate is noisy.
-   The scoring already prefers `expected_coverage` for the analysis. The
-   drawn value is only shown in the follow-up, not during the session.
-4. **Overestimation items.** The ladder format measures preference under
-   known reference, not point estimates against ground truth. Consider adding
-   a point-estimate variant for one node per block.
-5. **One item per form per domain.** With 16 scored nodes, the Finance and
-   GTM scores rest on three decisions each. Consider adding a second item per
-   form per block for the fielding version.
-6. **Attention checks** are now randomised within blocks (not always last).
-   Keep them as a quality marker rather than a hard exclusion given the small
-   sample.
-7. **Validation block and market-entry game.** Still to be added.
-8. **Team diversity** is now captured in demographics as a potential
-   moderator variable.
-9. **G3 reference distribution** comes from a Bass model since 0.10.0
-   (`models/g3_model.py`), with prior variants B and C as robustness checks.
-10. **H1 ladder (0, 1, 2, 3)** is censored on the aggressive side. A fifth
-    option (4 or 5 roles) would balance it.
-11. **F1 nine-month runway reference** is a convention; defend from
-    interviews or report with both a six- and a nine-month reference.
-12. **Contact and ethics placeholders** in the consent and end text need to
-    be confirmed with Prof. Castro and the Nova SBE ethics board. The current
-    placeholders are `founderstudy@novasbe.pt` and `ethics@novasbe.pt`.
+## 11 Version history
 
-## What changed in 0.4.0
+See `CHANGELOG.md`. Each release records the app version and the codebook
+version in every session row, so the analysis can tell which version a
+participant saw.
 
-- Demographics (profile, experience, risk) moved to the start.
-- Attention check randomised within its block, no longer always last.
-- Optimistic and pessimistic halves of each range screen appear in random order.
-- Starting situation screen added so participants see the baseline.
-- Burn is deducted at the end of each block.
-- Planned hires are shown separately and no longer fold into team size.
-- Customer growth depends on the launch-budget split (G1).
-- Convertible terms (F4) rebalanced to a 2M cap with a conversion note.
-- G4 reworked from a website colour choice to a trade-event question.
-- H1 roles updated to 0, 1, 2, 3.
-- Experience options extended to 0 through 5 or more.
-- Country as a dropdown; gender keeps "Prefer not to say".
-- Numbers rendered in US format throughout (commas as thousands separator).
-- Café warm-up is now explicitly labelled as an example.
-- Back button only in warm-up and intro screens; otherwise one-way.
-- Validation on every field; nothing can be left blank.
-- Dark mode: answer cards stay legible (forced light colours).
-- Continue button: one click; validation on click.
-- Interval warning if both values are the same.
-- "What was this study about?" kept as suspicion check with explanation.
-- Debrief content moved to the follow-up: the end screen shows a thank you,
-  the code, and the follow-up notice; the full purpose, data note and
-  personal results are shared in the follow-up a week later.
-- No mail collection; the follow-up is opened with the pseudonym code.
-- No "don't use my data" opt-out: participants withdraw by writing to the
-  research team with their code (deadline stated).
-- Scenario context popover ("About this scenario") on each measurement
-  question, with sources, without disclosing the reference value.
+## 12 Authors, citation and licence
 
-## Debriefing (review A7)
+Eléonore Konsbruck, Amie Weidemann and Sarah Yousfi, master's students at Nova
+School of Business and Economics, supervised by Prof. João Castro.
 
-The study is explained with the follow-up email a week after the session. That
-email must go to **every** participant in `followup.csv` (the data page offers
-the download), including those who do not answer the follow-up. The contests
-and the raffle are fictional; neither the app nor the email promises results.
+> Konsbruck, E., Weidemann, A. and Yousfi, S. (2026). *Decisions in founding:
+> a simulation instrument for measuring founder overconfidence* (version
+> 0.14.2). Work project, Nova School of Business and Economics.
+
+© 2026 the authors. All rights reserved. The code is shared for academic
+assessment at Nova SBE; any other use requires the authors' permission.
+
+### References
+
+- Benoît, J.-P., Dubra, J. and Moore, D. A. (2015). Does the better-than-average effect show that people are overconfident? *Journal of the European Economic Association*, 13(2), 293–329.
+- Camerer, C. and Lovallo, D. (1999). Overconfidence and excess entry: an experimental approach. *American Economic Review*, 89(1), 306–318.
+- Dohmen, T., Falk, A., Huffman, D., Sunde, U., Schupp, J. and Wagner, G. G. (2011). Individual risk attitudes: measurement, determinants, and behavioral consequences. *Journal of the European Economic Association*, 9(3), 522–550.
+- Moore, D. A. and Healy, P. J. (2008). The trouble with overconfidence. *Psychological Review*, 115(2), 502–517.
+- Soll, J. B. and Klayman, J. (2004). Overconfidence in interval estimates. *Journal of Experimental Psychology: Learning, Memory, and Cognition*, 30(2), 299–314.
+
+Further sources for each reference value are listed in `sim/codebook.json`.
