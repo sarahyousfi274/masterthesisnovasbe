@@ -197,8 +197,113 @@ def play(seed: int, try_back: bool = False) -> dict:
         raise AssertionError("session did not reach the end")
     return {"code": at.session_state.code, "track": at.session_state.track,
             "seed": at.session_state.seed, "email": email,
+            "token": at.session_state.resume_token,
             "final_state": at.session_state.state, "solo": at.session_state.solo,
             "events": at.session_state.events}
+
+
+# ---------------------------------------------------------------------------
+# Round 4, A1: resume after an interruption
+# ---------------------------------------------------------------------------
+
+COMPARE = ("screen_id", "screen_index", "option_key", "option_index", "numeric_value",
+           "text_value", "state_json")
+
+
+def _rows(code: str, from_index: int) -> list[tuple]:
+    # Sorted by index and id: the _opt and _pes rows of a range share an index.
+    return sorted(tuple(r[c] for c in COMPARE) for r in storage.fetch_responses(code)
+                  if r["screen_id"] != "resume" and r["screen_index"] >= from_index)
+
+
+def _drive(at: AppTest, rng: random.Random, email: str, stop_at: int | None = None) -> None:
+    """Play on until the end, or until the index reaches stop_at."""
+    for _ in range(MAX_STEPS):
+        if at.exception:
+            raise AssertionError(f"app raised: {at.exception[0].value}")
+        idx = at.session_state.index
+        if stop_at is not None and idx >= stop_at:
+            return
+        sc = at.session_state.screens[idx]
+        if answer(at, rng, email) == "end":
+            return
+        at.run()
+        if at.session_state.index == idx:
+            raise AssertionError(f"stuck on {sc['id']}: {[w.value for w in at.warning]}")
+    raise AssertionError("session did not reach the end")
+
+
+def resume_check(seed: int) -> tuple[bool, str]:
+    """Interrupt at a random screen, play the rest once without and once with a
+    restore from the saved progress; the stored rows must be identical."""
+    import copy as _copy
+    pick = random.Random(seed * 13)
+    email = f"tester{seed}@example.com"
+    rng = random.Random(seed)
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    stop = pick.randint(3, len(at.session_state.screens) - 3)
+    _drive(at, rng, email, stop_at=stop)
+    code, token = at.session_state.code, at.session_state.resume_token
+    k = at.session_state.index
+    saved = storage.load_progress(token)
+    assert saved and saved["data"]["index"] == k, "progress not saved on advance"
+    assert "email" not in json.dumps(saved["data"]["answers"]), "email in progress"
+    assert email not in json.dumps(saved["data"]), "email in progress"
+    rng_after = _copy.deepcopy(rng)
+
+    # Reference: the same session played on without interruption.
+    _drive(at, rng, email)
+    reference = _rows(code, k)
+
+    # Interrupted: put the database back to screen k, then open the link with ?r=.
+    with storage.connect() as conn:
+        storage._execute(conn, "DELETE FROM responses WHERE code = ? AND screen_index >= ?",
+                         (code, k))
+    storage.update_session(code, completed_at=None, duration_seconds=None)
+    storage.save_progress(code, token, saved["data"])
+    at2 = AppTest.from_file(APP, default_timeout=30)
+    at2.query_params["r"] = token
+    at2.run()
+    assert at2.session_state.code == code and at2.session_state.index == k, "not restored"
+    resumed = [r for r in storage.fetch_responses(code) if r["screen_id"] == "resume"]
+    assert resumed and resumed[0]["text_value"] == str(k), "no resume marker"
+    _drive(at2, rng_after, email)
+    again = _rows(code, k)
+    return reference == again, f"track {at2.session_state.track}, cut at screen {k} " \
+        f"({at2.session_state.screens[k]['id']}), {len(again)} rows after the cut"
+
+
+def email_resume_check(seed: int) -> bool:
+    """Leave a session after the email step, come back through the plain link,
+    enter the same email: 'Continue where I stopped' restores it."""
+    email = f"tester{seed}@example.com"
+    rng = random.Random(seed)
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    _drive(at, rng, email, stop_at=12)
+    old_code, old_index = at.session_state.code, at.session_state.index
+
+    at2 = AppTest.from_file(APP, default_timeout=30)
+    at2.run()
+    at2.button(key="consent_agree").click(); at2.run()
+    new_code = at2.session_state.code
+    at2.radio(key="filter_choice").set_value("Yes"); at2.button(key="filter_continue").click()
+    at2.run()
+    at2.text_input(key="email_value").set_value(email); submit(at2); at2.run()
+    offered = any(b.key == "resume_continue" for b in at2.button)
+    at2.button(key="resume_continue").click(); at2.run()
+    sessions = {r["code"] for r in storage.fetch_all("sessions")}
+    return (offered and at2.session_state.code == old_code
+            and at2.session_state.index == old_index and new_code not in sessions)
+
+
+def completed_link_check(token: str) -> bool:
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.query_params["r"] = token
+    at.run()
+    return bool(at.session_state.resumed_completed) and \
+        any(content.CLOSE["title"] in t.value for t in at.title)
 
 
 def main() -> int:
@@ -244,7 +349,7 @@ def main() -> int:
               f"{len(nodes)} node rows, {len(scored)} scored nodes")
         fs = r["final_state"]
         print(f"      final: cash €{fs['cash']:,}, runway {fs['runway']} mo, "
-              f"team {fs['team_size']}, open roles {fs['pending_hires']}, "
+              f"team {fs['team_size']}, planned hires {fs['pending_hires']}, "
               f"customers {fs['customers']}")
         for ev in r["events"][:4]:
             print(f"      event: {ev['label']}  {ev['delta']}")
@@ -306,6 +411,17 @@ def main() -> int:
     if not ok_balance:
         ok = False
         print("  FAIL: balanced track allocation")
+    # Round 4, A1: resume after an interruption.
+    print()
+    for seed in (101, 102, 103, 104, 105, 106):
+        same, info = resume_check(seed)
+        print(f"  resume after interruption, {info}: identical={same}")
+        ok = ok and same
+    by_email = email_resume_check(201)
+    print(f"  resume through the email step: {by_email}")
+    closed = completed_link_check(results[0]["token"])
+    print(f"  link of a completed session shows the closing page: {closed}")
+    ok = ok and by_email and closed
     print("\nRESULT:", "end to end ok" if ok else "checks failed")
     return 0 if ok else 1
 
