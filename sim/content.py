@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.13.3"
+APP_VERSION = "0.14.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -73,8 +73,8 @@ STATUS_FIELDS = [
     ("customers", "Customers", "Paying customers using the product today."),
     ("team_size", "Team", "People working in the startup, you and your "
                           "co-founder included."),
-    ("pending_hires", "Open roles", "Positions you have opened. New hires join "
-                                    "the team at the end of the Team area."),
+    ("pending_hires", "Planned hires", "People you plan to hire. They join at the "
+                                       "end of the Team area."),
     ("ownership", "Founders’ ownership", "Share of the company held by you and "
                                          "your co-founder together."),
     ("morale", "Team morale", "Mood of the team, from 1 (very low) to 5 (very "
@@ -200,12 +200,11 @@ MESSAGES = {
            "body": "Hi {name} team, {name} is one of 10 startups on our shortlist "
                    "for a single place in our program. An independent panel will "
                    "pick one of the ten."},
-    "H5": {"from": "Recruiting partner",
-           "subject": "Head of Growth decides between 10 offers",
-           "body": "Hi {name} team, a quick update from our search. The experienced "
-                   "Head of Growth we spoke about has offers from 10 startups, "
-                   "{name} among them, and will choose one of them in the coming "
-                   "weeks."},
+    "H5": {"from": "Head of Product candidate",
+           "subject": "My decision between 10 offers",
+           "body": "Hi {name} team, thank you for our conversations. I have offers "
+                   "from 10 startups, {name} among them, and I will choose one of "
+                   "them in the coming weeks."},
     "G5": {"from": "Procurement, potential customer", "subject": "Call for proposals",
            "body": "Hi {name} team, we are putting a contract out to tender. Ten "
                    "startups, {name} among them, are invited to submit a proposal, "
@@ -260,7 +259,7 @@ CONSENT = {
     "facts": [
         ("About 20 minutes", "Please complete it in one sitting, on any device"),
         ("A fictional startup", "No right or wrong answers"),
-        ("A 5-minute follow-up", "By email, a week from now"),
+        ("One short follow-up", "A single email in about a week, with a 5\u2011minute questionnaire"),
     ],
     # Text of the team, 21 October 2026. Lines in a body are separated by "\n".
     "sections": [
@@ -455,7 +454,7 @@ RANGE_INSTRUCTION = ("Give a low and a high estimate, so that you are 80% sure "
 
 SETUP = {
     "question": "Your startup: {name}",
-    "body": "{name} is a young startup. Its first paying customers use a pilot "
+    "body": "{name} is a young digital startup. Its first paying customers use a pilot "
             "that the team still runs largely by hand. Before you take over, decide "
             "how you run it and which industry it is in.",
     "team_label": "Do you run {name} on your own or with a co-founder?",
@@ -463,7 +462,8 @@ SETUP = {
                      ("team", "Together with a co-founder")],
     "team_help": "Cash, costs and customers at the start are the same either way.",
     "industry_label": "Which industry is {name} in?",
-    "industry_help": "Pick the industry you know best.",
+    "industry_help": "Pick the industry you know best. In every industry, {name}’s "
+                     "product is digital: software, an app or an online platform.",
     "industry_placeholder": "–",
 }
 
@@ -577,9 +577,9 @@ CONTEST_STORY = {
     "F2": {"label": "Accelerator place", "pending": "the panel decides later",
            "won": "Lumora gets the accelerator place", "lost": "The accelerator picks another startup",
            "effect": "cash"},
-    "H2": {"label": "Head of Growth", "pending": "she decides in the coming weeks",
-           "won": "The Head of Growth chooses Lumora: the saved search is worth €40,000",
-           "lost": "The Head of Growth chooses another startup", "effect": "cash"},
+    "H2": {"label": "Head of Product", "pending": "she decides in the coming weeks",
+           "won": "The Head of Product chooses Lumora: the saved search is worth €40,000",
+           "lost": "The Head of Product chooses another startup", "effect": "cash"},
     "G2": {"label": "Customer tender", "pending": "the panel picks the winner later",
            "won": "Lumora wins the customer contract", "lost": "The customer picks another proposal",
            "effect": "cash"},
@@ -796,7 +796,7 @@ SCREENS = {
     "H5": {
         "kind": "rank",
         "contest": "H2",
-        "question": "An experienced Head of Growth is choosing between offers from "
+        "question": "An experienced Head of Product is choosing between offers from "
                     "10 startups, {name} among them.",
         "body": "Before you decide whether to make an offer: if she ranked all 10 "
                 "startups by how attractive they are to her, where would {name} "
@@ -806,13 +806,13 @@ SCREENS = {
 
     "H2": {
         "kind": "contest",
-        "question": "Do you make the Head of Growth an offer?",
+        "question": "Do you make the Head of Product an offer?",
         "body": "If she joins you, you save 3 months of searching, worth {prize}. "
                 "Preparing a standard offer, with an assessment day and employer "
                 "branding, costs {base_cost}. An average startup has a 1 in 10 "
                 "chance of being her choice.",
         "background": BG_CONTEST,
-        "event": "Offer to Head of Growth",
+        "event": "Offer to Head of Product",
         "options": [
             {"key": "A", "label": "Make no offer"},
             {"key": "B", "label": "Standard offer"},
@@ -1010,9 +1010,9 @@ RANK_ENDS = ("1 = best of the 10", "10 = last of the 10")
 # Charts above the two range questions that build on a series. The revenue
 # series is scaled to the revenue at the start of the Finance area, so the chart,
 # the question and the status strip always agree (the reference scales with it).
-CHART_REVENUE = [("3 months before", 7_300, None), ("2 months before", 7_550, "+3%"),
-                 ("1 month before", 7_800, "+3%"), ("Today", 8_000, "+3%")]
-CHART_REVENUE_CAPTION = "Monthly revenue before you took over, and today"
+CHART_REVENUE = [("3 months before", 7_320, None), ("2 months before", 7_470, "+2%"),
+                 ("1 month before", 7_770, "+4%"), ("When you took over", 8_000, "+3%")]
+CHART_REVENUE_CAPTION = "Monthly revenue in the months before you took over"
 CHART_CUSTOMERS = [("Month 1", 9, None), ("Month 2", 16, None),
                    ("Month 3", 21, None)]
 
@@ -1032,9 +1032,9 @@ END = {
     "title": "Thank you",
     "body": "That is everything for today. Thank you for your time, and for "
             "taking the decisions as seriously as you did.\n\n"
-            "**A week from now** we will email you a short follow-up of about 5 "
-            "minutes. With the follow-up we will also explain what the study was "
-            "about.",
+            "**In about a week** we will send you one more email with a short "
+            "questionnaire of about 5 minutes. It is the only email you will get from "
+            "us, and it also explains what the study was about.",
 }
 
 THANK_YOU_NOT_FOUNDER = (
@@ -1052,8 +1052,18 @@ ALREADY_TOOK_PART = {
     "title": "Thank you",
     "body": "A response has already been submitted with this email address, so you "
             "cannot take part a second time. Thank you very much for your interest "
-            f"and your time. If you think this is a mistake, write to {CONTACT_EMAIL}.",
+            f"and your time. If you think this is a mistake, write to\u00a0{CONTACT_EMAIL}.",
     "close": "You can close this page now.",
+}
+
+# A1 (0.14.0): an earlier, unfinished session with the same email address.
+RESUME_OFFER = {
+    "question": "Welcome back",
+    "body": "You started this study earlier with this email address. Do you want to "
+            "continue where you stopped?",
+    "continue": "Continue where I stopped",
+    "restart": "Start again",
+    "gone": "The earlier session can no longer be continued. Please start again.",
 }
 
 DECLINED = "No problem. Nothing has been stored. You can close this page."

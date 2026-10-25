@@ -11,6 +11,7 @@ markdown renderer turns indented lines into code blocks.
 from __future__ import annotations
 
 import html
+import re
 
 import streamlit as st
 
@@ -293,7 +294,13 @@ div[data-testid="stPopoverBody"] * {{ color: {INK_2} !important; font-size: 0.87
 .fs-hero .lead {{ font-size: 1rem; color: {INK_2}; margin-top: -0.3rem; }}
 
 /* ---------- simulation feel (0.9.0) ---------- */
-.stApp {{ font-variant-numeric: tabular-nums; }}
+/* Round 4, A5: tabular figures only where numbers stand in columns or roll;
+   running text keeps the normal figures of Inter. */
+.fs-top, .fs-top *, .fs-card .val, .fs-card .dl, .fs-changes .row span, .odo, .odo * {{
+  font-variant-numeric: tabular-nums !important; }}
+.fs-mail {{ white-space: nowrap; color: inherit; text-decoration: underline;
+  text-underline-offset: 2px; }}
+.fs-plain {{ font-size: 1rem; line-height: 1.6; color: {INK}; margin: 0 0 1rem 0; }}
 div[data-testid="stElementContainer"][data-stale="true"], .stale-element {{ opacity: 1 !important; transition: none !important; }}
 div[class*="st-key-screen_"] {{ animation: fs-in 320ms cubic-bezier(.2,.7,.2,1); }}
 @keyframes fs-in {{ from {{ opacity: 0; transform: translateY(8px); }} to {{ opacity: 1; transform: none; }} }}
@@ -468,11 +475,10 @@ div[data-testid="stVerticalBlock"] {{ gap: 0.55rem; }}
    0.11.0 · green cockpit (team feedback of 21 October)
    ===================================================================== */
 
-/* One font everywhere, numbers included. */
+/* One font everywhere, numbers included (normal figures, A5). */
 .stApp *:not([data-testid="stIconMaterial"]):not(svg):not(path),
 div[data-baseweb="popover"] *, div[data-baseweb="tooltip"] *, div[role="listbox"] * {{
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-  font-variant-numeric: tabular-nums;
 }}
 
 /* Top panel: dark green, sections, gradient progress, numbers line. */
@@ -862,7 +868,7 @@ def hud(state: dict, caption: str = "At the start of this area", brand: str = ""
              ("Revenue", game.format_value("revenue", state) + "/mo"),
              ("Team", str(state.get("team_size", 0)))]
     if state.get("pending_hires"):
-        items.insert(5, ("Open roles", str(state["pending_hires"])))
+        items.insert(5, ("Planned hires", str(state["pending_hires"])))
     cells = "".join(f'<span class="it">{_h(k)}<b>{_h(v)}</b></span>' for k, v in items)
     markup = f'<div class="fs-hud"><span class="cap">{_h(caption)}</span>{cells}</div>'
     if render:
@@ -932,9 +938,19 @@ def facts(items: list[tuple[str, str]]) -> None:
     html_block(f'<div class="fs-facts">{cells}</div>')
 
 
+_MAIL_RE = re.compile(r"[ \u00a0]([\w.+-]+@[\w-]+(?:\.[\w-]+)+?)(?=[.,;:]?(?:\s|$|<))")
+
+
+def mail_links(text: str) -> str:
+    """Escape a text and turn each email address into a mailto link that stays
+    in one piece, bound to the word before it (Round 4, A3.6)."""
+    return _MAIL_RE.sub(lambda m: f'&nbsp;<a class="fs-mail" href="mailto:{m.group(1)}">'
+                                  f'{m.group(1)}</a>', _h(text))
+
+
 def terms(items: list[tuple[str, str]]) -> None:
     rows = "".join(f'<div class="row"><div class="h">{_h(t)}</div>'
-                   f'<div class="b">{_h(b).replace(chr(10), "<br>")}</div></div>'
+                   f'<div class="b">{mail_links(b).replace(chr(10), "<br>")}</div></div>'
                    for t, b in items)
     html_block(f'<div class="fs-terms">{rows}</div>')
 

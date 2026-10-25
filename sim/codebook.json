@@ -1,5 +1,5 @@
 {
-  "codebook_version": "0.13.0",
+  "codebook_version": "0.14.0",
   "updated": "2026-10-25",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
   "contest_variant": "harmonised",
@@ -153,7 +153,7 @@
         "0.90": 24000
       },
       "provenance": "empirical",
-      "basis": "SaaS Capital 2025 benchmarking of private B2B SaaS companies, band below 1 million ARR: median annual growth 40 percent, 25th percentile 20 percent, 75th percentile 100 percent. Applied to the current 8,000 euros these give 11,200, 9,600 and 16,000 euros. The 10th and 90th percentiles are extrapolated as -10 percent and +200 percent. The chart shows about 3 percent monthly growth; straight extrapolation gives about 11,400 euros, close to the reference median. Since 0.13.3 the question opens with 'Investors will ask Lumora for a revenue forecast' instead of 'is preparing its pitch for a seed round' (the old wording contradicted a late fundraising start chosen in F1); the chart is labelled as the three months before the takeover and today. Reference unchanged.",
+      "basis": "SaaS Capital 2025 benchmarking of private B2B SaaS companies, band below 1 million ARR: median annual growth 40 percent, 25th percentile 20 percent, 75th percentile 100 percent. Applied to the current 8,000 euros these give 11,200, 9,600 and 16,000 euros. The 10th and 90th percentiles are extrapolated as -10 percent and +200 percent. The chart shows +2, +4 and +3 percent in the three months before the takeover (on average 3 percent a month); straight extrapolation gives about 11,400 euros, close to the reference median. Since 0.13.3 the question opens with 'Investors will ask Lumora for a revenue forecast' instead of 'is preparing its pitch for a seed round' (the old wording contradicted a late fundraising start chosen in F1); the chart is labelled as the three months before the takeover and today. Since 0.14.0 the series is 7,320, 7,470, 7,770 and 8,000 euros and the last bar is labelled 'When you took over'. Reference unchanged.",
       "sources": [
         "SaaS Capital (2025), Benchmarking Private SaaS Company Growth Rates, more than 1,000 respondents",
         "ChartMogul SaaS Growth Report 2023, more than 2,200 SaaS businesses: median monthly growth 2 to 2.5 percent across the lifecycle",
@@ -216,7 +216,7 @@
         }
       },
       "provenance": "derived",
-      "basis": "Harmonised with T2 and F2 so that entry rates are comparable across domains. The walkthrough version used eight competitors, a 30,000 euro saving and an upgrade to one in five, which gave an expected value of -1,250 and -4,000 instead of -2,000 and -4,500. The upgrade is a higher salary and signing bonus, not equity, for the same reason.",
+      "basis": "Harmonised with T2 and F2 so that entry rates are comparable across domains. The walkthrough version used eight competitors, a 30,000 euro saving and an upgrade to one in five, which gave an expected value of -1,250 and -4,000 instead of -2,000 and -4,500. The upgrade is a higher salary and signing bonus, not equity, for the same reason. Since 0.14.0 the role is a Head of Product (before: Head of Growth), so that it does not overlap with the Head of Sales in H4.",
       "sources": [
         "Camerer and Lovallo (1999)",
         "Cain, Moore and Haran (2015)"

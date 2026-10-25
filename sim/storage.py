@@ -15,6 +15,8 @@ Three tables, deliberately kept apart:
              time the screen took
   followup   mail address for the questionnaire one week later, linked only by
              the pseudonym code
+  progress   where a running session stands, so that it can be resumed after a
+             reload or a lost connection (0.14.0); not part of the analysis
 
 The follow-up contact lives in its own table so that it can be held separately
 from the session data and deleted on its own.
@@ -79,6 +81,12 @@ CREATE TABLE IF NOT EXISTS followup (
     created_at  TEXT,
     sent_at     TEXT
 );
+CREATE TABLE IF NOT EXISTS progress (
+    code        TEXT PRIMARY KEY,
+    token       TEXT UNIQUE,
+    data        TEXT,
+    updated_at  TEXT
+);
 """
 
 POSTGRES_SCHEMA = """
@@ -122,6 +130,12 @@ CREATE TABLE IF NOT EXISTS followup (
     email       TEXT,
     created_at  TEXT,
     sent_at     TEXT
+);
+CREATE TABLE IF NOT EXISTS progress (
+    code        TEXT PRIMARY KEY,
+    token       TEXT UNIQUE,
+    data        TEXT,
+    updated_at  TEXT
 );
 """
 
@@ -422,6 +436,64 @@ def save_followup(code: str, email: str) -> None:
                  (code, email.strip(), _now()))
 
 
+# ---------------------------------------------------------------------------
+# Resume (0.14.0): where a running session stands, under a random token.
+# The token is the only thing in the URL; the session code and the email never
+# are. The email is not part of the saved data either.
+# ---------------------------------------------------------------------------
+
+@_deferred
+def save_progress(code: str, token: str, data: dict) -> None:
+    with connect() as conn:
+        _execute(conn,
+                 "INSERT INTO progress (code, token, data, updated_at) VALUES (?,?,?,?) "
+                 "ON CONFLICT (code) DO UPDATE SET token = EXCLUDED.token, "
+                 " data = EXCLUDED.data, updated_at = EXCLUDED.updated_at",
+                 (code, token, json.dumps(data), _now()))
+
+
+def load_progress(token: str) -> dict | None:
+    """The saved progress for a token, with `updated_at`, `completed` and
+    `withdrawn` of its session; None if the token is unknown."""
+    if not token:
+        return None
+    flush()
+    with connect() as conn:
+        rows = _fetch(conn,
+                      "SELECT p.code, p.data, p.updated_at, s.completed_at, s.withdrawn "
+                      "FROM progress p LEFT JOIN sessions s ON s.code = p.code "
+                      "WHERE p.token = ?", (token,))
+    if not rows:
+        return None
+    r = rows[0]
+    try:
+        data = json.loads(r["data"])
+    except (TypeError, ValueError):
+        return None
+    return {"code": r["code"], "data": data, "updated_at": r["updated_at"],
+            "completed": bool(r["completed_at"]) or bool(data.get("completed")),
+            "withdrawn": bool(r["withdrawn"])}
+
+
+def open_progress_for_email(email: str, exclude: str | None = None):
+    """(code, token) of the latest session with this email that is neither
+    completed nor withdrawn and has saved progress, otherwise None."""
+    flush()
+    with connect() as conn:
+        rows = _fetch(conn,
+                      "SELECT p.code, p.token FROM followup f "
+                      "JOIN sessions s ON s.code = f.code "
+                      "JOIN progress p ON p.code = f.code "
+                      "WHERE f.email = ? AND s.completed_at IS NULL "
+                      "AND (s.withdrawn IS NULL OR s.withdrawn = 0) "
+                      "ORDER BY p.updated_at DESC",
+                      (email.strip().lower(),))
+    for r in rows:
+        if r["code"] != exclude:
+            return r["code"], r["token"]
+    return None
+
+
 def code_for_email(email: str) -> str | None:
     """Session id stored with an email address, for a withdrawal by mail."""
     flush()
@@ -458,6 +530,7 @@ def withdraw(code: str) -> None:
     with connect() as conn:
         _execute(conn, "UPDATE sessions SET withdrawn = 1 WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM followup WHERE code = ?", (code,))
+        _execute(conn, "DELETE FROM progress WHERE code = ?", (code,))
 
 
 def delete(code: str) -> int:
@@ -468,6 +541,7 @@ def delete(code: str) -> int:
         before = _fetch(conn, "SELECT code FROM sessions WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM responses WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM followup WHERE code = ?", (code,))
+        _execute(conn, "DELETE FROM progress WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM sessions WHERE code = ?", (code,))
         return len(before)
 
