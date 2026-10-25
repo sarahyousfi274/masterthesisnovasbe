@@ -8,8 +8,9 @@ Economics
 - Net burn = monthly costs − monthly revenue. Runway = cash / net burn.
 
 Fixed rules, applied at the end of each area (end_of_area)
-- One month of net burn is paid.
-- Team area only: everyone hired in this area starts. Open roles from H1 and a
+- One month of net burn is paid, at the costs of the month that just ended.
+- Team area only: then everyone hired in this area starts (salaries count from
+  the next month on). Open roles from H1 and a
   Head of Sales from H4 join the team and add their monthly cost. One to three
   new people lift morale (+1, help arrives); four or more at once lower it
   (−1, onboarding strain, as in the walkthrough).
@@ -144,8 +145,17 @@ def end_of_area(state: dict, domain: str) -> tuple[dict, list[dict]]:
     events: list[dict] = []
     s = copy.deepcopy(state)
 
+    # The month that just ended is paid first, at the costs of that month.
+    # People hired in the Team area start at its end, so their salaries count
+    # from the next month on.
+    before = copy.deepcopy(s)
+    s["cash"] = max(0, s["cash"] - burn(s))
+    refresh(s)
+    events.append({"label": "One month of running costs", "delta": diff(before, s)})
+
     if domain == "hiring":
-        joining = s.get("pending_hires", 0) + s.get("pending_extra", 0)
+        planned, extra = s.get("pending_hires", 0), s.get("pending_extra", 0)
+        joining = planned + extra
         if joining:
             before = copy.deepcopy(s)
             s["team_size"] += joining
@@ -155,16 +165,10 @@ def end_of_area(state: dict, domain: str) -> tuple[dict, list[dict]]:
             s["pending_extra"] = 0
             s["pending_cost"] = 0
             refresh(s)
-            word = "person" if joining == 1 else "people"
-            label = f"New team members start ({joining} {word})"
+            label = content.joining_label(planned, extra)
             events.append({"label": label, "delta": diff(before, s)})
             s.setdefault("deferred", []).append(
                 {"label": label, "delta": {"morale": -1 if joining >= 4 else 1}})
-
-    before = copy.deepcopy(s)
-    s["cash"] = max(0, s["cash"] - burn(s))
-    refresh(s)
-    events.append({"label": "One month of running costs", "delta": diff(before, s)})
 
     if s["runway"] < content.SHORT_RUNWAY_MONTHS:
         s.setdefault("deferred", []).append(

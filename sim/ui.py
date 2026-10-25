@@ -943,17 +943,71 @@ def terms(items: list[tuple[str, str]]) -> None:
 # Modes: "About you" looks like a form, the transition like a curtain
 # ---------------------------------------------------------------------------
 
+# "About you" has its own colors, clearly apart from the green and beige of
+# the simulation (requirement of the supervisor): stone grey page, white card,
+# charcoal panel, terracotta accent.
+ABOUT_BG = "#E7E4E0"
+ABOUT_CARD = "#FFFFFF"
+ABOUT_DARK = "#2B2826"
+ABOUT_ACCENT = "#A84A23"
+ABOUT_SOFT = "#F6E9E2"
+ABOUT_LINE = "#E1D9D3"
+
 ABOUT_CSS = f"""
 <style>
 html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {{
-  background: #EAE3D5 !important;
+  background: {ABOUT_BG} !important;
 }}
-.block-container {{
-  background: #FFFDF8; border: 1px solid #DDD4C3; border-radius: 22px;
-  box-shadow: 0 10px 40px rgba(30,42,59,0.08);
+.stApp .block-container {{
+  background: {ABOUT_CARD} !important; border: 1px solid {ABOUT_LINE}; border-radius: 22px;
+  box-shadow: 0 10px 40px rgba(43,40,38,0.08);
   margin-top: 1.6rem; padding: 1.8rem 2rem 2.4rem 2rem !important;
 }}
-@media (max-width: 640px) {{ .block-container {{ border-radius: 0; margin-top: 0; padding: 1.2rem 1rem 2rem 1rem !important; }} }}
+@media (max-width: 640px) {{ .stApp .block-container {{ border-radius: 0; margin-top: 0; padding: 1.2rem 1rem 2rem 1rem !important; }} }}
+
+/* panel, progress, chips */
+.stApp .fs-top {{ background: {ABOUT_DARK} !important; box-shadow: 0 10px 30px rgba(43,40,38,0.18) !important; }}
+.stApp .fs-top .fs-step {{ background: rgba(255,255,255,0.08) !important; color: #CFC6C0 !important; }}
+.stApp .fs-top .fs-step.now {{ background: {ABOUT_SOFT} !important; color: {ABOUT_DARK} !important; }}
+.stApp .fs-top .fs-bar > div {{ background: linear-gradient(90deg, #C96A3F 0%, #E3A07E 55%, #F3D3C2 100%) !important; }}
+
+/* banner */
+.stApp .fs-about-banner {{ background: {ABOUT_SOFT} !important; border: 1px solid #EBC8B6 !important; }}
+.stApp .fs-about-banner .t {{ color: {ABOUT_ACCENT} !important; }}
+.stApp .fs-about-banner .ic {{ background: {ABOUT_ACCENT} !important; }}
+
+/* buttons */
+.stApp button[data-testid="stBaseButton-primary"], .stApp button[data-testid="stBaseButton-primaryFormSubmit"] {{
+  background: {ABOUT_DARK} !important; border-color: {ABOUT_DARK} !important; }}
+.stApp button[data-testid="stBaseButton-primary"]:hover,
+.stApp button[data-testid="stBaseButton-primaryFormSubmit"]:hover {{ background: #45403C !important; }}
+
+/* selections: radio cards and dots, pills, slider, focus */
+.stApp label[data-testid="stRadioOption"]:has(input:checked) {{ border-color: {ABOUT_ACCENT} !important;
+  background: {ABOUT_SOFT} !important; box-shadow: 0 0 0 1px {ABOUT_ACCENT} inset !important; }}
+.stApp label[data-testid="stRadioOption"]:hover {{ border-color: #E3A07E !important; }}
+.stApp label[data-testid="stRadioOption"][data-selected="true"] > div > div:first-child {{
+  background-color: {ABOUT_ACCENT} !important; border-color: {ABOUT_ACCENT} !important; }}
+.stApp div[data-testid="stButtonGroup"] button[aria-checked="true"],
+.stApp div[data-testid="stButtonGroup"] button[aria-pressed="true"],
+.stApp div[data-testid="stButtonGroup"] button[kind$="Active"] {{ background: {ABOUT_ACCENT} !important;
+  border-color: {ABOUT_ACCENT} !important; }}
+.stApp div[data-testid="stButtonGroup"] > div > button:hover {{ border-color: {ABOUT_ACCENT} !important; }}
+.stApp div[data-testid="stSlider"] div[data-rac]:has(> div > input[type="range"]) {{
+  background: {ABOUT_ACCENT} !important; box-shadow: 0 0 0 1px {ABOUT_ACCENT}, 0 2px 8px rgba(168,74,35,0.25) !important; }}
+.stApp div[data-testid="stSlider"] div[data-testid="stSliderThumbValue"],
+.stApp div[data-testid="stSlider"] div[data-testid="stSliderThumbValue"] * {{ color: {ABOUT_ACCENT} !important; }}
+.stApp div[data-testid="stSelectbox"] > div > div:focus-within, .stApp div[data-testid="stNumberInputContainer"]:focus-within,
+.stApp div[data-testid="stTextInputRootElement"]:focus-within, .stApp div[data-baseweb="select"]:focus-within,
+.stApp div[data-baseweb="input"]:focus-within {{ border-color: {ABOUT_ACCENT} !important; box-shadow: 0 0 0 3px {ABOUT_SOFT} !important; }}
+.stApp input, .stApp textarea {{ caret-color: {ABOUT_ACCENT} !important; }}
+.stApp *:focus-visible {{ outline-color: {ABOUT_ACCENT} !important; }}
+.stApp input, .stApp div[data-baseweb="select"], .stApp div[data-testid="stNumberInputContainer"],
+.stApp div[data-testid="stTextInputRootElement"], .stApp label[data-testid="stRadioOption"],
+.stApp div[data-testid="stButtonGroup"] button {{ background-color: #FFFFFF !important; }}
+.stApp label[data-testid="stRadioOption"]:has(input:checked) {{ background: {ABOUT_SOFT} !important; }}
+.stApp div[data-testid="stButtonGroup"] button[aria-checked="true"],
+.stApp div[data-testid="stButtonGroup"] button[aria-pressed="true"] {{ background: {ABOUT_ACCENT} !important; }}
 </style>
 """
 

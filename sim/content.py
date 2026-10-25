@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.13.0"
+APP_VERSION = "0.13.3"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -31,6 +31,16 @@ WITHDRAWAL_WEEKS = 4
 
 REVENUE_PER_CUSTOMER = 8_000 / 90
 COST_PER_HIRE = 5_000            # monthly cost of each new team member
+
+
+def joining_label(planned: int, head_of_sales: int) -> str:
+    """Report line when the people hired in the Team area start."""
+    hires = f"{planned} planned hire" + ("" if planned == 1 else "s")
+    if planned and head_of_sales:
+        return f"New team members start: {hires} and the Head of Sales"
+    if planned:
+        return f"New team members start: {hires}"
+    return "The Head of Sales starts"
 SHORT_RUNWAY_MONTHS = 6          # below this, the team feels it (morale −1)
 FINANCE_START_RUNWAY = 6         # Finance starts from at least this runway (round 3, A11)
 
@@ -53,8 +63,10 @@ START_STATE = {
 STATUS_FIELDS = [
     # key, label, help text
     ("cash", "Cash", "Money in the bank right now."),
-    ("burn", "Net burn per month", "Monthly costs minus monthly revenue. This "
-                                   "is what the startup loses each month."),
+    ("burn", "Net burn per month", "Monthly costs minus monthly revenue: what the "
+                                   "startup loses each month. Costs cover salaries, "
+                                   "the freelancers who help run the pilot, tools "
+                                   "and office."),
     ("runway", "Runway", "How many months the cash lasts. Cash divided by net "
                          "burn per month."),
     ("revenue", "Revenue per month", "Recurring revenue from paying customers."),
@@ -291,10 +303,11 @@ FILTER = {
 
 EMAIL = {
     "question": "Your email address",
-    "body": "We use your email address for two things only: to link your answers "
-            "today with the short follow-up, and to contact you once, a week from "
-            "now. It is stored separately from your answers and never shared "
-            "outside the research team.",
+    "body": "We need your email address for one short follow-up: about a week "
+            "from now we send you a single email with a 5-minute questionnaire, "
+            "and your address links its answers to today’s. We will not contact "
+            "you for anything else. Your address is stored separately from your "
+            "answers and never shared outside the research team.",
     "label": "Email",
     "placeholder": "you@example.com",
 }
@@ -442,15 +455,16 @@ RANGE_INSTRUCTION = ("Give a low and a high estimate, so that you are 80% sure "
 
 SETUP = {
     "question": "Your startup: {name}",
-    "body": "{name} is a young startup with its first paying customers. Before "
-            "you take over, decide how you run it and which industry it is in.",
+    "body": "{name} is a young startup. Its first paying customers use a pilot "
+            "that the team still runs largely by hand. Before you take over, decide "
+            "how you run it and which industry it is in.",
     "team_label": "Do you run {name} on your own or with a co-founder?",
     "team_options": [("solo", "On my own, as the solo founder"),
                      ("team", "Together with a co-founder")],
     "team_help": "Cash, costs and customers at the start are the same either way.",
     "industry_label": "Which industry is {name} in?",
-    "industry_help": "Pick the industry you know best. We have pre-selected the one "
-                     "you gave for your own company.",
+    "industry_help": "Pick the industry you know best.",
+    "industry_placeholder": "–",
 }
 
 TRANSITION = {
@@ -464,12 +478,15 @@ STARTING_SITUATION = {
     "title": "Your starting situation",
     "body": "This is where you and your co-founder take over {name}. The numbers "
             "change with your decisions, and you see your current status at the "
-            "start and end of each area. Hover over or tap the (i) next to a "
-            "label to see what it means.",
+            "start and end of each area. New customers start paying after a free "
+            "trial, so revenue changes only later; you will see it in the final "
+            "report. Hover over or tap the (i) next to a label to see what it means.",
     "body_solo": "This is where you take over {name}. The numbers change with "
                  "your decisions, and you see your current status at the start "
-                 "and end of each area. Hover over or tap the (i) next to a label "
-                 "to see what it means.",
+                 "and end of each area. New customers start paying after a free "
+                 "trial, so revenue changes only later; you will see it in the "
+                 "final report. Hover over or tap the (i) next to a label to see "
+                 "what it means.",
     "button": "Continue",
 }
 
@@ -486,12 +503,14 @@ STARTING_SITUATION = {
 BLOCKS = {
     "team": {
         "title": "Building the product",
-        "intro": "You and your co-founder have agreed to build a first version "
-                 "of {name}, the minimum viable product (MVP). The next "
+        "intro": "Your first customers pay for a pilot that you still run largely "
+                 "by hand. You and your co-founder have agreed to turn it into a "
+                 "first real product, the minimum viable product (MVP). The next "
                  "decisions are about how you get it done.",
-        "intro_solo": "You have decided to build a first version of {name}, the "
-                      "minimum viable product (MVP). The next decisions are "
-                      "about how you get it done.",
+        "intro_solo": "Your first customers pay for a pilot that you still run "
+                      "largely by hand. You have decided to turn it into a first "
+                      "real product, the minimum viable product (MVP). The next "
+                      "decisions are about how you get it done.",
         "sequence": ["T3", "T1"],     # T3 first: T1 names weeks of founder time
         "units": [["T5", "T2"]],
     },
@@ -720,8 +739,8 @@ SCREENS = {
     "F3": {
         "kind": "interval",
         "chart": "revenue",
-        "question": "{name}, an early-stage {industry} startup, is preparing its "
-                    "pitch for a seed round. Monthly revenue is {revenue_now} today. "
+        "question": "Investors will ask {name}, an early-stage {industry} startup, "
+                    "for a revenue forecast. Monthly revenue is {revenue_now} today. "
                     "What will monthly revenue be in 12 months?",
         "background": ["Cassar (2010)", "Soll & Klayman (2004)"],
         "unit": "euros",
@@ -832,8 +851,8 @@ SCREENS = {
             "B": "scored 71 of 100 on the work sample but was the most convincing "
                  "person in the interview and gave you a very strong gut feeling",
         },
-        "after": "Either hire adds €7,000 to the monthly costs and joins at the end "
-                 "of this area.",
+        "after": "This role comes on top of the hires you planned. Either hire adds "
+                 "€7,000 to the monthly costs and joins at the end of this area.",
         "background": ["Kausel, Culbertson & Madrid (2016)", "Dawes, Faust & Meehl (1989)"],
         "event": "Head of Sales",
         "options": [
@@ -991,8 +1010,9 @@ RANK_ENDS = ("1 = best of the 10", "10 = last of the 10")
 # Charts above the two range questions that build on a series. The revenue
 # series is scaled to the revenue at the start of the Finance area, so the chart,
 # the question and the status strip always agree (the reference scales with it).
-CHART_REVENUE = [("3 months ago", 7_300, None), ("2 months ago", 7_550, "+3%"),
-                 ("Last month", 7_800, "+3%"), ("This month", 8_000, "+3%")]
+CHART_REVENUE = [("3 months before", 7_300, None), ("2 months before", 7_550, "+3%"),
+                 ("1 month before", 7_800, "+3%"), ("Today", 8_000, "+3%")]
+CHART_REVENUE_CAPTION = "Monthly revenue before you took over, and today"
 CHART_CUSTOMERS = [("Month 1", 9, None), ("Month 2", 16, None),
                    ("Month 3", 21, None)]
 
@@ -1028,9 +1048,12 @@ CLOSE = {
     "body": "Your answers have been saved. Thank you again for taking part.",
 }
 
-ALREADY_TOOK_PART = (
-    f"Thank you. You have already taken part in this study with this email address, "
-    f"so the session ends here. If you think this is a mistake, write to {CONTACT_EMAIL}."
-)
+ALREADY_TOOK_PART = {
+    "title": "Thank you",
+    "body": "A response has already been submitted with this email address, so you "
+            "cannot take part a second time. Thank you very much for your interest "
+            f"and your time. If you think this is a mistake, write to {CONTACT_EMAIL}.",
+    "close": "You can close this page now.",
+}
 
 DECLINED = "No problem. Nothing has been stored. You can close this page."
