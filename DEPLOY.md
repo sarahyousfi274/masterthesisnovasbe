@@ -163,3 +163,12 @@ export carries no contact data.
 - **Do not edit `sim/codebook.json` mid-collection.** Changing a reference value changes
   the scoring, so participants before and after would not be comparable. The codebook
   version is stored with every session, so you can see if it happened.
+
+
+## Speed with Neon
+
+Neon's free plan suspends the database after 5 minutes without traffic; the
+first request after that takes a moment to wake it. Since 0.12.1 the app writes
+in the background, so participants do not wait for this. Only the moment of
+consent reads from the database (track allocation) and may take a second after
+a quiet period.

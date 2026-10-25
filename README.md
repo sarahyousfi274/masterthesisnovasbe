@@ -5,6 +5,18 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.13.0** applies the simulator check of round 3 (details in
+`REVIEW_RESPONSE_ROUND3_0.13.0.md`): F1 counted apart from Finance, ranges with
+low = high refused, G4 persistence coding, a Finance bridge to 6 months of runway,
+H1 as a plan, T1 founder time aligned with T3, a flatter F3 chart, H2 paid in cash,
+digital product sentences, one complete run per email, H4 option C resolved, and
+layout fixes for laptop and phone. It keeps the speed fix of 0.12.1.
+
+**Version 0.12.1** makes each page move on at once with Postgres: connections
+are reused instead of opened for every write, and writes run in one background
+thread in order, with five retries. Reads (data page, deletion) wait for the
+queue first. Failed writes, if any, are listed on the data page.
+
 **Version 0.12.0** closes the open threads of the contests: the area report
 notes that a decision is pending (for example "Head of Growth: she decides in
 the coming weeks"), and the final report after K1 draws every entered contest

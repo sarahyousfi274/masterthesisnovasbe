@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.12.0"
+APP_RELEASE = "0.13.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -181,7 +181,10 @@ def apply_effects(effects: dict, label: str | None, note: str | None = None) -> 
     ss.state = game.apply(ss.state, effects, label=label)
     delta = game.diff(before, ss.state)
     if label:
-        ss.events.append({"domain": screen().get("domain"), "label": label,
+        # The opening decision (F1) is listed in the final report, where the
+        # late-start terms are shown, not in the Finance area report.
+        ev_domain = "final" if screen().get("opening") else screen().get("domain")
+        ss.events.append({"domain": ev_domain, "label": label,
                           "delta": delta, "note": note or (None if delta else
                                                            content.NO_DIRECT_COST)})
 
@@ -219,7 +222,11 @@ def hud_markup() -> str:
 def email(node_id: str, **extra) -> None:
     """A decision that arrives as an email from an institution or a role (B6)."""
     m = content.MESSAGES[node_id]
-    ui.message(m["from"], fill(m["subject"], **extra), fill(m["body"], **extra),
+    body = fill(m["body"], **extra)
+    team_greeting = f"Hi {startup_name()} team,"
+    if ss.get("solo") and body.startswith(team_greeting):
+        body = content.SOLO_GREETING + body[len(team_greeting):]      # A8
+    ui.message(m["from"], fill(m["subject"], **extra), body,
                to=f"{startup_name()} team")   # no sign-off line: keeps decisions on one laptop screen
 
 
@@ -233,7 +240,8 @@ def decision_eyebrow() -> None:
     if dom not in content.BLOCKS:
         ui.eyebrow(content.SECTION_FINAL)
         return
-    nodes = [s["id"] for s in ss.screens if s.get("domain") == dom and s.get("node")]
+    nodes = [s["id"] for s in ss.screens if s.get("domain") == dom and s.get("node")
+             and not s.get("opening")]
     ui.eyebrow(f"{content.BLOCKS[dom]['title']} · Decision {nodes.index(sc['id']) + 1} "
                f"of {len(nodes)}")
 
@@ -242,7 +250,8 @@ def note_decision(spec: dict, choice_label: str) -> None:
     """Remember a decision for the timeline on the end screen."""
     if spec.get("event"):
         ss.journey = [j for j in ss.journey if j["id"] != screen()["id"]]
-        ss.journey.append({"id": screen()["id"], "domain": screen().get("domain"),
+        ss.journey.append({"id": screen()["id"],
+                           "domain": "opening" if screen().get("opening") else screen().get("domain"),
                            "event": spec["event"], "choice": choice_label})
 
 
@@ -371,6 +380,11 @@ def render_email(sc: dict) -> None:
         if not EMAIL_RE.match(email):
             st.warning("Please enter a valid email address.")
             return
+        if storage.completed_with_email(email):
+            # Round 3, A16: one complete run per email address.
+            storage.delete(ss.code)          # nothing of this session is kept
+            ss.already_took_part = True
+            st.rerun()
         remember(email=email)
         storage.save_followup(ss.code, email)
         log(option_key="provided")      # the address itself is never in responses
@@ -392,6 +406,9 @@ def _profile_widget(field: dict):
         opts = field["options"]
         value = st.selectbox(label, opts, index=opts.index(saved) if saved in opts else None,
                              placeholder="Select", key=wkey)
+        if value and len(value) > 28:
+            # Round 3, A7: the closed field cuts long options on a phone.
+            ui.html_block(f'<div class="fs-fullval">{ui._h(value)}</div>')
     elif kind == "pills":
         value = st.pills(label, field["options"], default=saved, key=wkey)
     elif kind == "slider":
@@ -649,11 +666,23 @@ def render_block_intro(sc: dict) -> None:
     domain = sc["domain"]
     block = content.BLOCKS[domain]
     if domain not in ss.block_start:
+        if domain == "finance" and ss.state["runway"] < content.FINANCE_START_RUNWAY:
+            # Round 3, A11: existing investors bridge the gap, so F2 to F4 are not
+            # decided close to insolvency in the tracks where Finance comes late.
+            need = content.FINANCE_START_RUNWAY * ss.state["burn"] - ss.state["cash"]
+            bridge = int(-(-need // 1000) * 1000)            # rounded up to €1,000
+            apply_effects({"cash": bridge}, content.BRIDGE_LABEL)
+            ss.state["finance_bridge"] = bridge
+            log(option_key="finance_bridge", numeric_value=float(bridge),
+                text_value=f"finance_bridge={bridge}")
         ss.block_start[domain] = copy.deepcopy(ss.state)
     n = content.TRACKS[ss.track].index(domain) + 1
     ui.eyebrow(f"Area {n} of 4")
     st.subheader(block["title"])
-    st.markdown(fill(pick(block, "intro")))
+    intro = fill(pick(block, "intro"))
+    if domain == "finance" and ss.state.get("finance_bridge"):
+        intro += " " + fill(content.BRIDGE_SENTENCE, bridge=money(ss.state["finance_bridge"]))
+    st.markdown(intro)
     st.markdown("**Where you start this area**")
     ui.status_cards(ss.state, solo=ss.solo)
     if continue_button(f"intro_{domain}_continue"):
@@ -665,8 +694,8 @@ def _option_label(opt: dict, cost_override: int | None = None) -> str:
     cost = cost_override if cost_override is not None else opt.get("cost")
     if cost is not None:
         label += f"  ·  {money(cost)}" if cost else "  ·  no cash cost"
-    if opt.get("extra"):
-        label += f"  ·  {opt['extra']}"
+    if pick(opt, "extra"):
+        label += f"  ·  {pick(opt, 'extra')}"
     return label
 
 
@@ -802,7 +831,7 @@ def render_interval(sc: dict) -> None:
         ui.bar_chart(series, money, "Monthly revenue so far", "In 12 months")
     elif spec.get("chart") == "customers":
         ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
-                     "New paying customers per month", "Month 9")
+                     "New paying customers per month", "Month 9", gap=True)
     ui.question(fill(spec["question"], revenue_now=money(revenue_now)),
                 content.RANGE_INSTRUCTION, sources=spec.get("background"))
     ui.range_diagram("lower", "higher")
@@ -817,9 +846,9 @@ def render_interval(sc: dict) -> None:
         if low is None or high is None:
             st.warning("Please enter both numbers.")
             return
-        if low > high:
-            st.warning("Your low estimate is higher than your high estimate. "
-                       "Please check the two numbers.")
+        if low >= high:
+            st.warning("Please give two different numbers: your low estimate must be "
+                       "lower than your high estimate.")
             return
         # Stored as the optimistic and the pessimistic value, as the scoring
         # expects. For durations the optimistic value is the low one.
@@ -883,6 +912,8 @@ def render_hire(sc: dict) -> None:
                       else f"Hired Candidate {idx + 1}")
         if key == "C":
             apply_effects(opt["effects"], f'{spec["event"]}: second structured round')
+            # Round 3, A17: resolved in the final report, after all decisions.
+            ss.state["deferred"] = ss.state.get("deferred", []) + [content.H4_SECOND_ROUND]
         else:
             apply_effects(opt["effects"], f'{spec["event"]}: Candidate {idx + 1} hired',
                           note="starts at the end of this area")
@@ -986,11 +1017,13 @@ def render_end(sc: dict) -> None:
     st.markdown(content.END["body"])
     j = content.JOURNEY
     months = []
-    for dom in content.TRACKS[ss.track] + ["final"]:
+    for dom in ["opening"] + content.TRACKS[ss.track] + ["final"]:
         items = [(e["event"], e["choice"]) for e in ss.journey if e["domain"] == dom]
         if not items:
             continue
-        if dom in content.BLOCKS:
+        if dom == "opening":
+            head, title = content.OPENING_EYEBROW, content.SECTION_STARTUP
+        elif dom in content.BLOCKS:
             head, title = f"Area {month_of(dom)} of 4", content.BLOCKS[dom]["title"]
         else:
             head, title = j["after_areas"], content.SECTION_FINAL
@@ -1045,6 +1078,9 @@ elif ss.get("declined"):
 elif ss.get("not_founder"):
     st.title(content.CONSENT["title"])
     st.markdown(content.THANK_YOU_NOT_FOUNDER)
+elif ss.get("already_took_part"):
+    st.title(content.CONSENT["title"])
+    st.markdown(content.ALREADY_TOOK_PART)
 else:
     sc = screen()
     with st.container(key=f"screen_{ss.index}"):
