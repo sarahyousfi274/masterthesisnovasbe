@@ -92,11 +92,14 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         labels = [lab for _, lab in content.SETUP["team_options"]]
         at.radio(key="setup_team").set_value(labels[0] if email.startswith("tester1")
                                              or int(email[6:].split("@")[0]) % 2 else labels[1])
-        # Pre-selected from the participant's own industry; sometimes changed.
+        # No preselection: the industry must be chosen.
+        assert at.selectbox(key="setup_industry").value is None, "industry preselected"
         if rng.random() < 0.5:
             at.selectbox(key="setup_industry").select("Other")
             at.run()
             at.text_input(key="setup_industry_other").set_value("Robotics")
+        else:
+            at.selectbox(key="setup_industry").select(rng.choice(content.INDUSTRIES[:-1]))
         at.button(key="setup_continue").click()
     elif kind == "final_intro":
         at.button(key="final_intro_continue").click()
