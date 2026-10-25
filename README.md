@@ -5,6 +5,9 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.14.1**: without `.streamlit/config.toml` the app now still looks
+right in dark mode (empty radio dots, light dropdown lists).
+
 **Version 0.14.0** applies the simulator check of round 4 (details in
 `REVIEW_RESPONSE_ROUND4_0.14.0.md`). A session can be resumed after a reload, a
 locked phone, a laptop asleep or a redeploy: the progress is saved under a random
