@@ -229,7 +229,7 @@ def snapshot(state: dict) -> dict:
     return {k: state.get(k) for k in
             ("cash", "costs", "revenue", "burn", "runway", "team_size",
              "pending_hires", "ownership", "morale", "market_confidence",
-             "customers", "fundraise_left")}
+             "customers", "fundraise_left", "finance_bridge")}
 
 
 # ---------------------------------------------------------------------------

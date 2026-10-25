@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.12.0"
+APP_VERSION = "0.13.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
@@ -32,6 +32,7 @@ WITHDRAWAL_WEEKS = 4
 REVENUE_PER_CUSTOMER = 8_000 / 90
 COST_PER_HIRE = 5_000            # monthly cost of each new team member
 SHORT_RUNWAY_MONTHS = 6          # below this, the team feels it (morale −1)
+FINANCE_START_RUNWAY = 6         # Finance starts from at least this runway (round 3, A11)
 
 START_STATE = {
     "cash": 280_000,
@@ -46,6 +47,7 @@ START_STATE = {
     "fundraise_left": None,      # runway left when the round starts (F1)
     "f4_route": None,            # loan, safe or priced (F4)
     "deferred": [],              # outcome effects held back until the final report
+    "finance_bridge": 0,         # bridge from existing investors before Finance (A11)
 }
 
 STATUS_FIELDS = [
@@ -126,19 +128,19 @@ INDUSTRY_PRODUCTS = {
                             "cash flow",
     "Health and life sciences": "software that helps clinics stay in touch with "
                                 "their patients between visits",
-    "Industrial, hardware or deep tech": "a sensor kit that helps small factories "
-                                         "spot machine problems early",
-    "Consumer products or services": "a subscription service that delivers everyday "
-                                     "products to households",
+    "Industrial, hardware or deep tech": "software that connects machine sensors in "
+                                         "small factories and flags problems early",
+    "Consumer products or services": "an app through which households subscribe to "
+                                     "the everyday products they need",
     "Energy, mobility or climate": "software that helps companies measure and cut "
                                    "their energy use",
     "Education": "an online learning platform that companies use to train their "
                  "staff",
-    "Food and beverages": "a healthy lunch subscription for offices",
+    "Food and beverages": "an app that organizes healthy lunch orders for offices",
     "Media and entertainment": "a platform that helps independent creators run paid "
                                "communities",
 }
-PRODUCT_OTHER = "a new product in {label} for its first customers"
+PRODUCT_OTHER = "a new digital product in {label} for its first customers"
 
 COMPANY = {
     "founded": "Founded last year · based in Europe",
@@ -148,6 +150,12 @@ COMPANY = {
 }
 
 # Labels of the reports and the numbers panel (no month labels, review B3).
+H4_SECOND_ROUND = {"label": "Head of Sales: after the second round, the candidate with "
+                            "the stronger work sample is hired",
+                   "delta": {"team_size": 1, "costs": 7000}}
+BRIDGE_LABEL = "Bridge from existing investors"
+BRIDGE_SENTENCE = ("Your existing investors have bridged {name} with {bridge} so that the "
+                   "financing decisions start from 6 months of runway.")
 HUD_CAPTION = "At the start of this area"
 HUD_CAPTION_FINAL = "At the start of this round"
 AREA_REPORT = {
@@ -196,6 +204,7 @@ MESSAGES = {
                    "startups plays no role."},
 }
 EMAIL_SIGNOFF = "Best regards"
+SOLO_GREETING = "Hi there,"          # emails to a solo founder (round 3, A8)
 
 JOURNEY = {
     "title": "Your time at {name}",
@@ -358,7 +367,7 @@ EXPERIENCE_FIELDS = [
      "label": "Times you have raised external financing (investors, loans or grants)",
      "options": ["0", "1", "2", "3", "4", "5 or more"]},
     {"key": "exp_teams", "label": "Founding teams you have been part of",
-     "options": ["0", "1", "2", "3", "4 or more"]},
+     "options": ["1", "2", "3", "4 or more"]},
     {"key": "exp_hires", "label": "People you have hired",
      "options": ["0", "1 to 2", "3 to 5", "6 to 10", "More than 10"]},
     {"key": "exp_launches", "label": "Product launches you have run",
@@ -550,8 +559,8 @@ CONTEST_STORY = {
            "won": "Lumora gets the accelerator place", "lost": "The accelerator picks another startup",
            "effect": "cash"},
     "H2": {"label": "Head of Growth", "pending": "she decides in the coming weeks",
-           "won": "The Head of Growth chooses Lumora and joins the team",
-           "lost": "The Head of Growth chooses another startup", "effect": "team"},
+           "won": "The Head of Growth chooses Lumora: the saved search is worth €40,000",
+           "lost": "The Head of Growth chooses another startup", "effect": "cash"},
     "G2": {"label": "Customer tender", "pending": "the panel picks the winner later",
            "won": "Lumora wins the customer contract", "lost": "The customer picks another proposal",
            "effect": "cash"},
@@ -594,18 +603,22 @@ SCREENS = {
         "options": [
             {"key": "A", "label": "Everything ourselves",
              "label_solo": "Everything myself",
-             "extra": "no cash cost · about 12 weeks of founder time",
+             "extra": "no cash cost · about 16 weeks of founder time",
+             "extra_solo": "no cash cost · about 32 weeks of your time",
              "effects": {"morale": -1}},
             {"key": "B", "label": "About three quarters ourselves, the rest to "
                                   "freelancers",
              "label_solo": "About three quarters myself, the rest to freelancers",
-             "extra": "€6,000 · about 8 weeks of founder time",
+             "extra": "€6,000 · about 12 weeks of founder time",
+             "extra_solo": "€6,000 · about 24 weeks of your time",
              "effects": {"cash": -6_000}},
             {"key": "C", "label": "About half to external developers",
-             "extra": "€12,000 · about 5 weeks of founder time",
+             "extra": "€12,000 · about 8 weeks of founder time",
+             "extra_solo": "€12,000 · about 16 weeks of your time",
              "effects": {"cash": -12_000}},
             {"key": "D", "label": "Almost everything to external developers",
-             "extra": "€20,000 · about 2 weeks of founder time",
+             "extra": "€20,000 · about 3 weeks of founder time",
+             "extra_solo": "€20,000 · about 6 weeks of your time",
              "effects": {"cash": -20_000}},
         ],
     },
@@ -744,12 +757,12 @@ SCREENS = {
     "H1": {
         "kind": "choice",
         "display": "pills",
-        "question": "How many new roles do you open in the next 3 months?",
-        "body": "Opening a role starts the search. New hires join the team at the "
-                "end of this area. Each new hire adds about €5,000 to the monthly "
-                "costs.",
+        "question": "How many people do you plan to have hired within the next 3 "
+                    "months?",
+        "body": "Each new hire adds about €5,000 to the monthly costs. In the numbers, "
+                "everyone you plan to hire is counted from the end of this area.",
         "background": ["Buehler, Griffin & Ross (1994)", "Kahneman & Lovallo (1993)"],
-        "event": "Roles opened",
+        "event": "Hires planned",
         "options": [
             {"key": "A", "label": "0", "effects": {"pending_hires": 0}},
             {"key": "B", "label": "1", "effects": {"pending_hires": 1}},
@@ -891,7 +904,7 @@ SCREENS = {
     "G3": {
         "kind": "interval",
         "chart": "customers",
-        "question": "A new paid sales channel brought {name} 9, 16 and 21 new "
+        "question": "Suppose a new paid sales channel brings {name} 9, 16 and 21 new "
                     "paying customers in its first three months. How many new "
                     "paying customers will it bring in month 9?",
         "background": ["O’Connor & Lawrence (1989)", "Soll & Klayman (2004)"],
@@ -978,8 +991,8 @@ RANK_ENDS = ("1 = best of the 10", "10 = last of the 10")
 # Charts above the two range questions that build on a series. The revenue
 # series is scaled to the revenue at the start of the Finance area, so the chart,
 # the question and the status strip always agree (the reference scales with it).
-CHART_REVENUE = [("3 months ago", 6_070, None), ("2 months ago", 6_620, "+9%"),
-                 ("Last month", 7_550, "+14%"), ("This month", 8_000, "+6%")]
+CHART_REVENUE = [("3 months ago", 7_300, None), ("2 months ago", 7_550, "+3%"),
+                 ("Last month", 7_800, "+3%"), ("This month", 8_000, "+3%")]
 CHART_CUSTOMERS = [("Month 1", 9, None), ("Month 2", 16, None),
                    ("Month 3", 21, None)]
 
@@ -1014,5 +1027,10 @@ CLOSE = {
     "title": "You can close this page now.",
     "body": "Your answers have been saved. Thank you again for taking part.",
 }
+
+ALREADY_TOOK_PART = (
+    f"Thank you. You have already taken part in this study with this email address, "
+    f"so the session ends here. If you think this is a mistake, write to {CONTACT_EMAIL}."
+)
 
 DECLINED = "No problem. Nothing has been stored. You can close this page."

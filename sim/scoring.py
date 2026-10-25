@@ -95,6 +95,7 @@ def score_participant(responses: list[dict], seed: int | None = None) -> dict:
                 out[node_id] = {
                     "node": node_id, "form": "none", "domain": spec["domain"],
                     "choice": row["option_key"],
+                    "coded": spec.get("coding", {}).get(row["option_key"]),
                 }
     return out
 

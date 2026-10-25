@@ -1,6 +1,6 @@
 {
-  "codebook_version": "0.10.0",
-  "updated": "2026-10-21",
+  "codebook_version": "0.13.0",
+  "updated": "2026-10-25",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
   "contest_variant": "harmonised",
   "contest_rule": {
@@ -28,7 +28,7 @@
       "reference_value": 0.75,
       "sign": 1,
       "provenance": "derived",
-      "basis": "Two founders and five core features. Commercial MVP timelines of three to four months assume a team working on the MVP full time; a two-person founding team is also running fundraising, hiring and go-to-market in the same window. Committing the whole build in-house therefore assumes capacity the team does not have, which is the inside view of Kahneman and Lovallo (1993) and the planning fallacy of Buehler, Griffin and Ross (1994).",
+      "basis": "Two founders and five core features. Commercial MVP timelines of three to four months assume a team working on the MVP full time; a two-person founding team is also running fundraising, hiring and go-to-market in the same window. Committing the whole build in-house therefore assumes capacity the team does not have, which is the inside view of Kahneman and Lovallo (1993) and the planning fallacy of Buehler, Griffin and Ross (1994). The founder time in the options follows the T3 median of 16 weeks for two full-time developers, doubled for a solo founder.",
       "sources": [
         "Netguru MVP timeline guide (industry): MVP typically three to four months",
         "Buehler, Griffin and Ross (1994)",
@@ -153,7 +153,7 @@
         "0.90": 24000
       },
       "provenance": "empirical",
-      "basis": "SaaS Capital 2025 benchmarking of private B2B SaaS companies, band below 1 million ARR: median annual growth 40 percent, 25th percentile 20 percent, 75th percentile 100 percent. Applied to the current 8,000 euros these give 11,200, 9,600 and 16,000 euros. The 10th and 90th percentiles are extrapolated as -10 percent and +200 percent. Note that naive extrapolation of the shown series (9, 14 and 6 percent) gives about 24,000 euros, which lands on the 90th percentile of the reference rather than at its centre.",
+      "basis": "SaaS Capital 2025 benchmarking of private B2B SaaS companies, band below 1 million ARR: median annual growth 40 percent, 25th percentile 20 percent, 75th percentile 100 percent. Applied to the current 8,000 euros these give 11,200, 9,600 and 16,000 euros. The 10th and 90th percentiles are extrapolated as -10 percent and +200 percent. The chart shows about 3 percent monthly growth; straight extrapolation gives about 11,400 euros, close to the reference median.",
       "sources": [
         "SaaS Capital (2025), Benchmarking Private SaaS Company Growth Rates, more than 1,000 respondents",
         "ChartMogul SaaS Growth Report 2023, more than 2,200 SaaS businesses: median monthly growth 2 to 2.5 percent across the lifecycle",
@@ -174,7 +174,7 @@
       "form": "overestimation",
       "domain": "hiring",
       "type": "ladder",
-      "quantity": "roles opened in the next three months",
+      "quantity": "people the founder plans to have hired within three months",
       "option_values": [
         0,
         1,
@@ -193,7 +193,7 @@
         "DHI-DFH Mean Vacancy Duration Measure, Information industry (FRED series DHIDFHDMII)",
         "Buehler, Griffin and Ross (1994)"
       ],
-      "open": "Options 0 to 6 or more (scored as 6). Since 0.7.0 each new hire adds 5,000 euros to monthly costs when they join at the end of the Team area; four or more joining at once lower morale by 1."
+      "open": "Options 0 to 6 or more (scored as 6). Since 0.7.0 each new hire adds 5,000 euros to monthly costs when they join at the end of the Team area; four or more joining at once lower morale by 1. Since 0.13.0 asked as a plan, so the answer states the hiring speed the founder expects."
     },
     "H2": {
       "form": "overplacement",
@@ -454,7 +454,14 @@
         "Chen, Elfenbein, Posen and Wang (2024)",
         "Kirtley and O'Mahony (2023), What is a pivot?, Strategic Management Journal"
       ],
-      "note": "Since 0.10.0 all four options have the same effect (+15 customers, shown only in the final report), so the game does not reward one reaction over another."
+      "note": "Since 0.10.0 all four options have the same effect (+15 customers, shown only in the final report), so the game does not reward one reaction over another.",
+      "coding": {
+        "A": 4,
+        "B": 3,
+        "C": 2,
+        "D": 1
+      },
+      "coding_note": "Persistence with the first channel: 4 = stay the course, 3 = sharpen the first channel, same budget, 2 = structured test of both channels, 1 = move most of the budget to the new channel."
     },
     "K1": {
       "form": "control",
@@ -502,10 +509,11 @@
     "launch_budget": "G1 uses a quarter of the cash at the start of the area, so the number in the question matches the strip.",
     "net_burn": "Costs 28,000, revenue 8,000 (90 customers at about 89 euros each), net burn 20,000, runway 14 months. Revenue follows customers, but customer changes are held back until the final report (0.10.0), so revenue stays at 8,000 during the session and is 8,000 at F3 in every track.",
     "popover": "Removed in 0.8.0. The scientific background appears on hover over a link icon next to the question, author and year only. Assumptions a participant needs are written into the question text.",
-    "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product.",
+    "industry": "The industry chosen at setup is a label in the text only. All reference values assume a digital product. Every product sentence describes a digital product, so the reference values apply to every industry.",
     "presentation": "From 0.10.0 no month labels are shown. The scenario text of the four rank items and of K1 is shown as an email from an institution or role (never a named or pictured person). Outcome feedback is held back until a final report after K1: customers, revenue, morale and market confidence change only there; during the session the area reports show only money spent or raised, ownership, monthly costs, people joining and one month of running costs. Order inside areas: T3 before T1, H3 before H1, G1 G3 G4; F4, H4 and G4 are always the last decision of their area. A company card states one generic product sentence per chosen industry. The end screen lists the participant's own decisions without any evaluation. F1 is asked as the opening decision after the starting situation (0.11.2); Finance then runs F3 and F4 plus its contest pair.",
     "startup": "Every participant runs the same fictional startup, Lumora. At setup the participant chooses to run it alone or with one co-founder (stored as sessions.solo and in the setup row); texts that mention the founder adapt to that choice. The team composition in the demographics describes the real company and is not used for this; the industry is chosen at setup (pre-selected from the participant's own industry) and used as a label only.",
-    "contest_outcomes": "From 0.12.0 every entered contest shows an open thread in the area report ('the jury announces the winner later'), without any outcome. The outcome is drawn in the final report after K1, once every measured decision is made, with the chance stated on the screen (1 in 10, 1 in 8 with the upgrade), from the session seed. A win adds the prize to cash (H2: the Head of Growth joins the team). The outcomes are stored in the text_value of the report_final row ('contests: T2=lost; ...'). They are independent of the draws in scoring.contest_outcome."
+    "contest_outcomes": "From 0.12.0 every entered contest shows an open thread in the area report ('the jury announces the winner later'), without any outcome. The outcome is drawn in the final report after K1, once every measured decision is made, with the chance stated on the screen (1 in 10, 1 in 8 with the upgrade), from the session seed. A win adds the prize to cash. The outcomes are stored in the text_value of the report_final row ('contests: T2=lost; ...'). They are independent of the draws in scoring.contest_outcome.",
+    "finance_bridge": "From 0.13.0: when the Finance area starts with less than 6 months of runway (FINANCE_START_RUNWAY), existing investors bridge the gap: bridge = 6 x net burn - cash, rounded up to 1,000 euros, applied as cash before the area starts, named in the Finance intro, stored as state.finance_bridge and logged on the intro_finance row (numeric_value). Path simulation: Track 1 and 2 never need it; in Track 3 it is given in 96 percent of random paths (median 148,000, max 303,000 euros; 130,000 with typical choices)."
   },
   "shown_background": {
     "note": "What participants see on hover over the link icon, author and year only (team decision, 20 October).",

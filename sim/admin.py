@@ -48,6 +48,10 @@ def render() -> None:
     numbers = storage.counts()
 
     st.caption(f"Storage: {storage.describe()}")
+    failed = storage.failed_writes()
+    if failed:
+        st.error(f"{len(failed)} write(s) failed after five attempts since the last "
+                 "restart: " + "; ".join(failed[-3:]))
     if storage.backend() == "sqlite":
         st.warning(
             "This app is writing to a local SQLite file. On a hosted Streamlit app "
@@ -174,10 +178,10 @@ def render() -> None:
     col1, col2 = st.columns([1, 3])
     if col1.button("Delete", type="primary", disabled=not given.strip()):
         value = given.strip()
-        code = storage.code_for_email(value) if "@" in value else value.upper()
-        removed = storage.delete(code) if code else 0
+        codes = storage.codes_for_email(value) if "@" in value else [value.upper()]
+        removed = sum(storage.delete(c) for c in codes)
         if removed:
-            st.success(f"Deleted the session for {value}.")
+            st.success(f"Deleted {removed} session(s) for {value}.")
         else:
             st.warning("No session found for that address or id.")
 

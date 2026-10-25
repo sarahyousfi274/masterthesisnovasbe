@@ -22,10 +22,15 @@ from the session data and deleted on its own.
 
 from __future__ import annotations
 
+import copy
 import csv
+import functools
 import json
 import os
+import queue
 import sqlite3
+import threading
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -174,14 +179,54 @@ def _sql(statement: str) -> str:
 
 _initialised = False
 
+# ---------------------------------------------------------------------------
+# Postgres: reuse connections instead of opening one per write.
+# Opening a TLS connection from Streamlit Cloud (US) to a database in Frankfurt
+# takes several round trips; doing that on every click made each page wait.
+# ---------------------------------------------------------------------------
+
+_POOL: "queue.LifoQueue" = queue.LifoQueue(maxsize=8)
+_IDLE_CHECK_SECONDS = 60
+
+
+def _pg_get():
+    import psycopg
+    while True:
+        try:
+            conn, last_used = _POOL.get_nowait()
+        except queue.Empty:
+            return psycopg.connect(database_url(), connect_timeout=15)
+        if conn.closed or conn.broken:
+            continue
+        if time.monotonic() - last_used > _IDLE_CHECK_SECONDS:
+            # The server may have dropped an idle connection; check before use.
+            try:
+                conn.execute("SELECT 1")
+                conn.rollback()
+            except Exception:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+                continue
+        return conn
+
+
+def _pg_put(conn) -> None:
+    if conn.closed or conn.broken:
+        return
+    try:
+        _POOL.put_nowait((conn, time.monotonic()))
+    except queue.Full:
+        conn.close()
+
 
 @contextmanager
 def connect():
     """A connection with the schema in place, committed on a clean exit."""
     global _initialised
     if backend() == "postgres":
-        import psycopg
-        conn = psycopg.connect(database_url())
+        conn = _pg_get()
         try:
             if not _initialised:
                 with conn.cursor() as cur:
@@ -192,10 +237,13 @@ def connect():
             yield conn
             conn.commit()
         except Exception:
-            conn.rollback()
+            try:
+                conn.rollback()
+            except Exception:
+                pass
             raise
         finally:
-            conn.close()
+            _pg_put(conn)
     else:
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(DB_PATH, timeout=30)
@@ -230,6 +278,70 @@ def _fetch(conn, statement: str, params: tuple = ()) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+# ---------------------------------------------------------------------------
+# Postgres: writes run in one background thread, in the order they were made,
+# with retries. The page moves on at once instead of waiting for the database.
+# Reads call flush() first, so they always see every write made before them.
+# SQLite (local runs and tests) keeps writing directly.
+# ---------------------------------------------------------------------------
+
+_WRITES: "queue.Queue" = queue.Queue()
+_WORKER: threading.Thread | None = None
+_WORKER_LOCK = threading.Lock()
+_FAILED: list[str] = []
+
+
+def _worker_loop() -> None:
+    while True:
+        fn, args, kwargs = _WRITES.get()
+        try:
+            for attempt in range(5):
+                try:
+                    fn(*args, **kwargs)
+                    break
+                except Exception as exc:          # network blip, cold database
+                    if attempt == 4:
+                        _FAILED.append(f"{fn.__name__}: {exc!r}"[:300])
+                    time.sleep(0.4 * 2 ** attempt)
+        finally:
+            _WRITES.task_done()
+
+
+def _ensure_worker() -> None:
+    global _WORKER
+    with _WORKER_LOCK:
+        if _WORKER is None or not _WORKER.is_alive():
+            _WORKER = threading.Thread(target=_worker_loop, name="storage-writer",
+                                       daemon=True)
+            _WORKER.start()
+
+
+def _deferred(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        if backend() != "postgres":
+            return fn(*args, **kwargs)
+        _ensure_worker()
+        _WRITES.put((fn, copy.deepcopy(args), copy.deepcopy(kwargs)))
+        return None
+    return wrapper
+
+
+def flush(timeout: float = 20.0) -> bool:
+    """Wait until every queued write is stored. True if the queue is empty."""
+    if backend() != "postgres":
+        return True
+    end = time.monotonic() + timeout
+    while _WRITES.unfinished_tasks and time.monotonic() < end:
+        time.sleep(0.05)
+    return not _WRITES.unfinished_tasks
+
+
+def failed_writes() -> list[str]:
+    """Writes that failed after all retries (shown on the data page)."""
+    return list(_FAILED)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -238,6 +350,7 @@ def _now() -> str:
 # Writing
 # ---------------------------------------------------------------------------
 
+@_deferred
 def start_session(code: str, track: int, seed: int, app_version: str,
                   codebook_version: str) -> None:
     with connect() as conn:
@@ -248,6 +361,7 @@ def start_session(code: str, track: int, seed: int, app_version: str,
                  (code, _now(), track, seed, app_version, codebook_version))
 
 
+@_deferred
 def update_session(code: str, **fields) -> None:
     if not fields:
         return
@@ -257,6 +371,7 @@ def update_session(code: str, **fields) -> None:
                  (*fields.values(), code))
 
 
+@_deferred
 def complete_session(code: str) -> None:
     """Mark the session complete and store its total duration in seconds."""
     now = datetime.now(timezone.utc)
@@ -270,6 +385,7 @@ def complete_session(code: str) -> None:
                    duration_seconds=duration)
 
 
+@_deferred
 def save_response(code: str, screen: dict, screen_index: int, *,
                   option_key: str | None = None, option_index: int | None = None,
                   numeric_value: float | None = None, text_value: str | None = None,
@@ -297,6 +413,7 @@ def save_response(code: str, screen: dict, screen_index: int, *,
              _now()))
 
 
+@_deferred
 def save_followup(code: str, email: str) -> None:
     with connect() as conn:
         _execute(conn,
@@ -307,14 +424,37 @@ def save_followup(code: str, email: str) -> None:
 
 def code_for_email(email: str) -> str | None:
     """Session id stored with an email address, for a withdrawal by mail."""
+    flush()
     with connect() as conn:
         rows = _fetch(conn, "SELECT code FROM followup WHERE email = ?",
                       (email.strip().lower(),))
     return rows[0]["code"] if rows else None
 
 
+def codes_for_email(email: str) -> list[str]:
+    """Every session id stored with an email address (a reload can start more
+    than one session), for a withdrawal by mail."""
+    flush()
+    with connect() as conn:
+        rows = _fetch(conn, "SELECT code FROM followup WHERE email = ?",
+                      (email.strip().lower(),))
+    return [r["code"] for r in rows]
+
+
+def completed_with_email(email: str) -> bool:
+    """True if a completed session already exists for this email address."""
+    flush()
+    with connect() as conn:
+        rows = _fetch(conn, "SELECT s.code FROM followup f JOIN sessions s ON s.code = f.code "
+                            "WHERE f.email = ? AND s.completed_at IS NOT NULL "
+                            "AND (s.withdrawn IS NULL OR s.withdrawn = 0)",
+                      (email.strip().lower(),))
+    return bool(rows)
+
+
 def withdraw(code: str) -> None:
     """Mark the data as withdrawn and drop the follow-up contact."""
+    flush()
     with connect() as conn:
         _execute(conn, "UPDATE sessions SET withdrawn = 1 WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM followup WHERE code = ?", (code,))
@@ -323,6 +463,7 @@ def withdraw(code: str) -> None:
 def delete(code: str) -> int:
     """Remove a participant's data entirely, for a withdrawal by mail.
     Returns the number of session rows removed."""
+    flush()
     with connect() as conn:
         before = _fetch(conn, "SELECT code FROM sessions WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM responses WHERE code = ?", (code,))
@@ -336,6 +477,7 @@ def delete(code: str) -> int:
 # ---------------------------------------------------------------------------
 
 def fetch_responses(code: str) -> list[dict]:
+    flush()
     with connect() as conn:
         return _fetch(conn,
                       "SELECT * FROM responses WHERE code = ? ORDER BY screen_index",
@@ -343,6 +485,7 @@ def fetch_responses(code: str) -> list[dict]:
 
 
 def fetch_all(table: str) -> list[dict]:
+    flush()
     if table not in TABLES:
         raise ValueError(f"unknown table {table!r}")
     with connect() as conn:
@@ -375,6 +518,7 @@ def track_load(tracks, window_minutes: int = 45) -> dict:
 
 
 def counts() -> dict:
+    flush()
     with connect() as conn:
         started = _fetch(conn, "SELECT COUNT(*) AS n FROM sessions")[0]["n"]
         completed = _fetch(

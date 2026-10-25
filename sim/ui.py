@@ -635,6 +635,45 @@ div[data-testid="stButtonGroup"] > div > button:hover {{ border-color: {ACCENT} 
 div[data-testid="stButtonGroup"] > div > button:hover * {{ color: {INK} !important; }}
 div[data-testid="stButtonGroup"] > div > button[aria-checked="true"]:hover *,
 div[data-testid="stButtonGroup"] > div > button[aria-pressed="true"]:hover * {{ color: #FFFFFF !important; }}
+
+/* ---------- 0.13.0 (round 3) ---------- */
+/* A6: a gap with dots between month 3 and month 9 */
+.fs-chart .bars.gap {{ grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 0.45fr) minmax(0, 1.5fr) !important; }}
+.fs-chart .gapcol .dots {{ color: {MUTED}; font-size: 1rem; font-weight: 700; letter-spacing: 0.1em; padding-bottom: 0.1rem; }}
+.fs-chart .gapcol .x {{ border-top-color: {LINE}; }}
+/* A5: a lower chart, so Continue stays above the fold on 1366 x 640 */
+.fs-chart {{ padding: 0.45rem 0.8rem 0.3rem 0.8rem !important; margin-bottom: 0.6rem !important; }}
+.fs-chart .cap {{ margin-bottom: 0 !important; }}
+.fs-chart .v {{ margin-bottom: 0.1rem !important; }}
+/* A7: phone layout */
+@media (max-width: 640px) {{
+  .fs-ticks {{ height: 2.5rem !important; }}
+  .fs-ticks span {{ white-space: normal !important; text-align: center; line-height: 1.15;
+    width: var(--w); font-size: 0.8rem !important; }}
+  .fs-ticks span:first-child {{ text-align: left; }}
+  .fs-ticks span:last-child {{ text-align: right; }}
+}}
+ul[role="listbox"] li, li[role="option"], div[role="option"] {{ white-space: normal !important;
+  line-height: 1.2 !important; overflow-wrap: anywhere; }}
+div[data-baseweb="select"] div {{ white-space: normal !important; text-overflow: clip !important; }}
+
+/* A5: only the screens with a chart (F3, G3) or an email (K1, rank items) */
+div[class*="st-key-screen_"]:has(.fs-chart) div[data-testid="stVerticalBlock"],
+div[class*="st-key-screen_"]:has(.fs-msg) div[data-testid="stVerticalBlock"] {{ gap: 0.5rem !important; }}
+div[class*="st-key-screen_"]:has(.fs-chart) .fs-body,
+div[class*="st-key-screen_"]:has(.fs-msg) .fs-body {{ margin-bottom: 0.6rem !important; }}
+div[class*="st-key-screen_"]:has(.fs-msg) label[data-testid="stRadioOption"] {{ padding: 0.6rem 1.05rem !important; }}
+div[class*="st-key-screen_"]:has(.fs-chart) .fs-top {{ margin-bottom: 0.75rem !important; }}
+div[class*="st-key-screen_"]:has(.fs-chart) .fs-range {{ margin-bottom: 0.45rem !important; }}
+div[class*="st-key-screen_"]:has(.fs-chart) .fs-q {{ margin-bottom: 0.4rem !important; }}
+/* A7: long dropdown options wrap on phones (rows are 40 px, two lines fit) */
+@media (max-width: 640px) {{
+  [role="option"] > div {{ white-space: normal !important; overflow: visible !important;
+    line-height: 1.15 !important; font-size: 0.8rem !important; height: auto !important; }}
+  [role="option"] {{ align-items: center !important; }}
+}}
+.fs-fullval {{ display: none; font-size: 0.875rem; color: {INK_2}; margin-top: -0.3rem; }}
+@media (max-width: 640px) {{ .fs-fullval {{ display: block; }} }}
 </style>
 """
 
@@ -863,13 +902,13 @@ def range_diagram(left: str, right: str) -> None:
 
 
 def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: str,
-              future_label: str) -> None:
+              future_label: str, gap: bool = False) -> None:
     """Small bar chart of a past series, with an empty 'future' slot. Built from
     HTML, not SVG, so its text keeps the type scale on every screen size."""
     vmax = max(v for _, v, _ in series) * 1.08
     cols = []
     for i, (lab, v, chg) in enumerate(series):
-        h = max(8, round(52 * v / vmax))
+        h = max(8, round(30 * v / vmax))
         cls = "bar now" if i == len(series) - 1 else "bar"
         inner = f'<span class="chg">{_h(chg)}</span>' if chg else ""
         cols.append(f'<div class="col"><div class="v">{_h(unit_fmt(v))}</div>'
@@ -877,10 +916,14 @@ def bar_chart(series: list[tuple[str, float, str | None]], unit_fmt, caption: st
                     f'<div class="x">{_h(lab)}</div></div>')
     # The future slot is a small box on the baseline, so its height suggests no
     # magnitude.
+    if gap:      # months between the series and the future slot (G3: months 4 to 8)
+        cols.append('<div class="col gapcol"><div class="v">&nbsp;</div><div class="dots">…</div>'
+                    '<div class="x">&nbsp;</div></div>')
     cols.append(f'<div class="col fut"><div class="v">&nbsp;</div><div class="bar q">?</div>'
                 f'<div class="x">{_h(future_label)}</div></div>')
     html_block(f'<div class="fs-chart" role="img" aria-label="{_h(caption)}">'
-               f'<div class="cap">{_h(caption)}</div><div class="bars">{"".join(cols)}</div></div>')
+               f'<div class="cap">{_h(caption)}</div><div class="bars{" gap" if gap else ""}">'
+               f'{"".join(cols)}</div></div>')
 
 
 def facts(items: list[tuple[str, str]]) -> None:
@@ -1030,6 +1073,6 @@ def journey(months: list[tuple[str, str, list[tuple[str, str]]]]) -> None:
 def slider_ticks(options: list[str]) -> None:
     """All values of a slider under its track, at the positions of the steps."""
     n = len(options) - 1
-    spans = "".join(f'<span style="left:{100 * i / n:.3f}%">{_h(o)}</span>'
+    spans = "".join(f'<span style="left:{100 * i / n:.3f}%;--w:{96 / (n + 1):.2f}%">{_h(o)}</span>'
                     for i, o in enumerate(options))
     html_block(f'<div class="fs-ticks" aria-hidden="true">{spans}</div>')
