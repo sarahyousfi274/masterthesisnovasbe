@@ -11,3 +11,8 @@ font = "sans serif"
 
 [client]
 toolbarMode = "minimal"
+
+[server]
+# Round 4, A1: a session whose connection drops (locked phone, laptop asleep)
+# is kept for an hour instead of two minutes. Reloads are covered by ?r=.
+disconnectedSessionTTL = 3600
