@@ -30,7 +30,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.13.0"
+APP_RELEASE = "0.13.3"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -604,17 +604,17 @@ def render_setup(sc: dict) -> None:
     team_choice = st.radio(fill(spec["team_label"]), team_labels,
                            index=team_keys.index(saved_team) if saved_team in team_keys else None,
                            key="setup_team", help=spec["team_help"])
-    own = ss.answers.get("profile", {})
-    own_industry = own.get("industry_real")
     options = content.INDUSTRIES
+    saved_industry = recalled("industry")
+    # No preselection: the field shows a dash until an industry is chosen.
     industry = st.selectbox(fill(spec["industry_label"]), options,
-                            index=options.index(own_industry) if own_industry in options else None,
-                            placeholder="Select", key="setup_industry",
+                            index=options.index(saved_industry) if saved_industry in options else None,
+                            placeholder=spec["industry_placeholder"], key="setup_industry",
                             help=spec["industry_help"])
     other = None
     if industry == "Other":
         other = st.text_input(content.OTHER_LABEL, key="setup_industry_other",
-                              value=own.get("industry_real_other", ""),
+                              value=recalled("industry_other", ""),
                               label_visibility="collapsed",
                               placeholder=f"{content.OTHER_LABEL}: industry")
     if continue_button("setup_continue"):
@@ -626,7 +626,7 @@ def render_setup(sc: dict) -> None:
             st.warning("Please choose the industry.")
             return
         team = team_keys[team_labels.index(team_choice)]
-        remember(team=team)
+        remember(team=team, industry=industry, industry_other=(other or "").strip())
         ss.solo = team == "solo"
         ss.state = game.new_state(solo=ss.solo)     # no decision has been made yet
         label = other.strip() if industry == "Other" else industry
@@ -828,7 +828,7 @@ def render_interval(sc: dict) -> None:
         factor = revenue_now / 8_000
         series = [(lab, round(v * factor, -1), chg) for lab, v, chg in content.CHART_REVENUE]
         series[-1] = (series[-1][0], revenue_now, series[-1][2])
-        ui.bar_chart(series, money, "Monthly revenue so far", "In 12 months")
+        ui.bar_chart(series, money, content.CHART_REVENUE_CAPTION, "In 12 months")
     elif spec.get("chart") == "customers":
         ui.bar_chart(content.CHART_CUSTOMERS, lambda v: f"{v:,.0f}",
                      "New paying customers per month", "Month 9", gap=True)
@@ -1079,8 +1079,11 @@ elif ss.get("not_founder"):
     st.title(content.CONSENT["title"])
     st.markdown(content.THANK_YOU_NOT_FOUNDER)
 elif ss.get("already_took_part"):
-    st.title(content.CONSENT["title"])
-    st.markdown(content.ALREADY_TOOK_PART)
+    t = content.ALREADY_TOOK_PART
+    ui.eyebrow(content.CONSENT["title"])
+    st.title(t["title"])
+    st.markdown(t["body"])
+    st.markdown(f"**{t['close']}**")
 else:
     sc = screen()
     with st.container(key=f"screen_{ss.index}"):

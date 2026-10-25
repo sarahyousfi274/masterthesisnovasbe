@@ -5,6 +5,22 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.13.3**: the end of the Team area pays the month before the new
+people start; H4 and the report make clear that the Head of Sales comes on top
+of the planned hires; F3 opens with "Investors will ask … for a revenue
+forecast"; the starting situation explains the free trial behind the steady
+revenue; the net burn help names what the costs cover.
+
+**Version 0.13.2**: the story explains the paying customers at the start: they
+use a pilot the team still runs largely by hand, and the MVP turns it into a
+first real product (setup text and Building the product intro).
+
+**Version 0.13.1**: "About you" has its own colors (stone grey page, white
+card, charcoal panel, terracotta accent), clearly apart from the green and
+beige simulation; the email text says there is exactly one follow-up email; a
+completed run with the same email ends on a thank-you screen; the industry of
+Lumora has no preselection (the field shows a dash).
+
 **Version 0.13.0** applies the simulator check of round 3 (details in
 `REVIEW_RESPONSE_ROUND3_0.13.0.md`): F1 counted apart from Finance, ranges with
 low = high refused, G4 persistence coding, a Finance bridge to 6 months of runway,

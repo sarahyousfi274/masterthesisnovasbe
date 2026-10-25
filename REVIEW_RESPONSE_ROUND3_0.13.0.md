@@ -102,3 +102,17 @@ for the queue first. Failed writes are listed on the data page. Tested against
 Postgres 16: all 180 answers of four full sessions stored over one connection; with
 a simulated 0.6 s connection setup the page wait per write fell from 0.6 s to under
 1 ms.
+
+## Update 0.13.3
+
+- End of the Team area: the month is paid at the costs of that month first; the
+  people hired then start (salaries from the next month). H4 says the Head of
+  Sales comes on top of the planned hires; the report names both.
+- With this order the Track 3 bridge (A11) is smaller: median €132,000, maximum
+  €275,000, €117,000 with typical choices. Tracks 1 and 2 still never need it.
+- F3 opens with "Investors will ask Lumora, an early-stage … startup, for a revenue
+  forecast." The chart shows the three months before the takeover and today. The
+  starting situation explains that new customers pay after a free trial, so revenue
+  changes only in the final report (the story behind A9).
+- Net burn help text names what the costs cover (salaries, freelancers who help run
+  the pilot, tools, office).
