@@ -1,9 +1,17 @@
-# Founder decision simulation
+# Decisions in founding
 
-The instrument for Chapter 5 of the work project *Founder Overconfidence and
-Startup Performance*. It runs a session of about 20 minutes: four domain
-blocks of four decisions each, a short post-game question, and an end screen
-with the pseudonym code that opens the follow-up a week later.
+A 20-minute simulation study for founders by master's students at Nova SBE.
+
+<!-- The first paragraph above is what link previews show (Streamlit Community
+Cloud takes the description from this README). Keep it neutral: it must not
+name the purpose of the study. -->
+
+## About this repository
+
+The research instrument of our work project at Nova SBE (Chapter 5). It runs a
+session of about 20 minutes: four domain blocks of four decisions each, a short
+post-game question, and an end screen. The follow-up a week later explains the
+study.
 
 **Version 0.14.2**: a resume link opened after more than 30 minutes asks for
 the email address first, so a forwarded link cannot open someone else's session;
