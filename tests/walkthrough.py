@@ -133,6 +133,12 @@ def answer(at: AppTest, rng: random.Random, email: str) -> str:
         at.button(key=f"hire_{node}_continue").click()
     elif kind == "interval":
         node = sc["node"]
+        # Round 3, A3: low == high must be refused.
+        at.number_input(key=f"interval_{node}_low").set_value(20)
+        at.number_input(key=f"interval_{node}_high").set_value(20)
+        at.button(key=f"interval_{node}_continue").click()
+        at.run()
+        assert at.session_state.index == at.session_state.screens.index(sc), "low == high accepted"
         low, high = sorted(rng.sample(range(5, 120), 2))
         at.number_input(key=f"interval_{node}_low").set_value(low)
         at.number_input(key=f"interval_{node}_high").set_value(high)
@@ -201,6 +207,16 @@ def main() -> int:
         seed += 1
     print(f"Sessions played: {len(results)}   tracks covered: {sorted(tracks)}\n")
 
+    # Round 3, A16: the same email cannot complete a second run.
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    at.button(key="consent_agree").click(); at.run()
+    at.radio(key="filter_choice").set_value("Yes"); at.button(key="filter_continue").click(); at.run()
+    at.text_input(key="email_value").set_value(results[0]["email"]); submit(at); at.run()
+    second_blocked = bool(at.session_state.already_took_part) and not storage.fetch_responses(
+        at.session_state.code)
+    print(f"  same email blocked: {second_blocked}")
+
     # Balanced allocation: on a fresh database the first three completed
     # sessions must use three different tracks; and 300 sequential arrivals
     # (each completing before the next starts) must split exactly 100/100/100.
@@ -264,6 +280,13 @@ def main() -> int:
                 json.loads(row["state_json"]).get("revenue_shown") == 8000
                 for row in nodes if row["node"] == "F3"),
             "final report applies the held-back customers": r["final_state"]["customers"] > 90,
+            "A11 Finance starts with at least 6 months of runway": all(
+                json.loads(row["state_json"]).get("runway_shown", 99) >= 6
+                for row in nodes if row["domain"] == "finance" and row["node"] != "F1"),
+            "A17 second round resolved": (not any(row["node"] == "H4" and row["option_key"] == "C"
+                                                  for row in rows))
+                or any(e.get("label", "").startswith("Head of Sales: after the second round")
+                       for e in r["events"]),
             "contest outcomes stored in the final report": any(
                 row["screen_id"] == "report_final" and (row["text_value"] or "").startswith("contests:")
                 for row in rows),
@@ -274,6 +297,9 @@ def main() -> int:
             if not passed:
                 ok = False
                 print(f"      FAIL: {label}")
+    if not second_blocked:
+        ok = False
+        print("  FAIL: second run with the same email")
     if not ok_balance:
         ok = False
         print("  FAIL: balanced track allocation")
