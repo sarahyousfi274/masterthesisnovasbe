@@ -31,7 +31,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.14.1"
+APP_RELEASE = "0.14.2"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -143,7 +143,29 @@ def resume_from_url() -> None:
     if saved["completed"]:
         s.resumed_completed = True          # show the closing page
         return
+    # 0.14.2: a link that was forwarded must not open someone else's session.
+    # After a longer break, a session that already has an email address asks
+    # for it once before it continues.
+    if _gap_seconds(saved) > RESUME_CHECK_SECONDS:
+        try:
+            has_email = bool(storage.email_for_code(saved["code"]))
+        except Exception:
+            has_email = False
+        if has_email:
+            s.resume_verify = token
+            return
     restore_progress(saved)
+
+
+RESUME_CHECK_SECONDS = 30 * 60
+
+
+def _gap_seconds(saved: dict) -> float:
+    try:
+        then = datetime.fromisoformat(str(saved["updated_at"]))
+        return (datetime.now(timezone.utc) - then).total_seconds()
+    except (TypeError, ValueError):
+        return 0.0
 
 
 resume_from_url()
@@ -1181,6 +1203,33 @@ RENDERERS = {
     "suspicion": render_suspicion, "end": render_end, "closed": render_closed,
 }
 
+def render_resume_verify() -> None:
+    """Confirm a resume link after a longer break by the email address."""
+    r = content.RESUME_CHECK
+    ui.eyebrow(content.CONSENT["title"])
+    st.title(r["title"])
+    st.markdown(r["body"])
+    with st.form("resume_check_form", border=False):
+        given = st.text_input(content.EMAIL["label"], placeholder=content.EMAIL["placeholder"],
+                              key="resume_check_email")
+        ok = st.form_submit_button(r["continue"], type="primary")
+    if st.button(r["restart"], key="resume_check_restart"):
+        del ss["resume_verify"]
+        st.query_params.pop("r", None)
+        st.rerun()
+    if ok:
+        saved = storage.load_progress(ss.resume_verify)
+        if not saved or saved["completed"] or saved["withdrawn"]:
+            st.warning(content.RESUME_OFFER["gone"])
+            return
+        stored = (storage.email_for_code(saved["code"]) or "").strip().lower()
+        if stored and (given or "").strip().lower() == stored:
+            del ss["resume_verify"]
+            restore_progress(saved)
+            st.rerun()
+        st.warning(r["wrong"])
+
+
 # ---------------------------------------------------------------------------
 
 if st.query_params.get("view") == "admin":
@@ -1192,6 +1241,8 @@ elif ss.get("declined"):
 elif ss.get("not_founder"):
     st.title(content.CONSENT["title"])
     st.markdown(content.THANK_YOU_NOT_FOUNDER)
+elif ss.get("resume_verify"):
+    render_resume_verify()
 elif ss.get("resumed_completed"):
     # A1: the link of a finished session was opened again.
     st.title(content.CLOSE["title"])
