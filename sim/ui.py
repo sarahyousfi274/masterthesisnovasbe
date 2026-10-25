@@ -402,6 +402,18 @@ label[data-testid="stRadioOption"][data-selected="true"] > div > div:first-child
   background-color: {ACCENT} !important; border-color: {ACCENT} !important; }}
 input[type="checkbox"]:checked + div, div[data-baseweb="checkbox"] [aria-checked="true"] {{
   background-color: {ACCENT} !important; border-color: {ACCENT} !important; }}
+/* 0.14.1: the same safety net for dark mode on the device. Without the theme
+   file Streamlit follows the system setting: unselected radio dots were filled
+   with the dark background (they looked selected) and dropdowns were black. */
+label[data-testid="stRadioOption"]:not([data-selected="true"]) > div > div:first-child {{
+  background-color: {CARD} !important; border-color: #B8B0A0 !important; }}
+div[data-testid="stSelectboxVirtualDropdown"] {{ background-color: {CARD} !important;
+  border: 1px solid {LINE} !important; }}
+div[data-testid="stSelectboxVirtualDropdown"] [role="option"],
+div[data-testid="stSelectboxVirtualDropdown"] [role="option"] * {{ color: {INK} !important; }}
+div[data-testid="stSelectboxVirtualDropdown"] [role="option"]:hover,
+div[data-testid="stSelectboxVirtualDropdown"] [role="option"][aria-selected="true"] {{
+  background-color: #E6EFE9 !important; }}
 
 /* ---------- email (review B6) ---------- */
 .fs-msg .hd {{ align-items: flex-start; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid {LINE}; }}
