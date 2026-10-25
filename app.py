@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import random
 import re
+import secrets
 import time
 from datetime import datetime, timezone
 
@@ -30,7 +31,7 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.13.3"
+APP_RELEASE = "0.14.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
@@ -75,6 +76,77 @@ def init() -> None:
     ss.startup_name = content.STARTUP_NAME
 
 
+# ---------------------------------------------------------------------------
+# Resume after an interruption (0.14.0, Round 4 A1)
+# A reload, a discarded tab or a redeploy starts a new Streamlit session. The
+# progress is saved under a random token that stands in the URL (?r=...), so
+# the participant continues on the same screen. Neither the session code nor
+# the email is ever in the URL or in the saved progress.
+# ---------------------------------------------------------------------------
+
+RESUME_KEYS = ("seed", "track", "code", "index", "solo", "state", "answers", "events",
+               "journey", "product", "industry_label", "block_start", "closed",
+               "completed", "startup_name", "contests", "contest_results",
+               "contest_outcomes", "resume_token", "resumes")
+
+
+def progress_snapshot() -> dict:
+    s = st.session_state
+    data = {k: copy.deepcopy(s[k]) for k in RESUME_KEYS if k in s}
+    data["closed"] = sorted(data.get("closed", []))
+    data["answers"] = {sid: v for sid, v in data.get("answers", {}).items()
+                       if sid != "email" and "email" not in v}
+    return data
+
+
+def save_progress() -> None:
+    s = st.session_state
+    if s.get("resume_token"):
+        storage.save_progress(s.code, s.resume_token, progress_snapshot())
+
+
+def restore_progress(saved: dict) -> None:
+    """Put a saved session back. Screens and sections are rebuilt from track
+    and seed; the contest draws use the seed, so they come out the same."""
+    s = st.session_state
+    data = saved["data"]
+    for k in RESUME_KEYS:
+        if k in data:
+            s[k] = copy.deepcopy(data[k])
+    s.closed = set(data.get("closed", []))
+    s.screens = flow.build(s.track, s.seed)
+    s.sections = flow.sections(s.screens)
+    s.index = min(s.index, len(s.screens) - 1)
+    s.screen_entered = time.monotonic()
+    s.screen_entered_at = _now()
+    s.resumes = data.get("resumes", 0) + 1
+    gap = None
+    try:
+        then = datetime.fromisoformat(str(saved["updated_at"]))
+        gap = round((datetime.now(timezone.utc) - then).total_seconds(), 1)
+    except (TypeError, ValueError):
+        pass
+    s.resume_log = {"gap": gap, "index": s.index}   # logged once the page runs
+
+
+def resume_from_url() -> None:
+    s = st.session_state
+    token = st.query_params.get("r")
+    if not token or "code" in s or st.query_params.get("view") == "admin":
+        return
+    try:
+        saved = storage.load_progress(token)
+    except Exception:
+        saved = None
+    if not saved or saved["withdrawn"]:
+        return                              # unknown token: start normally
+    if saved["completed"]:
+        s.resumed_completed = True          # show the closing page
+        return
+    restore_progress(saved)
+
+
+resume_from_url()
 init()
 ss = st.session_state
 
@@ -95,7 +167,7 @@ if os.environ.get("FS_DEV") == "1" and st.query_params.get("jump") and not ss.ge
             ss.contests = {"T2": "B", "F2": "C", "H2": "C", "G2": "B", "K1": "B"}
             dom0 = target.split("_", 1)[1]
             if dom0 in content.BLOCKS:
-                ss.events.append({"domain": dom0, "label": "Head of Growth", "delta": {},
+                ss.events.append({"domain": dom0, "label": "Head of Product", "delta": {},
                                   "note": content.CONTEST_STORY["H2"]["pending"]})
         if target == "report_final":
             for eff, lab in (({"customers": 45, "market_confidence": 1},
@@ -137,6 +209,7 @@ def advance() -> None:
     ss.index += 1
     ss.screen_entered = time.monotonic()
     ss.screen_entered_at = _now()
+    save_progress()
     st.rerun()
 
 
@@ -144,6 +217,7 @@ def go_back() -> None:
     ss.index -= 1
     ss.screen_entered = time.monotonic()
     ss.screen_entered_at = _now()
+    save_progress()
     st.rerun()
 
 
@@ -327,6 +401,9 @@ def render_consent(sc: dict) -> None:
         ss.sections = flow.sections(ss.screens)
         storage.start_session(ss.code, ss.track, ss.seed, content.APP_VERSION,
                               codebook.version())
+        # A1: a random resume token in the URL; advance() saves the progress.
+        ss.resume_token = secrets.token_urlsafe(12)
+        st.query_params["r"] = ss.resume_token
         storage.update_session(ss.code, consent=1)
         log(option_key="agree")
         advance()
@@ -362,6 +439,7 @@ def render_filter(sc: dict) -> None:
         if choice != "Yes":
             storage.delete(ss.code)      # the end screen promises nothing is kept
             ss.not_founder = True
+            st.query_params.pop("r", None)
             st.rerun()
         advance()
 
@@ -369,6 +447,29 @@ def render_filter(sc: dict) -> None:
 def render_email(sc: dict) -> None:
     frame()
     about_header()
+    offer = ss.get("resume_offer")
+    if offer:
+        # A1: an earlier, unfinished session with this email address.
+        r = content.RESUME_OFFER
+        ui.question(r["question"], r["body"])
+        c1, c2 = st.columns([1.3, 1])
+        if c1.button(r["continue"], type="primary", key="resume_continue",
+                     use_container_width=True):
+            saved = storage.load_progress(offer["token"])
+            del ss["resume_offer"]
+            if saved and not saved["completed"] and not saved["withdrawn"]:
+                storage.delete(ss.code)      # nothing of the new session is kept
+                restore_progress(saved)
+                st.query_params["r"] = offer["token"]
+                st.rerun()
+            st.warning(r["gone"])
+        elif c2.button(r["restart"], key="resume_restart", use_container_width=True):
+            del ss["resume_offer"]
+            remember(email=offer["email"])
+            storage.save_followup(ss.code, offer["email"])
+            log(option_key="provided", text_value="start_again")
+            advance()
+        return
     ui.question(content.EMAIL["question"], content.EMAIL["body"])
     with st.form("email_form", border=False):
         email = st.text_input(content.EMAIL["label"], value=recalled("email", ""),
@@ -384,6 +485,14 @@ def render_email(sc: dict) -> None:
             # Round 3, A16: one complete run per email address.
             storage.delete(ss.code)          # nothing of this session is kept
             ss.already_took_part = True
+            st.query_params.pop("r", None)
+            st.rerun()
+        try:
+            earlier = storage.open_progress_for_email(email, exclude=ss.code)
+        except Exception:
+            earlier = None
+        if earlier:
+            ss.resume_offer = {"email": email, "token": earlier[1]}
             st.rerun()
         remember(email=email)
         storage.save_followup(ss.code, email)
@@ -610,7 +719,7 @@ def render_setup(sc: dict) -> None:
     industry = st.selectbox(fill(spec["industry_label"]), options,
                             index=options.index(saved_industry) if saved_industry in options else None,
                             placeholder=spec["industry_placeholder"], key="setup_industry",
-                            help=spec["industry_help"])
+                            help=fill(spec["industry_help"]))
     other = None
     if industry == "Other":
         other = st.text_input(content.OTHER_LABEL, key="setup_industry_other",
@@ -931,6 +1040,11 @@ def render_report(sc: dict) -> None:
             ss.block_start[domain] = copy.deepcopy(ss.state)
             ss.state, events = game.settle(ss.state)
             resolve_contests()
+            # Round 4, A3.1: a decision whose held-back effect is applied now
+            # (F1) is listed once, with that effect, not also as "planned".
+            settled = {ev["label"] for ev in events}
+            ss.events = [e for e in ss.events if not (
+                e["domain"] == "final" and not e.get("delta") and e["label"] in settled)]
         else:
             ss.state, events = game.end_of_area(ss.state, domain)
         for ev in events:
@@ -1078,13 +1192,22 @@ elif ss.get("declined"):
 elif ss.get("not_founder"):
     st.title(content.CONSENT["title"])
     st.markdown(content.THANK_YOU_NOT_FOUNDER)
+elif ss.get("resumed_completed"):
+    # A1: the link of a finished session was opened again.
+    st.title(content.CLOSE["title"])
+    st.markdown(content.CLOSE["body"])
 elif ss.get("already_took_part"):
     t = content.ALREADY_TOOK_PART
     ui.eyebrow(content.CONSENT["title"])
     st.title(t["title"])
-    st.markdown(t["body"])
+    ui.html_block(f'<p class="fs-plain">{ui.mail_links(t["body"])}</p>')
     st.markdown(f"**{t['close']}**")
 else:
     sc = screen()
+    if ss.get("resume_log"):
+        # A1 data-quality marker: seconds since the last save, and the screen.
+        rl = ss.pop("resume_log")
+        log({"id": "resume"}, option_key="resume", option_index=ss.get("resumes"),
+            numeric_value=rl["gap"], text_value=str(rl["index"]), response_seconds=None)
     with st.container(key=f"screen_{ss.index}"):
         RENDERERS[sc["kind"]](sc)

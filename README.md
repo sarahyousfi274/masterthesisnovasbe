@@ -5,6 +5,18 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.14.0** applies the simulator check of round 4 (details in
+`REVIEW_RESPONSE_ROUND4_0.14.0.md`). A session can be resumed after a reload, a
+locked phone, a laptop asleep or a redeploy: the progress is saved under a random
+token in the URL (`?r=…`), and a participant who comes back through the plain
+link and enters the same email is offered "Continue where I stopped". A dropped
+connection is kept for an hour (`disconnectedSessionTTL = 3600`). Text fixes: F1
+listed once in the final report, "Planned hires" instead of "Open roles", an
+uneven F3 series (+2, +4, +3 %), the same follow-up wording everywhere, a digital
+product named before the industry is chosen, contact emails kept in one piece,
+a Head of Product instead of a Head of Growth (H5/H2), and normal figures in
+running text.
+
 **Version 0.13.3**: the end of the Team area pays the month before the new
 people start; H4 and the report make clear that the Head of Sales comes on top
 of the planned hires; F3 opens with "Investors will ask … for a revenue
@@ -152,6 +164,15 @@ It needs `ADMIN_PASSWORD` in `.streamlit/secrets.toml` (copy
 `secrets.toml.example`). Without a password the page refuses to open, so a
 deployed app is never accidentally public. Participants never see a link to it.
 
+Since 0.14.0 a fourth table, `progress`, holds where each running session
+stands (the screen, the situation and the answers, never the email), so that
+it can be resumed. It is not part of the analysis: the CSV downloads leave it
+out, and deleting a participant or withdrawing by email removes it too. Each
+resume writes one row with `screen_id = "resume"` into `responses`
+(`numeric_value` = seconds since the last save, `text_value` = the screen index,
+`option_index` = how many resumes so far). Leave these rows out of the scoring;
+they are a data-quality marker.
+
 From a script instead:
 
 ```python
@@ -175,7 +196,10 @@ result: r = 0.93 / 0.84 / 0.83 with cross correlations below 0.09.
 
 `walkthrough` drives the real app through all three tracks with Streamlit's
 AppTest harness and checks that every screen is stored, timed and carries a
-snapshot of the situation.
+snapshot of the situation. Since 0.14.0 it also interrupts six sessions at a random screen, restores
+them from the saved progress and checks that the stored answers are identical to
+an uninterrupted run; it checks the resume offer at the email step and that the
+link of a completed session shows the closing page.
 
 ## Layout
 
