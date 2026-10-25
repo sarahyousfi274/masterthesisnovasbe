@@ -5,6 +5,10 @@ Startup Performance*. It runs a session of about 20 minutes: four domain
 blocks of four decisions each, a short post-game question, and an end screen
 with the pseudonym code that opens the follow-up a week later.
 
+**Version 0.14.2**: a resume link opened after more than 30 minutes asks for
+the email address first, so a forwarded link cannot open someone else's session;
+phone fixes (background note, report lines, bigger answer pills on touch screens).
+
 **Version 0.14.1**: without `.streamlit/config.toml` the app now still looks
 right in dark mode (empty radio dots, light dropdown lists).
 

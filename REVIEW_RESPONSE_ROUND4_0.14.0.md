@@ -113,3 +113,37 @@ Checked on F3, G3 and H2.
 | `.streamlit/config.toml` | 5 | A1 step 1 |
 | `tests/walkthrough.py` | 118 | A1 tests |
 | `.github/workflows/keep-awake.yml` | new | B1, optional |
+
+## Update 0.14.1 (final check of round 4)
+
+The live check confirmed A1 and A3 to A5. Open was only that `config.toml` and
+`keep-awake.yml` sat in the wrong folders on GitHub (folders whose name starts
+with a dot are dropped when uploading from a Mac).
+
+- **Safety net in `sim/ui.py`** (CSS only): without the theme file, Streamlit
+  follows the dark mode of the device. Unselected radio dots are now always empty
+  (card color, grey ring) and the dropdown list is light with dark text. Tested
+  without `config.toml` in dark mode on 16 screens: no dark dots, no dark lists.
+- **Still needs the file in `.streamlit/`:** the one-hour hold of a dropped
+  connection (`disconnectedSessionTTL`) can only be set there. Resuming after a
+  reload works without it, through the database.
+- **To do on GitHub:** "Add file" → "Create new file", name `.streamlit/config.toml`,
+  paste the content, commit; the same for `.github/workflows/keep-awake.yml`; then
+  "Actions" → "Keep the app awake" → "Run workflow" once. Delete the copies in the
+  wrong places (`config.toml` in the main folder, `workflows/keep-awake.yml`).
+- Tests: walkthrough end to end ok, including the six resume checks.
+
+## Update 0.14.2 (launch check)
+
+- **Forwarded resume link:** if a `?r=` link is opened more than 30 minutes after
+  the last save and the session already has an email address, the app asks for
+  that address before it continues ("Welcome back"). A wrong address does not open
+  the session; "Start a new session instead" starts fresh. Within 30 minutes (a
+  reload, a short break) it continues directly. New: `storage.email_for_code()`,
+  `RESUME_CHECK` in `content.py`, `render_resume_verify()` in `app.py`; walkthrough
+  test added.
+- **Phones (checked at 320 × 568, 360 × 740, all 44 screens):** no horizontal
+  scrolling, no text below 12.5 px, the sticky Continue never covers content.
+  Fixed: the scientific-background note ran off the right edge when the link icon
+  sat near it (now spans the question); report change lines stack under the
+  decision below 480 px; answer pills are at least 40 px high on touch screens.
