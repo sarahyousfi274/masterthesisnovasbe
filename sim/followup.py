@@ -197,7 +197,6 @@ INTERSTITIAL = {
 
 INACTIVE = ("This link is no longer active. If you have questions, write to "
             f"{content.CONTACT_EMAIL}.")
-DELETED = "Your data has been deleted."
 
 DEBRIEF_TITLE = "What the study was about"
 
@@ -235,8 +234,8 @@ def debrief_sections() -> list[tuple[str, str]]:
         ("Your data",
          ui.mail_links("Your answers are stored under a code, not your name. Your email "
                        "address is stored separately from your answers and is used only for "
-                       "this follow-up and to make sure nobody plays twice. You can withdraw "
-                       "all your data with the button below, or later by writing to "
+                       "this follow-up and to make sure nobody plays twice. You can have all "
+                       "your data deleted by writing to "
                        f"{content.CONTACT_EMAIL}.")),
         ("One request",
          h("Please do not tell other founders what the study is about before "
@@ -244,11 +243,6 @@ def debrief_sections() -> list[tuple[str, str]]:
            "very welcome to forward the link to the simulation.")),
     ]
 
-
-WITHDRAW = {
-    "confirm": "I want to withdraw all my data from this study.",
-    "button": "Withdraw all my data",
-}
 
 # ---------------------------------------------------------------------------
 # Order (seeded by the token, so it is the same when someone comes back)
@@ -360,10 +354,6 @@ def render(token: str, view: str | None = None) -> None:
     """Entry point from app.py for `?fu=<token>`."""
     ss = _ss()
     st.markdown(CSS, unsafe_allow_html=True)
-    if ss.get("fu_deleted"):
-        ui.eyebrow(content.CONSENT["title"])
-        st.title(DELETED)
-        return
     try:
         row = storage.followup_by_token(token)
     except Exception:
@@ -627,14 +617,10 @@ def _debrief(code: str, with_bar: bool = False) -> None:
             f'<div class="row">{f"<div class=h>{ui._h(t)}</div>" if t else ""}'
             f'<div class="b">{body}</div></div>' for t, body in debrief_sections())
         ui.html_block(f'<div class="fs-terms fs-fu-debrief">{rows}</div>')
+        # Withdrawal works by email only (team decision of 1 November 2026, no
+        # button on this page): the data page deletes by address or code.
         st.markdown("Thank you very much for your time.\n\n"
                     "*The Decisions in Founding team, Nova SBE*")
-        st.divider()
-        confirm = st.checkbox(WITHDRAW["confirm"], key="fu_withdraw_confirm")
-        if st.button(WITHDRAW["button"], key="fu_withdraw", disabled=not confirm):
-            storage.delete(code)
-            ss.fu_deleted = True
-            st.rerun()
 
 
 # ---------------------------------------------------------------------------
