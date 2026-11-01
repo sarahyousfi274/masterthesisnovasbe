@@ -279,6 +279,38 @@ def _pg_put(conn) -> None:
         conn.close()
 
 
+_INIT_LOCK = threading.Lock()
+_SCHEMA_LOCK_ID = 727274                # any fixed number, shared by all app processes
+
+
+def _pg_init(conn) -> None:
+    """Create or migrate the schema once per process. Several threads (page
+    runs, the background writer) and, after a redeploy, several processes can
+    start at the same moment; CREATE TABLE IF NOT EXISTS is not safe against
+    that in Postgres (UniqueViolation on pg_type). A thread lock and a
+    transaction-level advisory lock run it one at a time (0.15.0 hotfix)."""
+    global _initialised
+    import psycopg
+    with _INIT_LOCK:
+        if _initialised:
+            return
+        for attempt in range(4):
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT pg_advisory_xact_lock(%s)", (_SCHEMA_LOCK_ID,))
+                    cur.execute(POSTGRES_SCHEMA)
+                _migrate(conn)
+                conn.commit()
+                _initialised = True
+                return
+            except (psycopg.errors.UniqueViolation, psycopg.errors.DuplicateTable,
+                    psycopg.errors.DuplicateObject):
+                conn.rollback()
+                if attempt == 3:
+                    raise
+                time.sleep(0.3 * (attempt + 1))
+
+
 @contextmanager
 def connect():
     """A connection with the schema in place, committed on a clean exit."""
@@ -287,11 +319,7 @@ def connect():
         conn = _pg_get()
         try:
             if not _initialised:
-                with conn.cursor() as cur:
-                    cur.execute(POSTGRES_SCHEMA)
-                _migrate(conn)
-                conn.commit()
-                _initialised = True
+                _pg_init(conn)
             yield conn
             conn.commit()
         except Exception:
