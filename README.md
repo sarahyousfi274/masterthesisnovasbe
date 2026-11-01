@@ -9,7 +9,7 @@ the examiners only. This repository must stay private (see "Confidentiality"). -
 
 | | |
 |---|---|
-| **Release** | 0.14.2 (codebook 0.14.0), 25 October 2026 |
+| **Release** | 0.15.0 (codebook 0.15.0), 1 November 2026 |
 | **Live app** | https://decisions-in-founding.streamlit.app |
 | **Stack** | Python 3.10+ (tested with 3.13), Streamlit 1.65.0 (pinned), Postgres (Neon, Frankfurt) or SQLite |
 | **Institution** | Nova School of Business and Economics, Lisbon |
@@ -74,6 +74,28 @@ About 20 minutes, 47 screens, the same in every track.
 
 The "About you" section has its own colour scheme (stone grey and terracotta),
 clearly apart from the green simulation, as required by the supervisor.
+
+### 2.1a Follow-up one week later
+
+About 5 minutes, opened from a personal link (`?fu=<token>`) in the single
+follow-up email, in the same design as the simulation. It is a self-report on
+the participant's **own** startup and ends with the debriefing.
+
+| Screen | Content |
+|---|---|
+| FU0 | welcome |
+| FU1 | "Do you currently run a startup?" (current or former founder) |
+| FU2 to FU5 | 13 statements rated 1 to 7, in random order: 8 new items (overestimation and overplacement), 4 unchanged anchors from Costa et al. (2026), 1 control row ("select 3"), never on the first page |
+| FU6 to FU9 | current founders only: 4 forecasts (lowest and highest value, then confidence 1 to 7) |
+| FU10 | debriefing: purpose, the three forms, what was fictional, data and withdrawal button |
+
+Each new item mirrors one measured decision (`SR_T1` for T1 and so on), in the
+format of Costa et al. (2026); matching item and decision follows Ajzen and
+Fishbein (1977). The week between both parts weakens consistency and demand
+effects (Podsakoff et al. 2003). Answers are stored apart, linked only by the
+pseudonym code. Participants who did not finish get a debriefing-only email.
+Opening the debriefing first shows a short interstitial; once the debriefing
+has been read, the questionnaire closes for that link.
 
 ### 2.2 Areas and tracks
 
@@ -156,8 +178,9 @@ Each stored row carries a snapshot of the situation at that moment
 |---|---|---|
 | `sessions` | one row per participant: pseudonym code, track, seed, solo or team, industry, consent, founder filter, start and end time, duration, app and codebook version, withdrawn flag | yes |
 | `responses` | one row per screen: answer, response time, timestamps, situation snapshot | yes |
-| `followup` | email address, linked only by the pseudonym code | no (separate download) |
+| `followup` | email address, linked only by the pseudonym code; follow-up token, type, due, invited, opened, completed and debriefing times, current founder | no (separate download) |
 | `progress` | where a running session stands, so it can be resumed; never the email | no |
+| `followup_responses` | one row per follow-up item: rating, forecast range, options, page, position, time on page | yes, as the follow-up wide and long files |
 
 Rows with `screen_id = "resume"` in `responses` mark a resumed session
 (seconds since the last save, screen index, number of resumes). They carry no
@@ -197,10 +220,11 @@ sim/
   flow.py                  screen order per track, randomisation, allocation
   scoring.py               scores per form and per domain
   storage.py               SQLite or Postgres, background writes, resume, export
+  followup.py              follow-up one week later: items, screens, due list, exports
   admin.py                 data page at ?view=admin
   ui.py                    design system (CSS) and screen components
 models/                    G1 launch model and G3 Bass model with variants
-tests/                     end-to-end walkthrough and simulated participants
+tests/                     walkthroughs (simulation and follow-up), simulated participants
 assets/favicon.png         browser tab icon
 .streamlit/config.toml     theme and server settings (session kept for 1 hour)
 .streamlit/secrets.toml.example   template for DATABASE_URL and ADMIN_PASSWORD
@@ -264,28 +288,41 @@ through a session. Upload hidden folders (`.streamlit`, `.github`) through
 - Download the CSV files from the data page once a day as a backup.
 - Withdrawals: delete by email address on the data page.
 
-**After the session window**
+**Follow-up one week later** (data page, section "Follow-up")
 
-- Send the follow-up email with the debrief to **every** address in
-  `followup.csv`, including participants who do not answer the questionnaire.
-  The contests and the raffle are fictional; neither the app nor the email
-  promises results.
+1. Every 2 to 3 days, open the data page. "Due now" lists every address whose
+   session was completed (or last active) at least 7 days ago and that has not
+   been invited yet: one row per address, never `@example.com`.
+2. "Download invitations (CSV)" gives `email`, `fu_type`, `link` and
+   `debrief_link` for a mail merge from the team mailbox. Use the template for
+   `followup` or `debrief_only` (in `REVIEW_RESPONSE_FOLLOWUP_0.15.0.md`).
+3. After sending, click "Mark these as invited". Each address gets exactly one
+   email, no reminders.
+4. New people can play until 5 November 2026 (`SIM_CLOSES`); questionnaire
+   links close after 19 November 2026 (`FOLLOWUP_CLOSES`) and then show the
+   debriefing only. Both dates are in `sim/followup.py`.
+5. "Download follow-up data, wide/long (CSV)" gives the analysis files, without
+   email, with all scores and flags (`control_passed`, `fast_pages`,
+   `debrief_before_scale`, `debrief_before_completion`, `lag_days`).
 
 ## 9 Quality assurance
 
 ```bash
 python -m tests.walkthrough             # full sessions through the real app
 python -m tests.simulate_participants   # does the scoring recover known biases?
+python -m tests.followup_walkthrough    # the follow-up: 15 paths of the build spec
 ```
 
-| Check | Result (0.14.2) |
+| Check | Result (0.15.0) |
 |---|---|
 | Walkthrough, all three tracks, solo and co-founder | end to end ok, 22 scored nodes per session, email never in the answers |
 | Resume after an interruption (6 sessions, random screen) | stored answers identical to an uninterrupted run |
 | Resume via email, forwarded link, completed link | all pass |
 | Simulated participants (n = 300) | parameter recovery r = 0.92 / 0.95 / 0.89; cross-correlations below 0.07 |
 | Browser run (laptop 1366 × 768, phones 320 to 375 px, dark mode) | all 47 screens, no horizontal scrolling, no text below 12.5 px |
-| Live run on the public link | complete session, reload, completed link and second-run block confirmed |
+| Live run on the public link (0.14.2) | complete session, reload, completed link and second-run block confirmed |
+| Follow-up walkthrough (SQLite and Postgres 16, including the migration of an existing database) | all 15 paths pass: pages, saving, order, scores checked by hand, options, validation, interruption, debriefing first, debriefing-only, withdrawal, closed links, isolation, codebook fields, one email per address, fast pages |
+| Follow-up in the browser (laptop, phones 320 to 375 px, light and dark) | all pages; the 1 to 7 scale stays on one line with readable end labels |
 
 The instrument went through four review rounds by the team (see the
 `REVIEW_RESPONSE_*.md` files).
@@ -307,6 +344,12 @@ The instrument went through four review rounds by the team (see the
 - **Industry is a label.** The product is digital in every industry; the
   reference values assume a digital product.
 
+- **Follow-up items.** The 12 new items are not a validated scale and were not
+  pretested; the 4 Costa anchors show how far they can be trusted. All items
+  run in the same direction (higher = more confident), and the target (one's own
+  startup) differs from the simulation on purpose, so only modest correlations
+  with the behavioural scores are expected.
+
 ## 11 Version history
 
 See `CHANGELOG.md`. Each release records the app version and the codebook
@@ -320,7 +363,7 @@ School of Business and Economics, supervised by Prof. João Castro.
 
 > Konsbruck, E., Weidemann, A. and Yousfi, S. (2026). *Decisions in founding:
 > a simulation instrument for measuring founder overconfidence* (version
-> 0.14.2). Work project, Nova School of Business and Economics.
+> 0.15.0). Work project, Nova School of Business and Economics.
 
 © 2026 the authors. All rights reserved. The code is shared for academic
 assessment at Nova SBE; any other use requires the authors' permission.

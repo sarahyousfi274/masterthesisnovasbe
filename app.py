@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 import streamlit as st
 
-from sim import codebook, content, flow, state as game, storage, ui
+from sim import codebook, content, flow, followup, state as game, storage, ui
 
 from pathlib import Path  # noqa: E402
 
@@ -31,12 +31,19 @@ ui.inject_css()
 # app.py and the files in sim/ must come from the same release. A mixed upload
 # (for example a new app.py with an old sim/content.py) stops here with a clear
 # message instead of failing halfway through a session.
-APP_RELEASE = "0.14.2"
+APP_RELEASE = "0.15.0"
 if getattr(content, "APP_VERSION", None) != APP_RELEASE:
     st.error(
         f"Version mismatch: app.py is {APP_RELEASE}, sim/content.py is "
         f"{getattr(content, 'APP_VERSION', 'unknown')}. Upload all files of the same "
         "release (app.py and every file in sim/), then reboot the app.")
+    st.stop()
+
+# Follow-up one week later (0.15.0): its own route, opened from a personal link.
+# It runs before anything of the simulation (resume, init), never creates a
+# session and never touches the track allocation.
+if st.query_params.get("fu"):
+    followup.render(st.query_params.get("fu"), st.query_params.get("view"))
     st.stop()
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")

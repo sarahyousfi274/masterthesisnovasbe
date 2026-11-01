@@ -2,7 +2,12 @@
 
 All notable changes to the simulation, newest first. Review responses with
 the full detail of each feedback round: `REVIEW_RESPONSE_0.10.0.md`,
-`REVIEW_RESPONSE_ROUND3_0.13.0.md` and `REVIEW_RESPONSE_ROUND4_0.14.0.md`.
+`REVIEW_RESPONSE_ROUND3_0.13.0.md`, `REVIEW_RESPONSE_ROUND4_0.14.0.md` and
+`REVIEW_RESPONSE_FOLLOWUP_0.15.0.md`.
+
+## 0.15.0
+
+The follow-up one week later (build spec of 30 October 2026, version 3): a 5-minute self-report on the participant's own startup under a personal link (`?fu=<token>`), followed by the debriefing, in the design of the simulation. 12 new items in the format of Costa et al. (2026), one per measured decision, 4 unchanged Costa items as anchors and a control row; forecasts for current founders only; interstitial when the debriefing link is opened first; withdrawal button on the debriefing page. New table `followup_responses`, new columns in `followup`, a "Follow-up" section on the data page (due list, invitation file, wide and long exports) and `tests/followup_walkthrough.py`. The simulation itself is unchanged.
 
 ## 0.14.2
 
