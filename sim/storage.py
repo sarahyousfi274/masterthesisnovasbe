@@ -17,6 +17,9 @@ Three tables, deliberately kept apart:
              the pseudonym code
   progress   where a running session stands, so that it can be resumed after a
              reload or a lost connection (0.14.0); not part of the analysis
+  followup_responses
+             the self-report one week later (0.15.0), one row per item, linked
+             only by the pseudonym code; never the email
 
 The follow-up contact lives in its own table so that it can be held separately
 from the session data and deleted on its own.
@@ -87,6 +90,20 @@ CREATE TABLE IF NOT EXISTS progress (
     data        TEXT,
     updated_at  TEXT
 );
+CREATE TABLE IF NOT EXISTS followup_responses (
+    code             TEXT,
+    item_id          TEXT,
+    page             INTEGER,
+    position         INTEGER,
+    confidence       INTEGER,
+    est_low          DOUBLE PRECISION,
+    est_high         DOUBLE PRECISION,
+    not_applicable   INTEGER,
+    numbers_withheld INTEGER,
+    answered_at      TEXT,
+    seconds_on_page  DOUBLE PRECISION,
+    UNIQUE (code, item_id)
+);
 """
 
 POSTGRES_SCHEMA = """
@@ -137,13 +154,37 @@ CREATE TABLE IF NOT EXISTS progress (
     data        TEXT,
     updated_at  TEXT
 );
+CREATE TABLE IF NOT EXISTS followup_responses (
+    code             TEXT,
+    item_id          TEXT,
+    page             INTEGER,
+    position         INTEGER,
+    confidence       INTEGER,
+    est_low          DOUBLE PRECISION,
+    est_high         DOUBLE PRECISION,
+    not_applicable   INTEGER,
+    numbers_withheld INTEGER,
+    answered_at      TEXT,
+    seconds_on_page  DOUBLE PRECISION,
+    UNIQUE (code, item_id)
+);
 """
 
 TABLES = ("sessions", "responses", "followup")
 
 # Columns added after the first release. Older databases get them on first use.
 MIGRATIONS = [("responses", "entered_at", "TEXT"),
-              ("sessions", "duration_seconds", "DOUBLE PRECISION")]
+              ("sessions", "duration_seconds", "DOUBLE PRECISION"),
+              # Follow-up one week later (0.15.0). Times are ISO text in UTC,
+              # like every other time in this database; flags are 0/1.
+              ("followup", "fu_token", "TEXT"),
+              ("followup", "fu_type", "TEXT"),
+              ("followup", "due_at", "TEXT"),
+              ("followup", "invited_at", "TEXT"),
+              ("followup", "opened_at", "TEXT"),
+              ("followup", "debrief_viewed_at", "TEXT"),
+              ("followup", "fu_completed_at", "TEXT"),
+              ("followup", "current_founder", "INTEGER")]
 
 
 def _migrate(conn) -> None:
@@ -155,6 +196,9 @@ def _migrate(conn) -> None:
             cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})")]
             if column not in cols:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+    # The follow-up token must be unique (SQLite cannot add a UNIQUE column).
+    _execute(conn, "CREATE UNIQUE INDEX IF NOT EXISTS followup_fu_token "
+                   "ON followup (fu_token)")
 
 
 # ---------------------------------------------------------------------------
@@ -502,6 +546,128 @@ def email_for_code(code: str) -> str | None:
     return rows[0]["email"] if rows else None
 
 
+# ---------------------------------------------------------------------------
+# Follow-up one week later (0.15.0)
+# The follow-up shares the `followup` row of a session (email, token, status)
+# and stores its answers in `followup_responses`. It never creates a session
+# and never writes to `sessions` or `responses`.
+# ---------------------------------------------------------------------------
+
+FOLLOWUP_STATUS = ("fu_token", "fu_type", "due_at", "invited_at", "opened_at",
+                   "debrief_viewed_at", "fu_completed_at", "current_founder")
+
+
+def followup_by_token(token: str) -> dict | None:
+    """The follow-up row of a token with the completion and withdrawal of its
+    session; None if the token is unknown. Never returns the email."""
+    if not token:
+        return None
+    flush()
+    with connect() as conn:
+        rows = _fetch(conn,
+                      "SELECT f.code, f.fu_token, f.fu_type, f.due_at, f.invited_at, "
+                      " f.opened_at, f.debrief_viewed_at, f.fu_completed_at, "
+                      " f.current_founder, s.completed_at, s.withdrawn "
+                      "FROM followup f LEFT JOIN sessions s ON s.code = f.code "
+                      "WHERE f.fu_token = ?", (token,))
+    return rows[0] if rows else None
+
+
+@_deferred
+def update_followup(code: str, **fields) -> None:
+    """Set follow-up status fields (only those in FOLLOWUP_STATUS)."""
+    fields = {k: v for k, v in fields.items() if k in FOLLOWUP_STATUS}
+    if not fields:
+        return
+    assignments = ", ".join(f"{k} = ?" for k in fields)
+    with connect() as conn:
+        _execute(conn, f"UPDATE followup SET {assignments} WHERE code = ?",
+                 (*fields.values(), code))
+
+
+@_deferred
+def set_followup_once(code: str, field: str, value: str) -> None:
+    """Set a time stamp the first time only (opened_at, debrief_viewed_at)."""
+    if field not in FOLLOWUP_STATUS:
+        return
+    with connect() as conn:
+        _execute(conn, f"UPDATE followup SET {field} = ? WHERE code = ? AND {field} IS NULL",
+                 (value, code))
+
+
+@_deferred
+def save_followup_answers(code: str, rows: list[dict]) -> None:
+    """One page of the questionnaire, upserted on (code, item_id)."""
+    with connect() as conn:
+        for r in rows:
+            _execute(
+                conn,
+                "INSERT INTO followup_responses (code, item_id, page, position, "
+                " confidence, est_low, est_high, not_applicable, numbers_withheld, "
+                " answered_at, seconds_on_page) VALUES (?,?,?,?,?,?,?,?,?,?,?) "
+                "ON CONFLICT (code, item_id) DO UPDATE SET page = EXCLUDED.page, "
+                " position = EXCLUDED.position, confidence = EXCLUDED.confidence, "
+                " est_low = EXCLUDED.est_low, est_high = EXCLUDED.est_high, "
+                " not_applicable = EXCLUDED.not_applicable, "
+                " numbers_withheld = EXCLUDED.numbers_withheld, "
+                " answered_at = EXCLUDED.answered_at, "
+                " seconds_on_page = EXCLUDED.seconds_on_page",
+                (code, r["item_id"], r.get("page"), r.get("position"), r.get("confidence"),
+                 r.get("est_low"), r.get("est_high"), int(bool(r.get("not_applicable"))),
+                 int(bool(r.get("numbers_withheld"))), r.get("answered_at") or _now(),
+                 r.get("seconds_on_page")))
+
+
+def followup_answers(code: str | None = None) -> list[dict]:
+    """Saved follow-up answers of one code, or of everyone."""
+    flush()
+    with connect() as conn:
+        if code is None:
+            return _fetch(conn, "SELECT * FROM followup_responses ORDER BY code, page, position")
+        return _fetch(conn, "SELECT * FROM followup_responses WHERE code = ? "
+                            "ORDER BY page, position", (code,))
+
+
+def followup_candidates() -> list[dict]:
+    """Every session with an email address and what the due list needs: its
+    status, completion and last activity (progress or last answer). For the
+    admin page only; this is the one follow-up read that includes the email."""
+    flush()
+    with connect() as conn:
+        return _fetch(conn,
+                      "SELECT f.code, f.email, f.fu_token, f.fu_type, f.due_at, "
+                      " f.invited_at, f.opened_at, f.debrief_viewed_at, f.fu_completed_at, "
+                      " f.current_founder, s.started_at, s.completed_at, s.withdrawn, "
+                      " p.updated_at AS progress_at, "
+                      " (SELECT MAX(r.answered_at) FROM responses r WHERE r.code = f.code) "
+                      "   AS last_answer "
+                      "FROM followup f JOIN sessions s ON s.code = f.code "
+                      "LEFT JOIN progress p ON p.code = f.code")
+
+
+def assign_followup(code: str, token: str, fu_type: str, due_at: str) -> str:
+    """Give a session its follow-up type and due date, and a token if it has
+    none yet. Written at once (not queued), because the invitation file that
+    is built right after must carry the same token. Returns the token."""
+    flush()
+    with connect() as conn:
+        _execute(conn, "UPDATE followup SET fu_token = COALESCE(fu_token, ?), "
+                       "fu_type = ?, due_at = ? WHERE code = ?",
+                 (token, fu_type, due_at, code))
+        rows = _fetch(conn, "SELECT fu_token FROM followup WHERE code = ?", (code,))
+    return rows[0]["fu_token"] if rows else token
+
+
+def mark_followup_invited(codes: list[str], when: str | None = None) -> int:
+    """'Mark these as invited' on the admin page."""
+    flush()
+    when = when or _now()
+    with connect() as conn:
+        for code in codes:
+            _execute(conn, "UPDATE followup SET invited_at = ? WHERE code = ? "
+                           "AND invited_at IS NULL", (when, code))
+    return len(codes)
+
 def code_for_email(email: str) -> str | None:
     """Session id stored with an email address, for a withdrawal by mail."""
     flush()
@@ -539,6 +705,7 @@ def withdraw(code: str) -> None:
         _execute(conn, "UPDATE sessions SET withdrawn = 1 WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM followup WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM progress WHERE code = ?", (code,))
+        _execute(conn, "DELETE FROM followup_responses WHERE code = ?", (code,))
 
 
 def delete(code: str) -> int:
@@ -550,6 +717,7 @@ def delete(code: str) -> int:
         _execute(conn, "DELETE FROM responses WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM followup WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM progress WHERE code = ?", (code,))
+        _execute(conn, "DELETE FROM followup_responses WHERE code = ?", (code,))
         _execute(conn, "DELETE FROM sessions WHERE code = ?", (code,))
         return len(before)
 

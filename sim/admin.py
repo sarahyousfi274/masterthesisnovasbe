@@ -167,6 +167,9 @@ def render() -> None:
             st.dataframe(rows, use_container_width=True, hide_index=True)
 
     st.divider()
+    _followup_section(stamp)
+
+    st.divider()
     st.subheader("Withdraw a participant")
     st.caption(
         "For a withdrawal by mail. Enter the email address the person wrote from "
@@ -187,3 +190,61 @@ def render() -> None:
 
     st.divider()
     st.caption(f"App {content.APP_VERSION} · codebook {codebook.version()}")
+
+
+def _followup_section(stamp: str) -> None:
+    """Follow-up one week later (0.15.0): status, due list, invitations, data."""
+    from . import followup
+    st.subheader("Follow-up")
+    st.caption(
+        f"Invitations are due {followup.DUE_DAYS} days after a session. Send at least "
+        "every 2 to 3 days, from the team mailbox, one email per address and no "
+        "reminders. Questionnaire links close after "
+        f"{followup.closes_text(followup.FOLLOWUP_CLOSES)}; after that every link shows "
+        "the explanation only.")
+    counts = followup.status_counts()
+    cols = st.columns(len(counts))
+    for col, (label, value) in zip(cols, counts.items()):
+        col.metric(label, value)
+
+    due = followup.plan_invitations()
+    st.markdown(f"**Due now: {len(due)}**")
+    if due:
+        st.dataframe([{"email": d["email"], "type": d["fu_type"], "due since": d["due_at"][:10]}
+                      for d in due], use_container_width=True, hide_index=True)
+        st.download_button("Download invitations (CSV)", data=followup.invitations_csv(due),
+                           file_name=f"{stamp}-followup-invitations.csv", mime="text/csv",
+                           key="fu_dl_invitations")
+        st.caption("Use the file for a mail merge. Then mark exactly these addresses as "
+                   "invited, so they never get a second email.")
+        if st.button(f"Mark these {len(due)} as invited", key="fu_mark_invited"):
+            storage.mark_followup_invited([d["code"] for d in due])
+            st.success(f"Marked {len(due)} as invited.")
+            st.rerun()
+    else:
+        st.caption("Nobody is due right now.")
+
+    wide, long = followup.export_rows()
+    c1, c2 = st.columns(2)
+    c1.download_button(f"Download follow-up data, wide (CSV, {len(wide)} rows)",
+                       data=followup._csv(wide) if wide else "",
+                       file_name=f"{stamp}-followup-wide.csv", mime="text/csv",
+                       disabled=not wide, key="fu_dl_wide")
+    c2.download_button(f"Download follow-up data, long (CSV, {len(long)} rows)",
+                       data=followup._csv(long, followup.LONG_COLUMNS) if long else "",
+                       file_name=f"{stamp}-followup-long.csv", mime="text/csv",
+                       disabled=not long, key="fu_dl_long")
+    st.caption("No email address in either file. Join them with sessions.csv and "
+               "responses.csv on code (and node for the long file).")
+
+    with st.expander("Test link for one session (go-live check)"):
+        st.caption("For a test session only, for example with an @example.com address, "
+                   "which never appears in the due list. Delete the session afterwards.")
+        code = st.text_input("Session code", key="fu_test_code").strip().upper()
+        if st.button("Create test link", key="fu_test_btn", disabled=not code):
+            made = followup.test_link(code)
+            if made:
+                st.code(made["link"] or "(no questionnaire: session not completed)")
+                st.code(made["debrief_link"])
+            else:
+                st.warning("No session with an email address has that code.")

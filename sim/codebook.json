@@ -1,6 +1,6 @@
 {
-  "codebook_version": "0.14.0",
-  "updated": "2026-10-25",
+  "codebook_version": "0.15.0",
+  "updated": "2026-11-01",
   "note": "Hidden reference values and scoring parameters. Participants never see this file. Every entry carries a provenance tag: 'empirical' = a published figure is used directly, 'derived' = computed from published figures plus a stated assumption, 'placeholder' = needs the team's own interview or pilot data before fielding.",
   "contest_variant": "harmonised",
   "contest_rule": {
@@ -536,5 +536,226 @@
     "G3": "O'Connor & Lawrence (1989); Soll & Klayman (2004)",
     "G4": "Chen et al. (2024); Kirtley & O'Mahony (2023)",
     "K1": "Camerer & Lovallo (1999)"
+  },
+  "followup": {
+    "added_in": "0.15.0",
+    "scale": {
+      "min": 1,
+      "max": 7,
+      "ends": [
+        "Not confident at all",
+        "Very confident"
+      ]
+    },
+    "sim_closes": "2026-11-05",
+    "followup_closes": "2026-11-19",
+    "due_days": 7,
+    "fast_seconds_per_item": 2.0,
+    "items": {
+      "SR_T1": {
+        "item_type": "new",
+        "node": "T1",
+        "sim_area": "T",
+        "form": "overestimation",
+        "template": "OESTI06",
+        "matches": null,
+        "wording": "My startup can build a new version of its product within the time I plan for it.",
+        "unit": null
+      },
+      "SR_F1": {
+        "item_type": "new",
+        "node": "F1",
+        "sim_area": "F",
+        "form": "overestimation",
+        "template": "OESTI07",
+        "matches": null,
+        "wording": "My startup can close a funding round within the time I plan for it.",
+        "unit": null
+      },
+      "SR_H1": {
+        "item_type": "new",
+        "node": "H1",
+        "sim_area": "H",
+        "form": "overestimation",
+        "template": "OESTI01",
+        "matches": null,
+        "wording": "My startup can fill an open position within the time I plan for it.",
+        "unit": null
+      },
+      "SR_G1": {
+        "item_type": "new",
+        "node": "G1",
+        "sim_area": "G",
+        "form": "overestimation",
+        "template": "OESTI04",
+        "matches": null,
+        "wording": "My startup knows its customers well enough to pick the right sales channel without much testing.",
+        "unit": null
+      },
+      "SR_T2": {
+        "item_type": "new",
+        "node": "T2",
+        "sim_area": "T",
+        "form": "overplacement",
+        "template": "OPLAC09",
+        "matches": null,
+        "wording": "When my startup competes with other startups for a prize at a pitch event, it does better than most of them.",
+        "unit": null
+      },
+      "SR_F2": {
+        "item_type": "new",
+        "node": "F2",
+        "sim_area": "F",
+        "form": "overplacement",
+        "template": "OPLAC12",
+        "matches": null,
+        "wording": "When my startup competes with other startups for funding, for example from an accelerator, it does better than most of them.",
+        "unit": null
+      },
+      "SR_H2": {
+        "item_type": "new",
+        "node": "H2",
+        "sim_area": "H",
+        "form": "overplacement",
+        "template": "OPLAC01",
+        "matches": null,
+        "wording": "When my startup competes with other startups for a strong candidate, it does better than most of them.",
+        "unit": null
+      },
+      "SR_G2": {
+        "item_type": "new",
+        "node": "G2",
+        "sim_area": "G",
+        "form": "overplacement",
+        "template": "OPLAC10",
+        "matches": null,
+        "wording": "When my startup competes with other startups for a large customer, it does better than most of them.",
+        "unit": null
+      },
+      "OESTI01": {
+        "item_type": "anchor",
+        "node": null,
+        "sim_area": "H",
+        "form": "overestimation",
+        "template": "OESTI01",
+        "matches": "SR_H1",
+        "wording": "What is your level of confidence in your ability to control hiring and firing decisions?",
+        "unit": null
+      },
+      "OPLAC07": {
+        "item_type": "anchor",
+        "node": null,
+        "sim_area": "F",
+        "form": "overplacement",
+        "template": "OPLAC07",
+        "matches": "SR_F2",
+        "wording": "I believe that the management of my working capital (cash, inventory, and accounts receivable) is better than that of my competitors.",
+        "unit": null
+      },
+      "OESTI04": {
+        "item_type": "anchor",
+        "node": null,
+        "sim_area": "G",
+        "form": "overestimation",
+        "template": "OESTI04",
+        "matches": "SR_G1",
+        "wording": "I have extensive knowledge about my customers, which helps me make decisions regarding new sales opportunities.",
+        "unit": null
+      },
+      "OPLAC10": {
+        "item_type": "anchor",
+        "node": null,
+        "sim_area": "G",
+        "form": "overplacement",
+        "template": "OPLAC10",
+        "matches": "SR_G2",
+        "wording": "I have better knowledge of the market and business expansion opportunities compared to my competitors.",
+        "unit": null
+      },
+      "CTRL3": {
+        "item_type": "control",
+        "node": null,
+        "sim_area": null,
+        "form": null,
+        "template": "control",
+        "matches": null,
+        "wording": "To show that you are reading carefully, please select 3 for this row.",
+        "unit": null
+      },
+      "SR_T3": {
+        "item_type": "new",
+        "node": "T3",
+        "sim_area": "T",
+        "form": "overprecision",
+        "template": "format_only",
+        "matches": null,
+        "wording": "How many weeks will your startup need for its next major product release, for example a new version or a major feature?",
+        "unit": "weeks",
+        "min": 0,
+        "max": 260,
+        "option": "na",
+        "option_label": "No major release planned in the next 12 months"
+      },
+      "SR_F3": {
+        "item_type": "new",
+        "node": "F3",
+        "sim_area": "F",
+        "form": "overprecision",
+        "template": "OPREC04",
+        "matches": null,
+        "wording": "What will your startup's monthly revenue be in 12 months, in euros?",
+        "unit": "eur",
+        "min": 0,
+        "max": 10000000,
+        "option": "withheld",
+        "option_label": "I prefer not to give numbers"
+      },
+      "SR_H3": {
+        "item_type": "new",
+        "node": "H3",
+        "sim_area": "H",
+        "form": "overprecision",
+        "template": "format_only",
+        "matches": null,
+        "wording": "How many weeks will it take to fill your startup's next open position, from the start of the search to a signed contract?",
+        "unit": "weeks",
+        "min": 0,
+        "max": 104,
+        "option": "na",
+        "option_label": "No hire planned in the next 12 months"
+      },
+      "SR_G3": {
+        "item_type": "new",
+        "node": "G3",
+        "sim_area": "G",
+        "form": "overprecision",
+        "template": "OPREC14",
+        "matches": null,
+        "wording": "How many new paying customers will your startup win over the next 12 months?",
+        "unit": "customers",
+        "min": 0,
+        "max": 10000000,
+        "option": null,
+        "option_label": null
+      }
+    },
+    "construction": [
+      "One new item per measured decision: 4 areas x 3 forms = 12 items. The outcome nodes (F4, H4, G4) and K1 get no item, because they do not measure a form.",
+      "Same action as the node, applied to the participant's own startup (Ajzen and Fishbein 1977). The target differs on purpose: questions about Lumora would bring back the consistency motive the time lag is meant to weaken.",
+      "Format of Costa et al. (2026): statements rated for confidence from 1 to 7 (pp. 1488, 1514); for overprecision a lowest and a highest estimate, followed by the confidence rating (p. 1514).",
+      "Parallel wording within a form: every statement starts with 'My startup'; overestimation items name a plan or a first choice; overplacement items read 'When my startup competes with other startups for ..., it does better than most of them'.",
+      "Units as in the simulation: weeks, euros and customers instead of Costa's percentages. The simulation asks in these units (T3, F3, H3, G3), and percentages are undefined for startups without revenue or customers.",
+      "'Not applicable' only where a forecast cannot exist (no planned release, no planned hire). 'Prefer not to give numbers' only for revenue, where the confidence rating is still asked.",
+      "4 anchors unchanged: they come from Costa's retained items, fit the areas H, F and G, and each has a matching new item.",
+      "Former founders answer all statements for their most recent startup, as they saw it at the time, and skip the forecasts."
+    ],
+    "sources": [
+      "Costa, Garcia, Tonelli and Moreira (2026), Journal of the International Council for Small Business 7(5): 1480-1518, doi 10.1080/26437015.2025.2562189",
+      "Ajzen and Fishbein (1977), Psychological Bulletin 84(5): 888-918, doi 10.1037/0033-2909.84.5.888",
+      "Podsakoff, MacKenzie, Lee and Podsakoff (2003), Journal of Applied Psychology 88(5): 879-903",
+      "Huang, Curran, Keeney, Poposki and DeShon (2012), Journal of Business and Psychology 27(1): 99-114, doi 10.1007/s10869-011-9231-8",
+      "Hertwig and Ortmann (2008), Ethics & Behavior 18(1): 59-92",
+      "Moore and Healy (2008), Psychological Review 115(2): 502-517"
+    ]
   }
 }

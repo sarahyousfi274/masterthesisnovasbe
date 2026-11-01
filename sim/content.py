@@ -13,7 +13,7 @@ Rules for this file
 - American English, "startup", typographic apostrophes.
 """
 
-APP_VERSION = "0.14.2"
+APP_VERSION = "0.15.0"
 
 # --------------------------------------------------------------------------
 # Contact details. Replace the study address once the team mailbox exists.
